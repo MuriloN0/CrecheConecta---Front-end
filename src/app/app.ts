@@ -1,11 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
+import { Alunos } from './alunos/alunos';
 
 @Component({
   selector: 'app-root',
-  imports: [],
-  templateUrl: './app.html',
-  styleUrl: './app.scss',
+  standalone: true,
+  imports: [Alunos],
+  template: '<app-alunos />'
 })
-export class App {
-  protected readonly title = signal('crecheconecta');
-}
+export class App {}
