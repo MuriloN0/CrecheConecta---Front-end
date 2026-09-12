@@ -4,7 +4,6 @@
     <nav>
       <a href="#">Ficha de Saúde</a>
     </nav>
-    <div class="rodape-menu">Cuidar começa com estar por perto.</div>
   </aside>
 
   <div class="conteudo">
@@ -53,7 +52,7 @@
           </div>
 
           <div class="rodape-form">
-            <button type="button" (click)="cancelar()">Cancelar</button>
+            <button class="cancelar" type="button" (click)="cancelar()">Cancelar</button>
             <button class="principal" type="button" (click)="salvar()" [disabled]="salvando()">
               {{ salvando() ? 'Salvando...' : 'Salvar' }}
             </button>
