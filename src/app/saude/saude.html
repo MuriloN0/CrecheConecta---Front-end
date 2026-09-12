@@ -1,63 +1,85 @@
-<div class="pagina">
-  <header class="cabecalho">
-    <div>
-      <h1>Ficha de Saúde</h1>
-      <p class="subtitulo">
-        Ficha de saúde para observação sobre alergias que o aluno possui ou alguma condição.
-      </p>
-    </div>
-    <button class="btn-primario" type="button" (click)="irParaCadastro()">Cadastrar nova ficha</button>
-  </header>
+<div class="portal">
+  <aside class="sidebar">
+    <a class="marca" href="#">CrecheConecta <span>Portal dos Pais</span></a>
+    <nav>
+      <a href="#">Ficha de Saúde</a>
+    </nav>
+    <div class="rodape-menu">Cuidar começa com estar por perto.</div>
+  </aside>
 
-  <section class="cartao">
-    @if (carregando()) {
-      <p class="aviso">Carregando fichas...</p>
-    }
+  <div class="conteudo">
+    <header class="topo">
+      <strong>Portal dos Pais</strong>
+      <span>Ficha de saúde do aluno</span>
+    </header>
 
-    @if (erro()) {
-      <p class="aviso erro">{{ erro() }}</p>
-    }
-
-    @if (!carregando()) {
-      <table class="tabela">
-        <thead>
-          <tr>
-            <th>NOME DA FICHA</th>
-            <th>DATA CRIAÇÃO</th>
-            <th class="col-acoes"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (ficha of fichas(); track ficha.id) {
-            <tr>
-              <td>{{ ficha.nome }}</td>
-              <td>{{ ficha.dataCriacao | date: 'dd/MM/yyyy' }}</td>
-              <td class="col-acoes">
-                <button class="btn-ver" type="button" (click)="visualizar(ficha)">Visualizar ficha</button>
-                <button class="btn-apagar" type="button" (click)="pedirExclusao(ficha)">
-                  Apagar
-                </button>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="3" class="vazio">Nenhuma ficha cadastrada.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    }
-  </section>
-
-  @if (fichaParaExcluir()) {
-    <div class="modal-fundo">
-      <div class="modal">
-        <h2>Tem certeza que deseja excluir?</h2>
-        <div class="modal-acoes">
-          <button class="btn-nao" type="button" (click)="cancelarExclusao()">Não</button>
-          <button class="btn-sim" type="button" (click)="confirmarExclusao()">Sim</button>
+    <main>
+      <div class="titulo">
+        <div>
+          <div class="etiqueta">SAÚDE</div>
+          <h1>Ficha de Saúde</h1>
+          <p>Observações sobre alergias que o aluno possui ou alguma condição.</p>
         </div>
+        <button class="principal" type="button" (click)="irParaCadastro()">
+          + Cadastrar nova ficha
+        </button>
+      </div>
+
+      <section class="cartao">
+        @if (carregando()) {
+          <p>Carregando fichas...</p>
+        }
+
+        @if (erro()) {
+          <p class="mensagem erro">{{ erro() }}</p>
+        }
+
+        @if (!carregando()) {
+          <div class="tabela">
+            <table>
+              <thead>
+                <tr>
+                  <th>NOME DA FICHA</th>
+                  <th>DATA CRIAÇÃO</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ficha of fichas(); track ficha.id) {
+                  <tr>
+                    <td>{{ ficha.nome }}</td>
+                    <td>{{ ficha.dataCriacao | date: 'dd/MM/yyyy' }}</td>
+                    <td>
+                      <div class="acoes">
+                        <button type="button" (click)="visualizar(ficha)">Visualizar</button>
+                        <button class="perigo" type="button" (click)="pedirExclusao(ficha)">
+                          Apagar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3" class="vazio">Nenhuma ficha cadastrada.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </main>
+  </div>
+</div>
+
+@if (fichaParaExcluir()) {
+  <div class="modal-fundo">
+    <div class="modal">
+      <h2>Tem certeza que deseja excluir?</h2>
+      <div class="modal-acoes">
+        <button type="button" (click)="cancelarExclusao()">Não</button>
+        <button class="perigo" type="button" (click)="confirmarExclusao()">Sim</button>
       </div>
     </div>
-  }
-</div>
+  </div>
+}

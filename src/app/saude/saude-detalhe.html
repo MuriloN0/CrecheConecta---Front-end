@@ -1,53 +1,71 @@
-<div class="pagina">
-  <header class="cabecalho">
-    <div>
-      <h1>Visualizar Ficha de Saúde</h1>
-      <p class="subtitulo">Detalhes da ficha de saúde do aluno.</p>
-    </div>
-    <button class="btn-ver" type="button" (click)="voltar()">Voltar</button>
-  </header>
+<div class="portal">
+  <aside class="sidebar">
+    <a class="marca" href="#">CrecheConecta <span>Portal dos Pais</span></a>
+    <nav>
+      <a href="#">Ficha de Saúde</a>
+    </nav>
+    <div class="rodape-menu">Cuidar começa com estar por perto.</div>
+  </aside>
 
-  <section class="cartao">
-    @if (carregando()) {
-      <p class="aviso">Carregando...</p>
-    }
+  <div class="conteudo">
+    <header class="topo">
+      <strong>Portal dos Pais</strong>
+      <span>Ficha de saúde do aluno</span>
+    </header>
 
-    @if (erro()) {
-      <p class="aviso erro">{{ erro() }}</p>
-    }
-
-    @if (ficha(); as f) {
-      <div class="campo">
-        <label>Nome da Ficha</label>
-        <p class="valor">{{ f.nome }}</p>
+    <main>
+      <div class="titulo">
+        <div>
+          <div class="etiqueta">SAÚDE</div>
+          <h1>Visualizar Ficha</h1>
+          <p>Detalhes da ficha de saúde do aluno.</p>
+        </div>
+        <button type="button" (click)="voltar()">Voltar</button>
       </div>
 
-      <div class="campo">
-        <label>Observações</label>
-        <p class="valor">{{ f.observacoes || 'Sem observações.' }}</p>
-      </div>
-
-      <div class="campo">
-        <label>Anexos</label>
-        @if (f.anexos.length === 0) {
-          <p class="valor">Nenhum anexo.</p>
-        } @else {
-          <ul>
-            @for (anexo of f.anexos; track anexo.id) {
-              <li>{{ anexo.nomeArquivo }}</li>
-            }
-          </ul>
+      <section class="cartao">
+        @if (carregando()) {
+          <p>Carregando...</p>
         }
-      </div>
 
-      <div class="campo">
-        <label>Data de criação</label>
-        <p class="valor">{{ f.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}</p>
-      </div>
+        @if (erro()) {
+          <p class="mensagem erro">{{ erro() }}</p>
+        }
 
-      <div class="form-acoes">
-        <button class="btn-primario" type="button" (click)="editar()">Editar</button>
-      </div>
-    }
-  </section>
+        @if (ficha(); as f) {
+          <div class="campo">
+            <label>Nome da Ficha</label>
+            <p class="valor">{{ f.nome }}</p>
+          </div>
+
+          <div class="campo">
+            <label>Observações</label>
+            <p class="valor">{{ f.observacoes || 'Sem observações.' }}</p>
+          </div>
+
+          <div class="campo">
+            <label>Anexos</label>
+            @if (f.anexos.length === 0) {
+              <p class="valor">Nenhum anexo.</p>
+            } @else {
+              <ul>
+                @for (anexo of f.anexos; track anexo.id) {
+                  <li>{{ anexo.nomeArquivo }}</li>
+                }
+              </ul>
+            }
+          </div>
+
+          <div class="campo">
+            <label>Data de criação</label>
+            <p class="valor">{{ f.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+
+          <div class="rodape-form">
+            <button class="principal" type="button" (click)="editar()">Editar</button>
+          </div>
+        }
+      </section>
+    </main>
+  </div>
 </div>
