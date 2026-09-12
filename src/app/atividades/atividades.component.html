@@ -1,3 +1,96 @@
-<p>
-  atividades works!
-</p>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo-text">CrecheConecta</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button 
+         [class.active]="isHome" 
+         (click)="setHome(true)">
+        Atividades para casa
+      </button>
+      <button 
+         [class.active]="!isHome" 
+         (click)="setHome(false)">
+        Atividades do dia
+      </button>
+    </nav>
+  </aside>
+
+  <div class="main-container">
+    
+    <header class="top-header">
+      <div class="header-titles">
+        <h1>Portal do Professor</h1>
+        <p>Creche Municipal Girassol</p>
+      </div>
+      <div class="user-profile">
+        <span class="user-name">Professora Ana</span>
+        <div class="user-avatar"></div>
+      </div>
+    </header>
+
+    <main class="content-area">
+      <div class="page-header">
+        <div class="page-info">
+          <h2>{{ isHome ? 'Atividades para casa' : 'Atividades do dia' }}</h2>
+          <p>{{ isHome ? 'Atividades cadastradas pelo professor para os alunos realizarem em casa!' : 'Atividades realizadas durante o dia pelo professor' }}</p>
+        </div>
+        <button class="btn-primary" (click)="abrirModalCriar()">Criar atividade</button>
+      </div>
+
+      <div class="mensagem-sucesso" *ngIf="mensagemSucesso">
+        {{ mensagemSucesso }}
+      </div>
+
+      <div class="table-wrapper">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>TITULO ATIVIDADE</th>
+              <th>TURMA</th>
+              <th>DATA CRIAÇÃO</th>
+              <th>DATA ENTREGA</th>
+              <th class="actions-column"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let atividade of atividades">
+              <td class="bold-text">{{ atividade.titulo }}</td>
+              <td class="light-text">{{ atividade.turma }}</td>
+              <td class="light-text">{{ atividade.dataCriacao }}</td>
+              <td class="light-text">{{ atividade.dataEntrega }}</td>
+              <td class="actions-cell">
+                <button class="btn-view" (click)="visualizarAtividade(atividade)">Visualizar atividade</button>
+                <button class="btn-edit" (click)="abrirModalEditar(atividade)">Editar</button>
+                <button class="btn-delete" (click)="abrirModalApagar(atividade)">Apagar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<app-modal-nova-atividade 
+   *ngIf="mostrarModal" 
+   [isHome]="isHome"
+   [isEditing]="isEditing"
+   [atividadeEdicao]="atividadeParaEditar"
+   (fechar)="fecharModal()" 
+   (salvar)="salvarAtividade($event)">
+</app-modal-nova-atividade>
+
+<app-modal-excluir-atividade
+  *ngIf="mostrarModalExcluir"
+  (cancelar)="fecharModalApagar()"
+  (confirmar)="confirmarExclusao()">
+</app-modal-excluir-atividade>
+
+<app-modal-visualizar-atividade
+  *ngIf="mostrarModalVisualizar"
+  [isHome]="isHome"
+  [atividade]="atividadeParaVisualizar"
+  (fechar)="fecharModalVisualizar()">
+</app-modal-visualizar-atividade>

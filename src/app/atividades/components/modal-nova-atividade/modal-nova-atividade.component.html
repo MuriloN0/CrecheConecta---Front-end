@@ -1,0 +1,55 @@
+<div class="modal-overlay">
+  <div class="modal-content">
+    
+    <div class="modal-header">
+      <h2 *ngIf="!isEditing">Cadastrar nova atividade {{ isHome ? 'para casa' : 'do dia' }}</h2>
+      <h2 *ngIf="isEditing">Editar {{ isHome ? 'atividade para casa' : 'nova atividade do dia' }}</h2>
+      <button class="btn-save" (click)="salvarAtividade()">Salvar</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-col">
+        <div class="form-group" [class.error]="tentouSalvar && !novaAtividade.nome.trim()">
+          <div class="label-container">
+            <label>Nome da Atividade</label>
+            <span class="error-text" *ngIf="tentouSalvar && !novaAtividade.nome.trim()">Campo obrigatório</span>
+          </div>
+          <input type="text" [(ngModel)]="novaAtividade.nome">
+        </div>
+        
+        <div class="form-group" [class.error]="tentouSalvar && !turmaSelecionada">
+          <div class="label-container">
+            <label>Turma</label>
+            <span class="error-text" *ngIf="tentouSalvar && !turmaSelecionada">Campo obrigatório</span>
+          </div>
+          <select [(ngModel)]="turmaSelecionada">
+            <option value="" disabled selected>Selecione uma turma</option>
+            <option *ngFor="let turma of turmasMock" [value]="turma.id">
+              {{ turma.nome }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="isHome" [class.error]="tentouSalvar && !novaAtividade.dataEntrega">
+          <div class="label-container">
+            <label>Data de Entrega</label>
+            <span class="error-text" *ngIf="tentouSalvar && !novaAtividade.dataEntrega">Campo obrigatório</span>
+          </div>
+          <input type="date" [(ngModel)]="novaAtividade.dataEntrega">
+        </div>
+      </div>
+
+      <div class="form-col">
+        <div class="form-group full-height">
+          <label>Observações para a atividade</label>
+          <textarea [(ngModel)]="novaAtividade.observacoes"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="fecharModal()">Cancelar</button>
+    </div>
+
+  </div>
+</div>
