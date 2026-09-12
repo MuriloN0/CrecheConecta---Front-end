@@ -1,0 +1,41 @@
+<div class="pagina">
+  <header class="cabecalho">
+    <div>
+      <h1>Cadastro de ficha de Saúde</h1>
+      <p class="subtitulo">Preencha os dados da ficha de saúde do aluno.</p>
+    </div>
+  </header>
+
+  <section class="cartao">
+    @if (erro()) {
+      <p class="aviso erro">{{ erro() }}</p>
+    }
+
+    <div class="campo">
+      <label>Nome da Ficha</label>
+      <input
+        type="text"
+        [value]="nome()"
+        (input)="atualizarNome($any($event.target).value)"
+        placeholder="Ex.: Alergia a Amendoim"
+      />
+    </div>
+
+    <div class="campo">
+      <label>Observações da ficha</label>
+      <textarea
+        rows="6"
+        [value]="observacoes()"
+        (input)="atualizarObservacoes($any($event.target).value)"
+        placeholder="Descreva as observações relevantes..."
+      ></textarea>
+    </div>
+
+    <div class="form-acoes">
+      <button class="btn-nao" type="button" (click)="cancelar()">Cancelar</button>
+      <button class="btn-primario" type="button" (click)="salvar()" [disabled]="salvando()">
+        {{ salvando() ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </div>
+  </section>
+</div>
