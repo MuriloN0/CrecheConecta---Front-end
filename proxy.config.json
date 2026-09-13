@@ -1,20 +1,7 @@
 {
-  "/api/**": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true,
-    "autoRewrite": true
-  },
-  "/login": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true,
-    "autoRewrite": true
-  },
-  "/logout": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true,
-    "autoRewrite": true
-  }
+    "/api": {
+        "target": "http://localhost:8080",
+        "secure": false,
+        "changeOrigin": true
+    }
 }

@@ -1,0 +1,64 @@
+<div class="portal">
+  <aside class="sidebar">
+    <a class="marca" href="#">CrecheConecta <span>Portal dos Pais</span></a>
+    <nav>
+      <a href="#">Ficha de Saúde</a>
+    </nav>
+  </aside>
+
+  <div class="conteudo">
+    <header class="topo">
+      <strong>Portal dos Pais</strong>
+      <span>Ficha de saúde do aluno</span>
+    </header>
+
+    <main>
+      <div class="titulo">
+        <div>
+          <div class="etiqueta">SAÚDE</div>
+          <h1>Editar Ficha de Saúde</h1>
+          <p>Altere os dados da ficha de saúde.</p>
+        </div>
+      </div>
+
+      <section class="cartao">
+        @if (carregando()) {
+          <p>Carregando...</p>
+        }
+
+        @if (erro()) {
+          <p class="mensagem erro">{{ erro() }}</p>
+        }
+
+        @if (!carregando()) {
+          <div class="campo">
+            <label>Nome da Ficha
+              <input
+                type="text"
+                [value]="nome()"
+                (input)="atualizarNome($any($event.target).value)"
+              />
+            </label>
+          </div>
+
+          <div class="campo">
+            <label>Observações da ficha
+              <textarea
+                rows="6"
+                [value]="observacoes()"
+                (input)="atualizarObservacoes($any($event.target).value)"
+              ></textarea>
+            </label>
+          </div>
+
+          <div class="rodape-form">
+            <button class="cancelar" type="button" (click)="cancelar()">Cancelar</button>
+            <button class="principal" type="button" (click)="salvar()" [disabled]="salvando()">
+              {{ salvando() ? 'Salvando...' : 'Salvar' }}
+            </button>
+          </div>
+        }
+      </section>
+    </main>
+  </div>
+</div>
