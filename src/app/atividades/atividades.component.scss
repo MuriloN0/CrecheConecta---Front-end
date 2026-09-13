@@ -1,0 +1,244 @@
+$bg-color: #FDF9F2;
+$header-border: #E8E2D9;
+$primary-orange: #FF7300;
+$table-header-bg: #F4BA93;
+$table-header-text: #7A695C;
+$btn-view-bg: #006C67;
+$btn-edit-bg: #2F80ED;
+$btn-delete-bg: #FF0000;
+$text-dark: #333333;
+$text-light: #888888;
+$creche-green: #006C67;
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background-color: $creche-green;
+  padding: 30px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+
+  .brand {
+    padding-left: 10px;
+    
+    .logo-text {
+      color: white;
+      font-size: 22px;
+      font-weight: 700;
+    }
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    button {
+      background-color: rgba(#FF7300, 0.7); 
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+
+      &:hover {
+        background-color: rgba(#FF7300, 0.9);
+      }
+
+      &.active {
+        background-color: $primary-orange; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      }
+    }
+  }
+}
+
+.main-container {
+  background-color: $bg-color;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 40px;
+  background-color: $bg-color;
+  border-bottom: 2px solid $header-border;
+
+  .header-titles {
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      color: $text-dark;
+      font-weight: 700;
+    }
+    p {
+      margin: 0;
+      font-size: 14px;
+      color: $creche-green;
+    }
+  }
+
+  .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .user-name {
+      font-size: 14px;
+      color: $text-dark;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      background-color: #D9D9D9;
+      border-radius: 50%;
+    }
+  }
+}
+
+.content-area {
+  padding: 40px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+
+  .page-info {
+    h2 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      color: $text-dark;
+      font-weight: 600;
+    }
+    p {
+      margin: 0;
+      font-size: 14px;
+      color: $text-light;
+    }
+  }
+
+  .btn-primary {
+    background-color: $primary-orange;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+.mensagem-sucesso {
+  background-color: #D1EFEC;
+  color: #005454;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.table-wrapper {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  overflow: hidden;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead {
+    background-color: $table-header-bg;
+    
+    th {
+      padding: 16px 24px;
+      color: $table-header-text;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #F0F0F0;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    td {
+      padding: 16px 24px;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+  }
+}
+
+.bold-text {
+  font-weight: 600;
+  color: $text-dark;
+}
+
+.light-text {
+  color: #999999;
+}
+
+.actions-column {
+  width: 250px;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+
+  button {
+    border: none;
+    padding: 6px 16px;
+    border-radius: 16px;
+    font-size: 12px;
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .btn-view {
+    background-color: $btn-view-bg;
+  }
+
+  .btn-edit {
+    background-color: $btn-edit-bg;
+  }
+
+  .btn-delete {
+    background-color: $btn-delete-bg;
+  }
+}

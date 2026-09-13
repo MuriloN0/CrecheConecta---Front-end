@@ -1,0 +1,84 @@
+<div class="portal">
+  <aside class="sidebar" aria-label="Menu principal">
+    <a class="marca" href="/">CrecheConecta<span>Gestão escolar</span></a>
+    <nav><a href="/" class="selecionado" aria-current="page">Alunos</a></nav>
+    <p class="rodape-menu">Cuidar começa com<br>estar por perto.</p>
+  </aside>
+  <div class="conteudo">
+    <header class="topo"><div><strong>Portal da Direção</strong><span>Gestão de alunos</span></div></header>
+    <main [attr.aria-busy]="ocupado()">
+      <div class="titulo">
+        <div><p class="etiqueta">ESCOLAR</p><h1>Alunos</h1><p>Cadastros e contatos das famílias em um só lugar.</p></div>
+        @if (modo() === 'lista') {
+          <button class="principal" (click)="novo()" [disabled]="ocupado()">+ Cadastrar aluno</button>
+        }
+      </div>
+      @if (erro()) { <p class="mensagem erro" role="alert">{{ erro() }}</p> }
+      @if (aviso()) { <p class="mensagem sucesso" role="status">{{ aviso() }}</p> }
+      @if (ocupado()) { <p role="status">Aguarde, processando…</p> }
+
+      @if (modo() === 'lista') {
+        <section class="cartao" aria-label="Lista de alunos">
+          <div class="cabecalho-lista"><h2>Alunos cadastrados</h2><button class="secundario" [disabled]="ocupado()" (click)="carregar(resultado()?.pagina ?? 0)">Atualizar lista</button></div>
+          @if (resultado(); as pagina) {
+            @if (pagina.itens.length === 0) {
+              <div class="vazio"><h3>Nenhum aluno nesta página</h3><p>Cadastre um aluno para começar a organizar as informações da família.</p></div>
+            } @else {
+              <div class="tabela"><table><caption class="sr-only">Cadastros de alunos</caption>
+                <thead><tr><th scope="col">Nome do aluno</th><th scope="col">Situação</th><th scope="col">Ações</th></tr></thead>
+                <tbody>
+                  @for (aluno of pagina.itens; track aluno.id) {
+                    <tr><td>{{ aluno.nome }}</td><td><span class="status" [class.inativo]="!aluno.ativo">{{ aluno.ativo ? 'Ativo' : 'Inativo' }}</span></td>
+                      <td class="acoes"><button [disabled]="ocupado()" (click)="abrir(aluno.id, false)" [attr.aria-label]="'Consultar ' + aluno.nome">Consultar</button>
+                      @if (aluno.ativo) {
+                        <button [disabled]="ocupado()" (click)="abrir(aluno.id, true)" [attr.aria-label]="'Editar ' + aluno.nome">Editar</button>
+                        <button class="perigo-texto" [disabled]="ocupado()" (click)="inativar(aluno)" [attr.aria-label]="'Inativar ' + aluno.nome">Inativar</button>
+                      }</td>
+                    </tr>
+                  }
+                </tbody>
+              </table></div>
+            }
+            <footer class="paginacao"><span>{{ pagina.totalElementos }} aluno(s) · Página {{ pagina.pagina + 1 }} de {{ pagina.totalPaginas || 1 }}</span>
+              <div><button [disabled]="ocupado() || pagina.pagina === 0" (click)="carregar(pagina.pagina - 1)">Anterior</button>
+                <button [disabled]="ocupado() || pagina.pagina + 1 >= pagina.totalPaginas" (click)="carregar(pagina.pagina + 1)">Próxima</button></div>
+            </footer>
+          }
+        </section>
+      } @else {
+        <section class="cartao formulario">
+          <h2>{{ modo() === 'novo' ? 'Cadastrar aluno' : modo() === 'editar' ? 'Editar aluno' : 'Consultar aluno' }}</h2>
+          <p>Os campos com * são obrigatórios.</p>
+          <form #cadastro="ngForm" (ngSubmit)="salvar(cadastro)">
+            <fieldset [disabled]="ocupado() || modo() === 'visualizar'">
+              <legend>Dados do aluno</legend>
+              <div class="grade">
+                <label class="inteiro">Nome completo *<input name="nome" [(ngModel)]="dados.nome" required maxlength="150" pattern=".*\S.*" autocomplete="off"></label>
+                <label>E-mail de contato *<input name="emailContato" type="email" email [(ngModel)]="dados.emailContato" required maxlength="254"></label>
+                <label>Telefone de contato *<input name="telefoneContato" type="tel" [(ngModel)]="dados.telefoneContato" required maxlength="30" [pattern]="telefonePattern" placeholder="(11) 99999-0000"></label>
+                <label class="inteiro">Endereço residencial<input name="endereco" [(ngModel)]="dados.endereco" maxlength="300"></label>
+              </div>
+              <div class="cabecalho-responsaveis"><div><h3>Responsáveis</h3><p>{{ dados.responsaveis.length }} de 5 contatos</p></div>
+                @if (modo() !== 'visualizar') { <button type="button" class="secundario" [disabled]="dados.responsaveis.length >= 5" (click)="adicionarResponsavel()">+ Adicionar responsável</button> }
+              </div>
+              @for (responsavel of dados.responsaveis; track responsavel; let i = $index) {
+                <fieldset class="responsavel"><legend>Responsável {{ i + 1 }}</legend><div class="grade">
+                  <label>Nome completo *<input [name]="'nomeResponsavel' + i" [(ngModel)]="responsavel.nome" required maxlength="150" pattern=".*\S.*"></label>
+                  <label>Parentesco *<input [name]="'parentesco' + i" [(ngModel)]="responsavel.parentesco" required maxlength="50" pattern=".*\S.*" placeholder="Ex.: mãe, avó, tio"></label>
+                  <label>E-mail<input [name]="'emailResponsavel' + i" type="email" email [(ngModel)]="responsavel.email" maxlength="254"></label>
+                  <label>Telefone *<input [name]="'telefoneResponsavel' + i" type="tel" [(ngModel)]="responsavel.telefone" required maxlength="30" [pattern]="telefonePattern"></label>
+                </div>
+                @if (modo() !== 'visualizar') { <button type="button" class="perigo-texto" (click)="dados.responsaveis.splice(i, 1)" [attr.aria-label]="'Remover responsável ' + (i + 1)">Remover contato</button> }
+                </fieldset>
+              }
+            </fieldset>
+            @if (tentouSalvar && cadastro.invalid) { <p role="alert" class="mensagem erro">Confira os campos obrigatórios e os formatos de e-mail e telefone.</p> }
+            <div class="rodape-form"><button type="button" class="secundario" [disabled]="ocupado()" (click)="voltar()">{{ modo() === 'visualizar' ? 'Voltar' : 'Cancelar' }}</button>
+              @if (modo() !== 'visualizar') { <button type="submit" class="principal" [disabled]="ocupado()">{{ ocupado() ? 'Salvando…' : 'Salvar aluno' }}</button> }
+            </div>
+          </form>
+        </section>
+      }
+    </main>
+  </div>
+</div>
