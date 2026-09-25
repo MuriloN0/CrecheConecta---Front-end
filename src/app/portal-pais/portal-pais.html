@@ -1,0 +1,52 @@
+<div class="portal">
+  <aside class="sidebar">
+    <a class="marca" href="#">CrecheConecta</a>
+    <nav>
+      <a href="#">Termo de Uso</a>
+    </nav>
+  </aside>
+
+  <div class="conteudo">
+    <header class="topo">
+      <div>
+        <strong>Portal dos Pais</strong>
+        <span>Creche Municipal Girassol</span>
+      </div>
+    </header>
+
+    <main>
+      @if (carregando()) {
+        <p class="mensagem">Carregando...</p>
+      }
+      @if (erro()) {
+        <p class="mensagem erro">{{ erro() }}</p>
+      }
+
+      @if (termo(); as t) {
+        <div class="titulo">
+          <div>
+            <h1>Termo de Uso</h1>
+            <p>Leia com atenção e registre o seu aceite para continuar.</p>
+          </div>
+        </div>
+
+        <section class="cartao">
+          <div class="termo-texto">{{ t.texto }}</div>
+          <p class="versao">Versão do termo: {{ t.versao }}</p>
+
+          <label class="aceite">
+            <input type="checkbox" (change)="alternarAceite($event)" />
+            Li e aceito o termo de uso.
+          </label>
+
+          <div class="rodape">
+            <button class="principal" type="button"
+                    [disabled]="!aceito() || carregando()" (click)="confirmar()">
+              Confirmar e continuar
+            </button>
+          </div>
+        </section>
+      }
+    </main>
+  </div>
+</div>
