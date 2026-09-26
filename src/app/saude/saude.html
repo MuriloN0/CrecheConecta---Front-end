@@ -2,10 +2,10 @@
   <aside class="sidebar">
     <a class="marca" href="#">CrecheConecta</a>
     <nav>
-      <a href="#">Ficha de Saúde</a>
+      <a href="#">Informações Relevantes</a>
+      <a href="#" (click)="$event.preventDefault(); verTermos()">Termos de Uso</a>
     </nav>
   </aside>
-
   <div class="conteudo">
     <header class="topo">
       <div>
@@ -13,32 +13,28 @@
         <span>Creche Municipal Girassol</span>
       </div>
     </header>
-
     <main>
       <div class="titulo">
         <div>
-          <h1>Ficha de Saúde</h1>
-          <p>Ficha de saúde para observação sobre alergias que o aluno possui ou alguma condição.</p>
+          <h1>Informações Relevantes</h1>
+          <p>Informações relevantes sobre alergias, condições ou observações do aluno.</p>
         </div>
         <button class="principal" type="button" (click)="irParaCadastro()">
-          Cadastrar nova ficha
+          Cadastrar nova informação
         </button>
       </div>
-
       <section class="cartao">
         @if (carregando()) {
-          <p class="mensagem">Carregando fichas...</p>
+          <p class="mensagem">Carregando...</p>
         }
-
         @if (erro()) {
           <p class="mensagem erro">{{ erro() }}</p>
         }
-
         @if (!carregando()) {
           <table>
             <thead>
               <tr>
-                <th>NOME DA FICHA</th>
+                <th>NOME</th>
                 <th>DATA CRIAÇÃO</th>
                 <th></th>
               </tr>
@@ -51,7 +47,7 @@
                   <td>
                     <div class="acoes">
                       <button class="ver" type="button" (click)="visualizar(ficha)">
-                        Visualizar ficha
+                        Visualizar
                       </button>
                       <button class="perigo" type="button" (click)="pedirExclusao(ficha)">
                         Apagar
@@ -61,7 +57,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="3" class="vazio">Nenhuma ficha cadastrada.</td>
+                  <td colspan="3" class="vazio">Nenhuma informação cadastrada.</td>
                 </tr>
               }
             </tbody>

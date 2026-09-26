@@ -17,6 +17,10 @@ export class PortalPais implements OnInit {
   readonly termo = signal<TermoStatus | null>(null);
   readonly carregando = signal(false);
   readonly erro = signal<string | null>(null);
+
+  readonly leuTermo = signal(false);
+  readonly leuPrivacidade = signal(false);
+
   readonly aceito = signal(false);
 
   ngOnInit(): void {
@@ -28,9 +32,8 @@ export class PortalPais implements OnInit {
     this.erro.set(null);
     this.api.statusTermo().subscribe({
       next: (status) => {
-       
         if (!status.precisaAceitar) {
-          this.router.navigate(['/saude']);
+          this.router.navigate(['/informacoes']);
           return;
         }
         this.termo.set(status);
@@ -43,9 +46,20 @@ export class PortalPais implements OnInit {
     });
   }
 
+  aoRolar(evento: Event, qual: 'termo' | 'privacidade'): void {
+    const el = evento.target as HTMLElement;
+    const chegouAoFim = el.scrollTop + el.clientHeight >= el.scrollHeight - 5;
+    if (chegouAoFim) {
+      if (qual === 'termo') {
+        this.leuTermo.set(true);
+      } else {
+        this.leuPrivacidade.set(true);
+      }
+    }
+  }
+
   alternarAceite(evento: Event): void {
-    const alvo = evento.target as HTMLInputElement;
-    this.aceito.set(alvo.checked);
+    this.aceito.set((evento.target as HTMLInputElement).checked);
   }
 
   confirmar(): void {
@@ -56,7 +70,7 @@ export class PortalPais implements OnInit {
     this.api.aceitarTermo().subscribe({
       next: () => {
         this.carregando.set(false);
-        this.router.navigate(['/saude']);
+        this.router.navigate(['/informacoes']);
       },
       error: () => {
         this.erro.set('Nao foi possivel registrar o aceite.');

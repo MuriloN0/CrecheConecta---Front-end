@@ -44,7 +44,7 @@ export class SaudeForm {
     this.api.cadastrar(this.alunoId, dados, []).subscribe({
       next: () => {
         this.salvando.set(false);
-        this.router.navigate(['/saude']);
+        this.router.navigate(['/informacoes']);
       },
       error: () => {
         this.erro.set('Não foi possível salvar a ficha.');
@@ -54,6 +54,6 @@ export class SaudeForm {
   }
 
   cancelar(): void {
-    this.router.navigate(['/saude']);
+    this.router.navigate(['/informacoes']);
   }
 }

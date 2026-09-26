@@ -77,7 +77,7 @@ export class SaudeEditar implements OnInit {
     this.api.editar(this.alunoId, this.fichaId, dados, []).subscribe({
       next: () => {
         this.salvando.set(false);
-        this.router.navigate(['/saude', this.fichaId]); // volta pro detalhe
+        this.router.navigate(['/informacoes', this.fichaId]); // volta pro detalhe
       },
       error: () => {
         this.erro.set('Não foi possível salvar as alterações.');
@@ -87,6 +87,6 @@ export class SaudeEditar implements OnInit {
   }
 
   cancelar(): void {
-    this.router.navigate(['/saude', this.fichaId]);
+    this.router.navigate(['/informacoes', this.fichaId]);
   }
 }

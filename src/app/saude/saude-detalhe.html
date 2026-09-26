@@ -1,47 +1,41 @@
 <div class="portal">
   <aside class="sidebar">
-    <a class="marca" href="#">CrecheConecta <span>Portal dos Pais</span></a>
+    <a class="marca" href="#">CrecheConecta</a>
     <nav>
-      <a href="#">Ficha de Saúde</a>
+      <a href="#">Informações Relevantes</a>
     </nav>
   </aside>
-
   <div class="conteudo">
     <header class="topo">
-      <strong>Portal dos Pais</strong>
-      <span>Ficha de saúde do aluno</span>
+      <div>
+        <strong>Portal dos Pais</strong>
+        <span>Informações relevantes do aluno</span>
+      </div>
     </header>
-
     <main>
       <div class="titulo">
         <div>
-          <div class="etiqueta">SAÚDE</div>
-          <h1>Visualizar Ficha</h1>
-          <p>Detalhes da ficha de saúde do aluno.</p>
+          <h1>Visualizar Informação</h1>
+          <p>Detalhes da informação relevante do aluno.</p>
         </div>
         <button class="ver" type="button" (click)="voltar()">Voltar</button>
       </div>
-
       <section class="cartao">
         @if (carregando()) {
           <p>Carregando...</p>
         }
-
         @if (erro()) {
           <p class="mensagem erro">{{ erro() }}</p>
         }
-
         @if (ficha(); as f) {
           <div class="campo">
-            <label>Nome da Ficha</label>
+            <label>Nome</label>
             <p class="valor">{{ f.nome }}</p>
           </div>
-
           <div class="campo">
             <label>Observações</label>
             <p class="valor">{{ f.observacoes || 'Sem observações.' }}</p>
           </div>
-
           <div class="campo">
             <label>Anexos</label>
             @if (f.anexos.length === 0) {
@@ -54,12 +48,10 @@
               </ul>
             }
           </div>
-
           <div class="campo">
             <label>Data de criação</label>
             <p class="valor">{{ f.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}</p>
           </div>
-
           <div class="rodape-form">
             <button class="principal" type="button" (click)="editar()">Editar</button>
           </div>
