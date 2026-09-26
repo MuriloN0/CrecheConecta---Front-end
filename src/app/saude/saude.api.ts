@@ -1,8 +1,8 @@
-import {Injectable, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {FichaSaude, FichaSaudeResumo, SalvarFichaSaude } from './saude.model';
+import { FichaSaude, FichaSaudeResumo, SalvarFichaSaude } from './saude.model';
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class SaudeApi {
   private readonly http = inject(HttpClient);
 
@@ -18,27 +18,16 @@ export class SaudeApi {
     return this.http.get<FichaSaude>(`${this.base(alunoId)}/${fichaId}`);
   }
 
-cadastrar(alunoId: string, dados: SalvarFichaSaude, arquivos: File[]) {
-    return this.http.post<void>(this.base(alunoId), this.montarForm(dados, arquivos), {
-      observe: 'response',
-    });
+  cadastrar(alunoId: string, dados: SalvarFichaSaude, arquivos: File[]) {
+    // backend em camadas recebe JSON puro
+    return this.http.post<void>(this.base(alunoId), dados, { observe: 'response' });
   }
 
-    editar(alunoId: string, fichaId: string, dados: SalvarFichaSaude, novosArquivos: File[]) {
-    return this.http.put<FichaSaude>(
-      `${this.base(alunoId)}/${fichaId}`,
-      this.montarForm(dados, novosArquivos),
-    );
+  editar(alunoId: string, fichaId: string, dados: SalvarFichaSaude, novosArquivos: File[]) {
+    return this.http.put<FichaSaude>(`${this.base(alunoId)}/${fichaId}`, dados);
   }
 
   excluir(alunoId: string, fichaId: string) {
     return this.http.delete<void>(`${this.base(alunoId)}/${fichaId}`);
-  }
-
-  private montarForm(dados: SalvarFichaSaude, arquivos: File[]): FormData {
-    const form = new FormData();
-    form.append('dados', new Blob([JSON.stringify(dados)], { type: 'application/json' }));
-    arquivos.forEach((a) => form.append('arquivos', a));
-    return form;
   }
 }
