@@ -126,4 +126,8 @@ export class AuthService {
       Authorization: `Bearer ${this.token}`,
     });
   }
+
+  obterToken(): string | null {
+    return this.possuiSessao() ? this.token : null;
+  }
 }

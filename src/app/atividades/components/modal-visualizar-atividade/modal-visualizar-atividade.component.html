@@ -1,0 +1,25 @@
+<div class="modal-overlay" *ngIf="atividade">
+  <div class="modal-content">
+    
+    <div class="modal-header">
+      <h2>{{ atividade.titulo }}</h2>
+    </div>
+
+    <div class="modal-body">
+      <div class="descricao-box">
+        {{ atividade.atividadeOriginal.descricao || 'Nenhuma observação registrada para esta atividade.' }}
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="footer-info">
+        <span class="data-entrega" *ngIf="isHome">
+          Data de Entrega: {{ atividade.dataEntrega }}
+        </span>
+      </div>
+      
+      <button class="btn-fechar" (click)="fecharModal()">Fechar</button>
+    </div>
+
+  </div>
+</div>

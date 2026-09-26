@@ -21,4 +21,10 @@
   input {
     font: inherit;
   }
+
+html,
+body {
+  @apply m-0 bg-[#fbfaf5] text-[#253831];
+  font-family: "Baloo 2", "Nunito Sans", sans-serif;
+}
 }

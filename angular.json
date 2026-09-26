@@ -3,7 +3,7 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "analytics": "be38d324-0ba1-4abd-87aa-fde9cf55446c"
+    "analytics": "b87c8a28-946c-47cc-8664-65f219432946"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -80,6 +80,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.config.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "crecheconecta:build:production"
