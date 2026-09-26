@@ -8,7 +8,7 @@ import { FichaSaudeResumo } from './saude.model';
   selector: 'app-saude',
   imports: [CommonModule],
   templateUrl: './saude.html',
-  styleUrl: './saude.scss',
+  styleUrl: './saude.css',
 })
 export class Saude implements OnInit {
   private readonly api = inject(SaudeApi);
@@ -44,7 +44,7 @@ export class Saude implements OnInit {
   irParaCadastro(): void {
     this.router.navigate(['/informacoes/nova']);
   }
-  
+
     verTermos(): void {
     this.router.navigate(['/informacoes/termos']);
   }

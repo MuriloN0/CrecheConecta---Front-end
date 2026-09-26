@@ -7,7 +7,7 @@ import { SalvarFichaSaude } from './saude.model';
   selector: 'app-saude-editar',
   imports: [],
   templateUrl: './saude-editar.html',
-  styleUrl: './saude.scss',
+  styleUrl: './saude.css',
 })
 export class SaudeEditar implements OnInit {
   private readonly api = inject(SaudeApi);

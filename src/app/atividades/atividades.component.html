@@ -4,13 +4,13 @@
       <span class="logo-text">CrecheConecta</span>
     </div>
     <nav class="sidebar-nav">
-      <button 
-         [class.active]="isHome" 
+      <button>
+         [class.active]="isHome"
          (click)="setHome(true)">
         Atividades para casa
       </button>
-      <button 
-         [class.active]="!isHome" 
+      <button>
+         [class.active]="!isHome"
          (click)="setHome(false)">
         Atividades do dia
       </button>
@@ -18,7 +18,7 @@
   </aside>
 
   <div class="main-container">
-    
+
     <header class="top-header">
       <div class="header-titles">
         <h1>Portal do Professor</h1>
@@ -73,12 +73,12 @@
   </div>
 </div>
 
-<app-modal-nova-atividade 
-   *ngIf="mostrarModal" 
+<app-modal-nova-atividade
+   *ngIf="mostrarModal"
    [isHome]="isHome"
    [isEditing]="isEditing"
    [atividadeEdicao]="atividadeParaEditar"
-   (fechar)="fecharModal()" 
+   (fechar)="fecharModal()"
    (salvar)="salvarAtividade($event)">
 </app-modal-nova-atividade>
 

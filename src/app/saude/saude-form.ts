@@ -7,7 +7,7 @@ import { SalvarFichaSaude } from './saude.model';
   selector: 'app-saude-form',
   imports: [],
   templateUrl: './saude-form.html',
-  styleUrl: './saude.scss',
+  styleUrl: './saude.css',
 })
 export class SaudeForm {
   private readonly api = inject(SaudeApi);

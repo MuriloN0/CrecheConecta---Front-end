@@ -18,7 +18,7 @@ import { AtividadesService } from './service/atividades.service';
     ModalVisualizarAtividadeComponent
   ],
   templateUrl: './atividades.component.html',
-  styleUrls: ['./atividades.component.scss']
+  styleUrls: ['./atividades.component.css']
 })
 export class AtividadesComponent implements OnInit {
   atividades: AtividadeTabela[] = [];
@@ -43,7 +43,7 @@ export class AtividadesComponent implements OnInit {
 
   carregarAtividades(): void {
     const tipoFiltro = this.isHome ? 'CASA' : 'DIA';
-    
+
     this.atividadesService.listarTodas(undefined, tipoFiltro).subscribe({
       next: (dados: AtividadeResponseDTO[]) => {
         this.atividades = dados.map(atividade => ({
@@ -82,7 +82,7 @@ export class AtividadesComponent implements OnInit {
 
   setHome(value: boolean): void {
     if (this.isHome === value) {
-      return; 
+      return;
     }
     this.isHome = value;
     this.carregarAtividades();

@@ -1,5 +1,5 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { PortalPaisApi } from './portal-pais.api';
 import { TermoStatus } from './portal-pais.model';
@@ -8,7 +8,7 @@ import { TermoStatus } from './portal-pais.model';
   selector: 'app-portal-pais',
   imports: [CommonModule],
   templateUrl: './portal-pais.html',
-  styleUrl: './portal-pais.scss',
+  styleUrl: './portal-pais.css',
 })
 export class PortalPais implements OnInit {
   private readonly api = inject(PortalPaisApi);

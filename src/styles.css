@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-creche-verde: #005f60;
+  --color-creche-creme: #fcf7ed;
+  --color-creche-pessego: #ffba90;
+  --color-creche-texto: #253831;
+
+  --font-sans: Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    background-color: var(--color-creche-creme);
+    color: var(--color-creche-texto);
+    font-family: var(--font-sans);
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+html,
+body {
+  @apply m-0 bg-[#fbfaf5] text-[#253831];
+  font-family: "Baloo 2", "Nunito Sans", sans-serif;
+}
+}

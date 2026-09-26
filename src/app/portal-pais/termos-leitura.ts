@@ -8,7 +8,7 @@ import { TermoStatus } from './portal-pais.model';
   selector: 'app-termos-leitura',
   imports: [CommonModule],
   templateUrl: './termos-leitura.html',
-  styleUrl: './portal-pais.scss',
+  styleUrl: './portal-pais.css',
 })
 export class TermosLeitura implements OnInit {
   private readonly api = inject(PortalPaisApi);

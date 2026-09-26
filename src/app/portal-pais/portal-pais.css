@@ -1,0 +1,134 @@
+@reference "../../styles.css";
+
+:host {
+  @apply block min-h-[100dvh];
+}
+
+.portal {
+  @apply grid grid-cols-[240px_minmax(0,1fr)] min-h-[100dvh];
+}
+
+.sidebar {
+  @apply flex flex-col bg-[#0b5b54] text-white px-[20px] py-[28px];
+}
+
+.marca {
+  @apply text-white no-underline text-[24px] font-bold px-[8px] py-0;
+  font-family: "Baloo 2", sans-serif;
+}
+
+nav {
+  @apply mt-[40px];
+}
+
+nav a {
+  @apply block rounded-[22px] px-[22px] py-[11px]
+    no-underline bg-[#f5822b] text-white font-bold text-[14px];
+}
+
+.conteudo {
+  @apply min-w-0 bg-[#f7f3e8];
+}
+
+.topo {
+  @apply flex items-center justify-between min-h-[64px]
+    bg-white px-[32px] py-[16px];
+}
+
+.topo strong {
+  @apply text-[15px] text-[#253831];
+  font-family: "Baloo 2", sans-serif;
+}
+
+.topo span {
+  @apply block mt-[2px] text-[12px] text-[#8a8f8a];
+}
+
+main {
+  @apply pt-[28px] px-[36px] pb-[60px]
+    bg-[#f7f3e8] min-h-[calc(100dvh-64px)];
+}
+
+.titulo {
+  @apply mb-[16px];
+}
+
+h1 {
+  @apply text-[26px] m-0 text-[#253831] font-bold;
+  font-family: "Baloo 2", sans-serif;
+}
+
+p {
+  @apply text-[#6b7280] leading-[1.4] text-[13px] mt-[4px] mx-0 mb-0;
+}
+
+.cartao {
+  @apply bg-white rounded-[18px] p-[24px]
+    shadow-[0_2px_10px_rgba(0,0,0,0.05)];
+}
+
+.documento {
+  @apply bg-[#f7f3e8] rounded-[12px] p-[18px]
+    leading-[1.6] text-[#253831] text-[14px]
+    whitespace-pre-line mb-[16px] max-h-[260px] overflow-y-auto;
+}
+
+.versao {
+  @apply text-[12px] text-[#8a8f8a] mt-0 mx-0 mb-[18px];
+}
+
+.aceite {
+  @apply flex items-center gap-[10px] mb-[20px]
+    text-[14px] font-semibold text-[#253831] cursor-pointer;
+}
+
+.aceite input {
+  @apply w-[18px] h-[18px] cursor-pointer;
+}
+
+.rodape {
+  @apply flex justify-start;
+}
+
+button {
+  @apply border-none px-[24px] py-[12px] rounded-[20px]
+    text-[14px] font-bold cursor-pointer text-white;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+button.principal {
+  @apply bg-[#f5822b];
+}
+
+button.principal:hover:not(:disabled) {
+  @apply bg-[#e0741f];
+}
+
+button:disabled {
+  @apply opacity-60 cursor-not-allowed;
+}
+
+.mensagem {
+  @apply py-[14px] px-0 text-[#6b7280];
+}
+
+.erro {
+  @apply text-[#e11d1d];
+}
+
+.passo {
+  @apply text-[18px] text-[#253831] mt-[8px] mx-0 mb-[12px];
+  font-family: "Baloo 2", sans-serif;
+}
+
+h2:first-of-type {
+  @apply mt-0;
+}
+
+.aceite.desabilitado {
+  @apply text-[#a89a7d] cursor-default;
+}
+
+.aceite input:disabled {
+  @apply cursor-not-allowed;
+}

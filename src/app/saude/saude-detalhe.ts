@@ -8,7 +8,7 @@ import { FichaSaude } from './saude.model';
   selector: 'app-saude-detalhe',
   imports: [CommonModule],
   templateUrl: './saude-detalhe.html',
-  styleUrl: './saude.scss',
+  styleUrl: './saude.css',
 })
 export class SaudeDetalhe implements OnInit {
   private readonly api = inject(SaudeApi);
