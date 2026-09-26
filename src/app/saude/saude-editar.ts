@@ -16,9 +16,8 @@ export class SaudeEditar implements OnInit {
 
   readonly alunoId = '11111111-1111-1111-1111-111111111111';
   private fichaId = '';
-
-  // ids dos anexos existentes que devem ser mantidos
   private anexosMantidos: string[] = [];
+  private versao = 0; // guarda a versao atual da ficha
 
   readonly nome = signal('');
   readonly observacoes = signal('');
@@ -43,6 +42,7 @@ export class SaudeEditar implements OnInit {
         this.nome.set(f.nome);
         this.observacoes.set(f.observacoes ?? '');
         this.anexosMantidos = f.anexos.map((a) => a.id);
+        this.versao = f.versao; // guarda a versao vinda do backend
         this.carregando.set(false);
       },
       error: () => {
@@ -67,17 +67,16 @@ export class SaudeEditar implements OnInit {
     }
     this.salvando.set(true);
     this.erro.set(null);
-
     const dados: SalvarFichaSaude = {
       nome: this.nome(),
       observacoes: this.observacoes(),
+      versao: this.versao, // envia a versao para o backend
       anexosMantidos: this.anexosMantidos,
     };
-
     this.api.editar(this.alunoId, this.fichaId, dados, []).subscribe({
       next: () => {
         this.salvando.set(false);
-        this.router.navigate(['/saude', this.fichaId]); // volta pro detalhe
+        this.router.navigate(['/informacoes', this.fichaId]);
       },
       error: () => {
         this.erro.set('Não foi possível salvar as alterações.');
@@ -87,6 +86,6 @@ export class SaudeEditar implements OnInit {
   }
 
   cancelar(): void {
-    this.router.navigate(['/saude', this.fichaId]);
+    this.router.navigate(['/informacoes', this.fichaId]);
   }
 }

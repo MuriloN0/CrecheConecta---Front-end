@@ -179,3 +179,5 @@ input, textarea {
 }
 .modal-acoes { display: flex; gap: 20px; justify-content: center; }
 .modal-acoes button { padding: 12px 36px; font-size: 15px; }
+
+nav a + a { margin-top: 12px; }

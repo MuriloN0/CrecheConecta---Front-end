@@ -1,38 +1,34 @@
 <div class="portal">
   <aside class="sidebar">
-    <a class="marca" href="#">CrecheConecta <span>Portal dos Pais</span></a>
+    <a class="marca" href="#">CrecheConecta</a>
     <nav>
-      <a href="#">Ficha de Saúde</a>
+      <a href="#">Informações Relevantes</a>
     </nav>
   </aside>
-
   <div class="conteudo">
     <header class="topo">
-      <strong>Portal dos Pais</strong>
-      <span>Ficha de saúde do aluno</span>
+      <div>
+        <strong>Portal dos Pais</strong>
+        <span>Informações relevantes do aluno</span>
+      </div>
     </header>
-
     <main>
       <div class="titulo">
         <div>
-          <div class="etiqueta">SAÚDE</div>
-          <h1>Editar Ficha de Saúde</h1>
-          <p>Altere os dados da ficha de saúde.</p>
+          <h1>Editar Informação Relevante</h1>
+          <p>Altere os dados da informação relevante.</p>
         </div>
       </div>
-
       <section class="cartao">
         @if (carregando()) {
           <p>Carregando...</p>
         }
-
         @if (erro()) {
           <p class="mensagem erro">{{ erro() }}</p>
         }
-
         @if (!carregando()) {
           <div class="campo">
-            <label>Nome da Ficha
+            <label>Nome
               <input
                 type="text"
                 [value]="nome()"
@@ -40,9 +36,8 @@
               />
             </label>
           </div>
-
           <div class="campo">
-            <label>Observações da ficha
+            <label>Observações
               <textarea
                 rows="6"
                 [value]="observacoes()"
@@ -50,7 +45,6 @@
               ></textarea>
             </label>
           </div>
-
           <div class="rodape-form">
             <button class="cancelar" type="button" (click)="cancelar()">Cancelar</button>
             <button class="principal" type="button" (click)="salvar()" [disabled]="salvando()">

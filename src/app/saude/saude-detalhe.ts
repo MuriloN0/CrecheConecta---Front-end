@@ -48,11 +48,11 @@ export class SaudeDetalhe implements OnInit {
   editar(): void {
     const f = this.ficha();
     if (f) {
-      this.router.navigate(['/saude', f.id, 'editar']);
+      this.router.navigate(['/informacoes', f.id, 'editar']);
     }
   }
 
   voltar(): void {
-    this.router.navigate(['/saude']);
+    this.router.navigate(['/informacoes']);
   }
 }

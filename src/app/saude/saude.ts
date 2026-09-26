@@ -42,11 +42,16 @@ export class Saude implements OnInit {
   }
 
   irParaCadastro(): void {
-    this.router.navigate(['/saude/nova']);
+    this.router.navigate(['/informacoes/nova']);
+  }
+  
+    verTermos(): void {
+    this.router.navigate(['/informacoes/termos']);
   }
 
+
   visualizar(ficha: FichaSaudeResumo): void {
-    this.router.navigate(['/saude', ficha.id]);
+    this.router.navigate(['/informacoes', ficha.id]);
   }
 
   pedirExclusao(ficha: FichaSaudeResumo): void {
