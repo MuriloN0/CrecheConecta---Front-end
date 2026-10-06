@@ -1,0 +1,166 @@
+@reference "../../styles.css";
+
+.dashboard-layout {
+  @apply grid grid-cols-[240px_1fr] min-h-screen;
+}
+
+.sidebar {
+  @apply bg-[#006C67] px-[16px] py-[30px]
+    flex flex-col gap-[40px];
+}
+
+.sidebar .brand {
+  @apply pl-[10px];
+}
+
+.sidebar .brand .logo-text {
+  @apply text-white text-[22px] font-bold;
+}
+
+.sidebar .sidebar-nav {
+  @apply flex flex-col gap-[12px];
+}
+
+.sidebar .sidebar-nav button {
+  @apply bg-[#FF7300]/70 text-white border-none
+    px-[20px] py-[12px] rounded-[20px]
+    text-[14px] font-semibold text-left cursor-pointer w-full;
+  transition: all 0.2s ease;
+}
+
+.sidebar .sidebar-nav button:hover {
+  @apply bg-[#FF7300]/90;
+}
+
+.sidebar .sidebar-nav button.active {
+  @apply bg-[#FF7300] shadow-[0_4px_6px_rgba(0,0,0,0.1)];
+}
+
+.main-container {
+  @apply bg-[#FDF9F2] min-h-screen;
+  font-family: "Inter", sans-serif;
+}
+
+.top-header {
+  @apply flex justify-between items-center
+    px-[40px] py-[16px] bg-[#FDF9F2]
+    border-b-2 border-solid border-[#E8E2D9];
+}
+
+.top-header .header-titles h1 {
+  @apply m-0 text-[18px] text-[#333333] font-bold;
+}
+
+.top-header .header-titles p {
+  @apply m-0 text-[14px] text-[#006C67];
+}
+
+.top-header .user-profile {
+  @apply flex items-center gap-[12px];
+}
+
+.top-header .user-profile .user-name {
+  @apply text-[14px] text-[#333333];
+}
+
+.top-header .user-profile .user-avatar {
+  @apply w-[40px] h-[40px] bg-[#D9D9D9] rounded-full;
+}
+
+.content-area {
+  @apply p-[40px];
+}
+
+.page-header {
+  @apply flex justify-between items-start mb-[30px];
+}
+
+.page-header .page-info h2 {
+  @apply mt-0 mx-0 mb-[8px] text-[24px]
+    text-[#333333] font-semibold;
+}
+
+.page-header .page-info p {
+  @apply m-0 text-[14px] text-[#888888];
+}
+
+.page-header .btn-primary {
+  @apply bg-[#FF7300] text-white border-none
+    px-[24px] py-[10px] rounded-[20px]
+    text-[14px] font-semibold cursor-pointer;
+  transition: opacity 0.2s;
+}
+
+.page-header .btn-primary:hover {
+  @apply opacity-90;
+}
+
+.mensagem-sucesso {
+  @apply bg-[#D1EFEC] text-[#005454]
+    px-[18px] py-[14px] rounded-[10px]
+    mb-[20px] text-[14px] font-semibold;
+}
+
+.table-wrapper {
+  @apply bg-white rounded-[12px]
+    shadow-[0_4px_6px_rgba(0,0,0,0.02)] overflow-hidden;
+}
+
+.custom-table {
+  @apply w-full border-collapse text-left;
+}
+
+.custom-table thead {
+  @apply bg-[#F4BA93];
+}
+
+.custom-table thead th {
+  @apply px-[24px] py-[16px] text-[#7A695C]
+    text-[13px] font-semibold tracking-[0.5px];
+}
+
+.custom-table tbody tr {
+  @apply border-b border-solid border-[#F0F0F0];
+}
+
+.custom-table tbody tr:last-child {
+  @apply border-b-0;
+}
+
+.custom-table tbody td {
+  @apply px-[24px] py-[16px] text-[14px] align-middle;
+}
+
+.bold-text {
+  @apply font-semibold text-[#333333];
+}
+
+.light-text {
+  @apply text-[#999999];
+}
+
+.actions-column {
+  @apply w-[250px];
+}
+
+.actions-cell {
+  @apply flex gap-[10px] justify-end;
+}
+
+.actions-cell button {
+  @apply border-none px-[16px] py-[6px]
+    rounded-[16px] text-[12px] text-white
+    cursor-pointer font-medium;
+}
+
+.actions-cell .btn-view {
+  @apply bg-[#006C67];
+}
+
+.actions-cell .btn-edit {
+  @apply bg-[#2F80ED];
+}
+
+.actions-cell .btn-delete {
+  @apply bg-[#FF0000];
+}

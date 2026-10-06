@@ -1,3 +1,4 @@
+
 # CrecheConecta — Front-end
 
 Interface web do CrecheConecta, uma plataforma para centralizar a comunicação entre pais, professores e direção de creches e escolas de educação infantil.
@@ -94,3 +95,4 @@ Para encerrar o servidor, pressione `Ctrl + C`.
 **Instituição:** Universidade de Mogi das Cruzes (UMC)  
 **Curso:** Engenharia de Software  
 **Ano:** 2026
+
