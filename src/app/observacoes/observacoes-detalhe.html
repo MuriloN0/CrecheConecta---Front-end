@@ -1,0 +1,32 @@
+<div class="titulo">
+  <div>
+    <h1>Visualizar Observacao</h1>
+    <p>Detalhes da observacao sobre o aluno.</p>
+  </div>
+  <button class="ver" type="button" (click)="voltar()">Voltar</button>
+</div>
+<section class="cartao">
+  @if (carregando()) {
+    <p>Carregando...</p>
+  }
+  @if (erro()) {
+    <p class="mensagem erro">{{ erro() }}</p>
+  }
+  @if (observacao(); as o) {
+    <div class="campo">
+      <label>Titulo</label>
+      <p class="valor">{{ o.titulo }}</p>
+    </div>
+    <div class="campo">
+      <label>Conteudo</label>
+      <p class="valor">{{ o.conteudo || 'Sem conteudo.' }}</p>
+    </div>
+    <div class="campo">
+      <label>Data de criacao</label>
+      <p class="valor">{{ o.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}</p>
+    </div>
+    <div class="rodape-form">
+      <button class="principal" type="button" (click)="editar()">Editar</button>
+    </div>
+  }
+</section>

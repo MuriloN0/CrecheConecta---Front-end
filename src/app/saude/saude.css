@@ -1,58 +1,5 @@
 @reference "../../styles.css";
 
-:host {
-  @apply block min-h-[100dvh];
-}
-
-.portal {
-  @apply grid grid-cols-[240px_minmax(0,1fr)] min-h-[100dvh];
-}
-
-.sidebar {
-  @apply flex flex-col bg-[#0b5b54] text-white px-[20px] py-[28px];
-}
-
-.marca {
-  @apply text-white no-underline text-[24px] font-bold px-[8px] py-0;
-  font-family: "Baloo 2", sans-serif;
-}
-
-nav {
-  @apply mt-[40px];
-}
-
-nav a {
-  @apply block rounded-[22px] px-[22px] py-[11px]
-    no-underline bg-[#f5822b] text-white font-bold text-[14px];
-}
-
-nav a + a {
-  @apply mt-[12px];
-}
-
-.conteudo {
-  @apply min-w-0 bg-[#f7f3e8];
-}
-
-.topo {
-  @apply flex items-center justify-between min-h-[64px]
-    bg-white px-[32px] py-[16px];
-}
-
-.topo strong {
-  @apply text-[15px] text-[#253831];
-  font-family: "Baloo 2", sans-serif;
-}
-
-.topo span {
-  @apply block mt-[2px] text-[12px] text-[#8a8f8a];
-}
-
-main {
-  @apply pt-[28px] px-[36px] pb-[60px]
-    bg-[#f7f3e8] min-h-[calc(100dvh-64px)];
-}
-
 .titulo,
 .rodape-form {
   @apply flex justify-between items-start gap-[16px];
@@ -74,10 +21,6 @@ h2 {
 
 p {
   @apply text-[#6b7280] leading-[1.4] text-[13px] mt-[4px] mx-0 mb-0;
-}
-
-.etiqueta {
-  @apply hidden;
 }
 
 .cartao {
@@ -156,10 +99,6 @@ td:first-child {
 
 .campo {
   @apply px-[24px] py-0 my-[18px] mx-0;
-}
-
-.cartao .titulo-form {
-  @apply flex justify-between items-center pt-[24px] px-[24px] pb-0;
 }
 
 label {

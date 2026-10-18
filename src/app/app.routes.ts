@@ -45,6 +45,74 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/home/home').then((m) => m.Home),
       },
+      {
+        path: 'observacoes',
+        canActivateChild: [termoAceitoGuard],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Observações do filho | CrecheConecta',
+            loadComponent: () =>
+              import('./observacoes/observacoes').then((m) => m.Observacoes),
+          },
+          {
+            path: 'nova',
+            title: 'Cadastrar observação | CrecheConecta',
+            loadComponent: () =>
+              import('./observacoes/observacoes-form').then(
+                (m) => m.ObservacoesForm,
+              ),
+          },
+          {
+            path: ':id/editar',
+            title: 'Editar observação | CrecheConecta',
+            loadComponent: () =>
+              import('./observacoes/observacoes-editar').then(
+                (m) => m.ObservacoesEditar,
+              ),
+          },
+          {
+            path: ':id',
+            title: 'Consultar observação | CrecheConecta',
+            loadComponent: () =>
+              import('./observacoes/observacoes-detalhe').then(
+                (m) => m.ObservacoesDetalhe,
+              ),
+          },
+        ],
+      },
+      {
+        path: 'informacoes',
+        canActivateChild: [termoAceitoGuard],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Informações relevantes | CrecheConecta',
+            loadComponent: () =>
+              import('./saude/saude').then((m) => m.Saude),
+          },
+          {
+            path: 'nova',
+            title: 'Cadastrar informação | CrecheConecta',
+            loadComponent: () =>
+              import('./saude/saude-form').then((m) => m.SaudeForm),
+          },
+          {
+            path: ':id/editar',
+            title: 'Editar informação | CrecheConecta',
+            loadComponent: () =>
+              import('./saude/saude-editar').then((m) => m.SaudeEditar),
+          },
+          {
+            path: ':id',
+            title: 'Consultar informação | CrecheConecta',
+            loadComponent: () =>
+              import('./saude/saude-detalhe').then((m) => m.SaudeDetalhe),
+          },
+        ],
+      },
     ],
   },
   {
@@ -67,43 +135,6 @@ export const routes: Routes = [
           import('./portal-pais/termos-leitura').then(
             (m) => m.TermosLeitura,
           ),
-      },
-      {
-        path: 'informacoes',
-        canActivateChild: [termoAceitoGuard],
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            title: 'Fichas de saúde | CrecheConecta',
-            loadComponent: () =>
-              import('./saude/saude').then((m) => m.Saude),
-          },
-          {
-            path: 'nova',
-            title: 'Cadastrar ficha | CrecheConecta',
-            loadComponent: () =>
-              import('./saude/saude-form').then(
-                (m) => m.SaudeForm,
-              ),
-          },
-          {
-            path: ':id/editar',
-            title: 'Editar ficha | CrecheConecta',
-            loadComponent: () =>
-              import('./saude/saude-editar').then(
-                (m) => m.SaudeEditar,
-              ),
-          },
-          {
-            path: ':id',
-            title: 'Consultar ficha | CrecheConecta',
-            loadComponent: () =>
-              import('./saude/saude-detalhe').then(
-                (m) => m.SaudeDetalhe,
-              ),
-          },
-        ],
       },
     ],
   },

@@ -1,0 +1,145 @@
+@reference "../../styles.css";
+
+.titulo,
+.rodape-form {
+  @apply flex justify-between items-start gap-[16px];
+}
+
+.titulo {
+  @apply mb-[16px];
+}
+
+h1 {
+  @apply text-[26px] m-0 text-[#253831] font-bold;
+  font-family: "Baloo 2", sans-serif;
+}
+
+h2 {
+  @apply text-[22px] m-0 text-[#253831];
+  font-family: "Baloo 2", sans-serif;
+}
+
+p {
+  @apply text-[#6b7280] leading-[1.4] text-[13px] mt-[4px] mx-0 mb-0;
+}
+
+.cartao {
+  @apply bg-white rounded-[18px] p-0 overflow-hidden
+    shadow-[0_2px_10px_rgba(0,0,0,0.05)];
+}
+
+button {
+  @apply border-none px-[18px] py-[10px] rounded-[20px]
+    text-[13px] font-bold cursor-pointer text-white;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+button.principal {
+  @apply bg-[#f5822b];
+}
+
+button.principal:hover:not(:disabled) {
+  @apply bg-[#e0741f];
+}
+
+button:disabled {
+  @apply opacity-60 cursor-not-allowed;
+}
+
+.btn-ver,
+button.ver {
+  @apply bg-[#1b7a6f];
+}
+
+.perigo {
+  @apply bg-[#e11d1d];
+}
+
+.cancelar {
+  @apply bg-[#f28b82];
+}
+
+table {
+  @apply w-full border-collapse text-left;
+}
+
+th {
+  @apply bg-[#f7c89b] text-[#8a5a2b] text-[13px]
+    font-bold px-[20px] py-[14px] tracking-[0.03em];
+}
+
+td {
+  @apply px-[20px] py-[14px] border-b border-solid
+    border-[#f0eee6] text-[14px] text-[#253831];
+}
+
+tbody tr:last-child td {
+  @apply border-b-0;
+}
+
+td:first-child {
+  @apply font-bold;
+}
+
+.acoes {
+  @apply flex gap-[8px] justify-end;
+}
+
+.vazio {
+  @apply text-center px-[20px] py-[40px] text-[#9ca3af];
+}
+
+.mensagem {
+  @apply px-[20px] py-[14px];
+}
+
+.erro {
+  @apply text-[#e11d1d];
+}
+
+.campo {
+  @apply px-[24px] py-0 my-[18px] mx-0;
+}
+
+label {
+  @apply flex flex-col gap-[8px] text-[14px] font-semibold text-[#253831];
+}
+
+input,
+textarea {
+  @apply w-full border border-solid border-[#d9d5c8]
+    rounded-[12px] px-[14px] py-[12px]
+    bg-white text-[#253831] box-border;
+  font: inherit;
+  @apply font-normal;
+}
+
+.valor {
+  @apply mt-[4px] mx-0 mb-0 text-[#253831] text-[14px];
+}
+
+.rodape-form {
+  @apply pt-0 px-[24px] pb-[24px] mt-[12px] justify-start;
+}
+
+.modal-fundo {
+  @apply fixed inset-0 bg-black/25 flex items-center justify-center;
+}
+
+.modal {
+  @apply bg-white px-[56px] py-[36px] rounded-[18px]
+    text-center shadow-[0_12px_40px_rgba(0,0,0,0.15)];
+}
+
+.modal h2 {
+  @apply mt-0 mx-0 mb-[24px] text-[24px];
+  font-family: "Baloo 2", sans-serif;
+}
+
+.modal-acoes {
+  @apply flex gap-[20px] justify-center;
+}
+
+.modal-acoes button {
+  @apply px-[36px] py-[12px] text-[15px];
+}

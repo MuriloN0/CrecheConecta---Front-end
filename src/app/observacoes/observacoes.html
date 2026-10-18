@@ -1,0 +1,62 @@
+<div class="titulo">
+  <div>
+    <h1>Observacoes do Filho</h1>
+    <p>Observacoes sobre o dia a dia, comportamento e rotina do aluno.</p>
+  </div>
+  <button class="principal" type="button" (click)="irParaCadastro()">
+    Cadastrar nova observacao
+  </button>
+</div>
+<section class="cartao">
+  @if (carregando()) {
+    <p class="mensagem">Carregando...</p>
+  }
+  @if (erro()) {
+    <p class="mensagem erro">{{ erro() }}</p>
+  }
+  @if (!carregando()) {
+    <table>
+      <thead>
+        <tr>
+          <th>TITULO</th>
+          <th>DATA CRIACAO</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (observacao of observacoes(); track observacao.id) {
+          <tr>
+            <td>{{ observacao.titulo }}</td>
+            <td>{{ observacao.dataCriacao | date: 'dd/MM/yyyy' }}</td>
+            <td>
+              <div class="acoes">
+                <button class="ver" type="button" (click)="visualizar(observacao)">
+                  Visualizar
+                </button>
+                <button class="perigo" type="button" (click)="pedirExclusao(observacao)">
+                  Apagar
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="vazio">Nenhuma observacao cadastrada.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
+
+@if (observacaoParaExcluir()) {
+  <div class="modal-fundo">
+    <div class="modal">
+      <h2>Tem certeza que deseja excluir?</h2>
+      <div class="modal-acoes">
+        <button class="ver" type="button" (click)="cancelarExclusao()">Nao</button>
+        <button class="perigo" type="button" (click)="confirmarExclusao()">Sim</button>
+      </div>
+    </div>
+  </div>
+}

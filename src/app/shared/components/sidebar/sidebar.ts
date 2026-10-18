@@ -14,7 +14,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         CrecheConecta
       </a>
 
-      <nav aria-label="Menu principal" class="md:mt-6">
+      <nav aria-label="Menu principal" class="md:mt-6 flex flex-col gap-2">
         <a
           routerLink="/home"
           routerLinkActive="bg-creche-pessego text-stone-900"
@@ -22,6 +22,22 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           class="block rounded-full px-4 py-3 text-sm font-semibold"
         >
           Início
+        </a>
+        <a
+          routerLink="/informacoes"
+          routerLinkActive="bg-creche-pessego text-stone-900"
+          ariaCurrentWhenActive="page"
+          class="block rounded-full px-4 py-3 text-sm font-semibold"
+        >
+          Informações Relevantes
+        </a>
+        <a
+          routerLink="/observacoes"
+          routerLinkActive="bg-creche-pessego text-stone-900"
+          ariaCurrentWhenActive="page"
+          class="block rounded-full px-4 py-3 text-sm font-semibold"
+        >
+          Observações do Filho
         </a>
       </nav>
 

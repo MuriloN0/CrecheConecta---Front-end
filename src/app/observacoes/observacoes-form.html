@@ -1,0 +1,37 @@
+<div class="titulo">
+  <div>
+    <h1>Cadastrar Observacao</h1>
+    <p>Preencha os dados da observacao sobre o aluno.</p>
+  </div>
+</div>
+<section class="cartao">
+  @if (erro()) {
+    <p class="mensagem erro">{{ erro() }}</p>
+  }
+  <div class="campo">
+    <label>Titulo
+      <input
+        type="text"
+        [value]="titulo()"
+        (input)="atualizarTitulo($any($event.target).value)"
+        placeholder="Ex.: Como foi o dia"
+      />
+    </label>
+  </div>
+  <div class="campo">
+    <label>Conteudo
+      <textarea
+        rows="6"
+        [value]="conteudo()"
+        (input)="atualizarConteudo($any($event.target).value)"
+        placeholder="Descreva a observacao sobre o aluno..."
+      ></textarea>
+    </label>
+  </div>
+  <div class="rodape-form">
+    <button class="cancelar" type="button" (click)="cancelar()">Cancelar</button>
+    <button class="principal" type="button" (click)="salvar()" [disabled]="salvando()">
+      {{ salvando() ? 'Salvando...' : 'Salvar' }}
+    </button>
+  </div>
+</section>
