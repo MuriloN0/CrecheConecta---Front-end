@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { permitirPerfis } from './core/guards/perfil.guard';
 import { termoAceitoGuard } from './portal-pais/termo.guard';
 
 export const routes: Routes = [
@@ -14,7 +15,9 @@ export const routes: Routes = [
         path: 'login',
         title: 'Entrar | CrecheConecta',
         loadComponent: () =>
-          import('./pages/auth/login/login').then((m) => m.Login),
+          import('./pages/auth/login/login').then(
+            (m) => m.Login,
+          ),
       },
       {
         path: 'recuperar-senha',
@@ -43,7 +46,18 @@ export const routes: Routes = [
         path: 'home',
         title: 'Início | CrecheConecta',
         loadComponent: () =>
-          import('./pages/home/home').then((m) => m.Home),
+          import('./pages/home/home').then(
+            (m) => m.Home,
+          ),
+      },
+      {
+        path: 'atividades',
+        title: 'Atividades | CrecheConecta',
+        canActivate: [permitirPerfis('PROFESSOR')],
+        loadComponent: () =>
+          import('./atividades/atividades.component').then(
+            (m) => m.AtividadesComponent,
+          ),
       },
     ],
   },
@@ -77,7 +91,9 @@ export const routes: Routes = [
             pathMatch: 'full',
             title: 'Fichas de saúde | CrecheConecta',
             loadComponent: () =>
-              import('./saude/saude').then((m) => m.Saude),
+              import('./saude/saude').then(
+                (m) => m.Saude,
+              ),
           },
           {
             path: 'nova',
