@@ -3,8 +3,10 @@ import { CanActivateFn, Router } from '@angular/router';
 import { Perfil } from '../models/auth.models';
 import { AuthService } from '../services/auth.service';
 
-export function permitirPerfis(...perfis: Perfil[]): CanActivateFn {
+export function permitirPerfis(  ...perfis: Perfil[]): CanActivateFn {
+
   return () => {
+
     const auth = inject(AuthService);
     const router = inject(Router);
     const usuario = auth.usuario();
