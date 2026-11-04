@@ -41,6 +41,25 @@ interface ItemMenu {
         </span>
       </a>
 
+      <nav aria-label="Menu principal" class="space-y-2 md:mt-6">
+        <a
+          routerLink="/home"
+          routerLinkActive="bg-creche-pessego text-stone-900"
+          [routerLinkActiveOptions]="{ exact: true }"
+          ariaCurrentWhenActive="page"
+          class="block rounded-full px-4 py-3 text-sm font-semibold"
+        >
+          Início
+        </a>
+
+        @if (auth.usuario()?.perfil === 'DIRECAO') {
+          <a
+            routerLink="/alunos"
+            routerLinkActive="bg-creche-pessego text-stone-900"
+            ariaCurrentWhenActive="page"
+            class="block rounded-full px-4 py-3 text-sm font-semibold"
+          >
+            Alunos
       <p
         class="mb-3 mt-7 px-3 text-xs font-semibold
                uppercase tracking-wider text-white/65"
