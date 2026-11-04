@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { termoAceitoGuard } from './portal-pais/termo.guard';
+import { permitirPerfis } from './core/guards/perfil.guard';
 
 export const routes: Routes = [
   {
@@ -44,6 +45,12 @@ export const routes: Routes = [
         title: 'Início | CrecheConecta',
         loadComponent: () =>
           import('./pages/home/home').then((m) => m.Home),
+      },
+      {
+        path: 'alunos',
+        title: 'Alunos | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO')],
+        loadComponent: () => import('./alunos/alunos').then((m) => m.Alunos),
       },
     ],
   },
