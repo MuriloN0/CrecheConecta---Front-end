@@ -4,7 +4,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { Aluno, AlunosApi } from '../alunos/alunos.service';
-import { Matricula, Pagina, Turma, TurmasApi } from './turmas.service';
+import { Matricula, Pagina, Turma, TurmasService } from './turmas.service';
 
 type Filtro = 'ativas' | 'inativas' | 'todas';
 type MatriculaExibida = Matricula & { nomeAluno: string };
@@ -26,7 +26,7 @@ function listaVazia<T>(): Lista<T> {
   templateUrl: './turmas.html',
 })
 export class Turmas implements OnInit {
-  private readonly api = inject(TurmasApi);
+  private readonly api = inject(TurmasService);
   private readonly alunosApi = inject(AlunosApi);
   private readonly http = inject(HttpClient);
 

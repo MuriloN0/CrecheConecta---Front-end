@@ -1,0 +1,230 @@
+<section class="space-y-5" aria-labelledby="titulo-professores">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 id="titulo-professores" class="text-3xl font-bold text-creche-texto">
+        Professores
+      </h1>
+      <p class="mt-1 text-sm text-stone-600">
+        Gerencie convites, cadastros e vínculos com turmas.
+      </p>
+    </div>
+    <button type="button" [class]="primario" [disabled]="ocupada()"
+      (click)="abrirConvite()">
+      Convidar professor
+    </button>
+  </header>
+
+  @if (ocupada()) {
+    <p role="status" class="text-sm text-stone-600">Processando…</p>
+  }
+  @if (sucesso()) {
+    <p role="status" class="rounded-xl bg-green-50 p-4 text-green-900">{{ sucesso() }}</p>
+  }
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-red-800">{{ erro() }}</p>
+  }
+
+  @if (formulario) {
+    <form [class]="cartao" #form="ngForm" (ngSubmit)="salvar()">
+      <h2 class="text-xl font-bold">
+        {{ formulario === 'convite' ? 'Enviar convite' : 'Editar professor' }}
+      </h2>
+
+      <label class="block max-w-lg space-y-1 text-sm font-semibold">
+        <span>Nome</span>
+        <input name="nome" [class]="campo" [(ngModel)]="nome"
+          required maxlength="150" [disabled]="ocupada()" />
+      </label>
+
+      @if (formulario === 'convite') {
+        <label class="block max-w-lg space-y-1 text-sm font-semibold">
+          <span>E-mail</span>
+          <input name="email" type="email" [class]="campo" [(ngModel)]="email"
+            required email maxlength="254" [disabled]="ocupada()" />
+        </label>
+      } @else {
+        <label class="block max-w-lg space-y-1 text-sm font-semibold">
+          <span>Telefone com DDD</span>
+          <input name="telefone" type="tel" inputmode="numeric" [class]="campo"
+            [(ngModel)]="telefone" required pattern="[1-9][0-9]{9,10}"
+            maxlength="11" [disabled]="ocupada()" />
+        </label>
+      }
+
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" [class]="primario" [disabled]="ocupada() || form.invalid">
+          {{ formulario === 'convite' ? 'Enviar convite' : 'Salvar alterações' }}
+        </button>
+        <button type="button" [class]="botao" [disabled]="ocupada()"
+          (click)="formulario = null">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  }
+
+  <section [class]="cartao" aria-labelledby="lista-professores">
+    <h2 id="lista-professores" class="text-xl font-bold">Cadastros</h2>
+
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="grid gap-1 text-sm font-semibold">
+        Situação
+        <select [class]="campo" [ngModel]="filtro" [disabled]="ocupada()"
+          (ngModelChange)="mudarFiltro($event)">
+          <option value="">Todas</option>
+          <option value="PENDENTE_APROVACAO">Pendentes de aprovação</option>
+          <option value="APROVADO">Aprovados</option>
+          <option value="REJEITADO">Rejeitados</option>
+          <option value="INATIVO">Inativos</option>
+        </select>
+      </label>
+      <button type="button" [class]="botao" [disabled]="ocupada()"
+        (click)="carregarProfessores(paginaProfessores())">
+        Atualizar lista
+      </button>
+    </div>
+
+    <ul class="divide-y divide-stone-200">
+      @for (professor of professores().content; track professor.id) {
+        <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+          <div class="min-w-0 wrap-break-word">
+            <p class="font-semibold">{{ professor.nome }}</p>
+            <p class="text-sm text-stone-600">{{ professor.email }}</p>
+            @if (professor.telefone) {
+              <p class="text-sm text-stone-600">{{ professor.telefone }}</p>
+            }
+            <p class="text-sm text-stone-700">{{ situacoes[professor.situacaoCadastro] }}</p>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" [class]="botao" [disabled]="ocupada()"
+              (click)="abrirEdicao(professor)">Editar</button>
+
+            @if (professor.situacaoCadastro === 'PENDENTE_APROVACAO') {
+              <button type="button" [class]="botao" [disabled]="ocupada()"
+                (click)="decidir(professor, 'aprovar')">Aprovar</button>
+              <button type="button" [class]="botao" [disabled]="ocupada()"
+                (click)="decidir(professor, 'rejeitar')">Rejeitar</button>
+            }
+
+            @if (podeVincular(professor)) {
+              <button type="button" [class]="botao" [disabled]="ocupada()"
+                (click)="decidir(professor, 'inativar')">Inativar</button>
+              <button type="button" [class]="botao" [disabled]="ocupada()"
+                (click)="selecionarProfessor(professor)">Selecionar para vínculo</button>
+            }
+          </div>
+        </li>
+      } @empty {
+        @if (!ocupada() && !erro()) {
+          <li class="py-3 text-sm text-stone-600">Nenhum professor neste filtro.</li>
+        }
+      }
+    </ul>
+
+    @if (professores().totalPages > 1) {
+      <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de professores">
+        <button type="button" [class]="botao"
+          [disabled]="ocupada() || paginaProfessores() === 0"
+          (click)="carregarProfessores(paginaProfessores() - 1)">Anterior</button>
+        <span class="text-sm">{{ paginaProfessores() + 1 }} de {{ professores().totalPages }}</span>
+        <button type="button" [class]="botao"
+          [disabled]="ocupada() || paginaProfessores() + 1 >= professores().totalPages"
+          (click)="carregarProfessores(paginaProfessores() + 1)">Próxima</button>
+      </nav>
+    }
+  </section>
+
+  <section [class]="cartao" aria-labelledby="titulo-vinculos">
+    <h2 id="titulo-vinculos" class="text-xl font-bold">Vínculos com turmas</h2>
+
+    @if (professorSelecionado(); as professor) {
+      <p class="text-sm">Professor selecionado <strong>{{ professor.nome }}</strong></p>
+    } @else {
+      <p class="text-sm text-stone-600">
+        Selecione um professor aprovado na lista para criar um vínculo.
+      </p>
+    }
+
+    <button type="button" [class]="botao" [disabled]="ocupada()"
+      (click)="carregarTurmas(0)">
+      Consultar turmas ativas
+    </button>
+
+    <ul class="flex flex-wrap gap-2">
+      @for (turma of turmas().content; track turma.id) {
+        <li>
+          <button type="button" [class]="botao" [disabled]="ocupada()"
+            [attr.aria-pressed]="turmaSelecionada()?.id === turma.id"
+            (click)="selecionarTurma(turma)">
+            {{ turma.nome }} · Sala {{ turma.numeroSala }}
+          </button>
+        </li>
+      }
+    </ul>
+
+    @if (turmas().totalPages > 1) {
+      <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de turmas ativas">
+        <button type="button" [class]="botao" [disabled]="ocupada() || paginaTurmas() === 0"
+          (click)="carregarTurmas(paginaTurmas() - 1)">Turmas anteriores</button>
+        <span class="text-sm">{{ paginaTurmas() + 1 }} de {{ turmas().totalPages }}</span>
+        <button type="button" [class]="botao"
+          [disabled]="ocupada() || paginaTurmas() + 1 >= turmas().totalPages"
+          (click)="carregarTurmas(paginaTurmas() + 1)">Próximas turmas</button>
+      </nav>
+    }
+
+    @if (turmaSelecionada(); as turma) {
+      <h3 class="text-lg font-semibold">{{ turma.nome }}</h3>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" [class]="primario"
+          [disabled]="ocupada() || !professorSelecionado()" (click)="vincular()">
+          Vincular professor selecionado
+        </button>
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" class="accent-creche-verde" [ngModel]="incluirEncerrados"
+            [disabled]="ocupada()" (ngModelChange)="mudarHistorico($event)" />
+          Incluir vínculos encerrados
+        </label>
+        <button type="button" [class]="botao" [disabled]="ocupada()"
+          (click)="carregarVinculos(paginaVinculos())">Atualizar vínculos</button>
+      </div>
+
+      <ul class="divide-y divide-stone-200">
+        @for (vinculo of vinculos().content; track vinculo.id) {
+          <li class="flex flex-wrap items-center justify-between gap-2 py-3">
+            <div class="min-w-0 wrap-break-word">
+              <p class="font-semibold">{{ vinculo.nomeProfessor }}</p>
+              <p class="text-sm text-stone-600">
+                Desde {{ vinculo.criadoEm | date: 'dd/MM/yyyy' }}
+                @if (vinculo.encerradoEm) {
+                  · Encerrado em {{ vinculo.encerradoEm | date: 'dd/MM/yyyy' }}
+                }
+              </p>
+            </div>
+            @if (!vinculo.encerradoEm) {
+              <button type="button" [class]="botao" [disabled]="ocupada()"
+                (click)="encerrar(vinculo)">Encerrar vínculo</button>
+            }
+          </li>
+        } @empty {
+          @if (!ocupada() && !erro()) {
+            <li class="py-3 text-sm text-stone-600">Nenhum vínculo neste filtro.</li>
+          }
+        }
+      </ul>
+
+      @if (vinculos().totalPages > 1) {
+        <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de vínculos">
+          <button type="button" [class]="botao"
+            [disabled]="ocupada() || paginaVinculos() === 0"
+            (click)="carregarVinculos(paginaVinculos() - 1)">Anterior</button>
+          <span class="text-sm">{{ paginaVinculos() + 1 }} de {{ vinculos().totalPages }}</span>
+          <button type="button" [class]="botao"
+            [disabled]="ocupada() || paginaVinculos() + 1 >= vinculos().totalPages"
+            (click)="carregarVinculos(paginaVinculos() + 1)">Próxima</button>
+        </nav>
+      }
+    }
+  </section>
+</section>
