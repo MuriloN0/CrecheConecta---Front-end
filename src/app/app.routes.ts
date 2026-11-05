@@ -82,6 +82,13 @@ export const routes: Routes = [
         canActivate: [permitirPerfis('DIRECAO')],
         loadComponent: () => import('./direcao/direcao').then((m) => m.Direcao),
       },
+      {
+        path: 'comunicados',
+        title: 'Comunicados | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],
+        loadComponent: () =>
+          import('./comunicados/comunicados').then((m) => m.Comunicados),
+      },
     ],
   },
   {

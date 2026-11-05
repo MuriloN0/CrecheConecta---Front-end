@@ -88,7 +88,6 @@ export class Sidebar {
 
   readonly iniciais = computed(() => {
     const partes = (this.usuario()?.nome ?? '').trim().split(/\s+/).filter(Boolean);
-
     if (partes.length === 0) return 'CC';
 
     const primeira = partes[0].charAt(0);
@@ -107,6 +106,10 @@ export class Sidebar {
     const itens: ItemMenu[] = [
       { titulo: perfil ? tituloInicio[perfil] : 'Início', caminho: '/home' },
     ];
+
+    if (perfil) {
+      itens.push({ titulo: 'Comunicados', caminho: '/comunicados' });
+    }
 
     if (perfil === 'DIRECAO') {
       itens.push(
