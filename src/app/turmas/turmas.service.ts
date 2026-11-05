@@ -28,7 +28,7 @@ export interface Pagina<T> {
 }
 
 @Injectable({ providedIn: 'root' })
-export class TurmasApi {
+export class TurmasService {
   private readonly http = inject(HttpClient);
   private readonly url = '/api/turmas';
 

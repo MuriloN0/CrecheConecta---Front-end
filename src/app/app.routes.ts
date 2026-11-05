@@ -21,6 +21,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/auth/recuperacao/recuperacao').then((m) => m.Recuperacao),
       },
+      {
+        path: 'cadastro',
+        pathMatch: 'full',
+        title: 'Cadastro de professor | CrecheConecta',
+        loadComponent: () =>import('./pages/auth/cadastro-professor/cadastro-professor').then(
+            (m) => m.CadastroProfessor,
+          ),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'login' },
     ],
   },
@@ -53,6 +61,13 @@ export const routes: Routes = [
         title: 'Turmas | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO')],
         loadComponent: () => import('./turmas/turmas').then((m) => m.Turmas),
+      },
+      {
+        path: 'professores',
+        title: 'Professores | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO')],
+        loadComponent: () =>
+          import('./professores/professores').then((m) => m.Professores),
       },
     ],
   },

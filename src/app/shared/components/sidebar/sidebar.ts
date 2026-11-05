@@ -26,7 +26,6 @@ interface ItemMenu {
         >
           ♥
         </span>
-
         <span class="min-w-0">
           <span class="block text-lg font-bold">CrecheConecta</span>
           <span class="block text-xs text-white/75">{{ nomePerfil() }}</span>
@@ -104,7 +103,6 @@ export class Sidebar {
 
   readonly iniciais = computed(() => {
     const partes = (this.usuario()?.nome ?? '').trim().split(/\s+/).filter(Boolean);
-
     if (partes.length === 0) return 'CC';
 
     const primeira = partes[0].charAt(0);
@@ -128,6 +126,7 @@ export class Sidebar {
       itens.push(
         { titulo: 'Alunos', caminho: '/alunos' },
         { titulo: 'Turmas', caminho: '/turmas' },
+        { titulo: 'Professores', caminho: '/professores' },
       );
     }
 
