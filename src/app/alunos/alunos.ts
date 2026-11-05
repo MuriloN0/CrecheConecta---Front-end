@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Aluno, AlunosApi } from './alunos.api';
+import { Aluno, AlunosApi } from './alunos.service';
 
 type FiltroAluno = 'ativos' | 'inativos' | 'todos';
 

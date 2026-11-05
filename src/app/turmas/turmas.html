@@ -1,0 +1,214 @@
+<section class="space-y-5" aria-labelledby="titulo-turmas" [attr.aria-busy]="ocupada()">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 id="titulo-turmas" class="text-3xl font-bold text-creche-texto">Turmas</h1>
+      <p class="mt-1 text-sm text-stone-600">Gerencie salas e matrículas da creche.</p>
+    </div>
+    <button type="button" [class]="primario" [disabled]="ocupada()"
+      (click)="abrirFormulario()">
+      Cadastrar turma
+    </button>
+  </header>
+
+  @if (ocupada()) {
+    <p role="status" class="text-sm text-stone-600">Processando…</p>
+  }
+  @if (sucesso()) {
+    <p role="status" class="rounded-xl bg-green-50 p-4 text-green-900">{{ sucesso() }}</p>
+  }
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-red-800">{{ erro() }}</p>
+  }
+
+  @if (formularioAberto) {
+    <form [class]="cartao" #form="ngForm" (ngSubmit)="salvar()">
+      <h2 class="text-xl font-bold">{{ editando ? 'Editar turma' : 'Nova turma' }}</h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="grid gap-1 text-sm font-semibold">
+          Nome da turma
+          <input name="nome" [class]="campo" [(ngModel)]="nome"
+            required maxlength="150" [disabled]="ocupada()" />
+        </label>
+        <label class="grid gap-1 text-sm font-semibold">
+          Número da sala
+          <input name="numeroSala" [class]="campo" [(ngModel)]="numeroSala"
+            required maxlength="20" [disabled]="ocupada()" />
+        </label>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" [class]="primario" [disabled]="ocupada() || form.invalid">
+          Salvar
+        </button>
+        <button type="button" [class]="botao" [disabled]="ocupada()"
+          (click)="formularioAberto = false">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  }
+
+  <section [class]="cartao" aria-labelledby="lista-turmas">
+    <h2 id="lista-turmas" class="text-xl font-bold">Turmas cadastradas</h2>
+    <div class="flex flex-wrap items-end gap-2">
+      <label class="grid gap-1 text-sm font-semibold">
+        Situação
+        <select [class]="campo" [ngModel]="filtro"
+          (ngModelChange)="mudarFiltro($event)" [disabled]="ocupada()">
+          <option value="ativas">Ativas</option>
+          <option value="inativas">Inativas</option>
+          <option value="todas">Todas</option>
+        </select>
+      </label>
+      <button type="button" [class]="botao" [disabled]="ocupada()"
+        (click)="listarTurmas(turmas().pagina)">
+        Atualizar lista
+      </button>
+    </div>
+
+    <ul class="divide-y divide-stone-200">
+      @for (turma of turmas().itens; track turma.id) {
+        <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+          <div>
+            <p class="font-semibold">{{ turma.nome }}</p>
+            <p class="text-sm text-stone-600">
+              Sala {{ turma.numeroSala }} · {{ turma.ativo ? 'Ativa' : 'Inativa' }}
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" [class]="botao" [disabled]="ocupada()"
+              [attr.aria-pressed]="turmaSelecionada()?.id === turma.id"
+              (click)="selecionarTurma(turma)">
+              Matrículas
+            </button>
+            <button type="button" [class]="botao" [disabled]="ocupada()"
+              (click)="abrirFormulario(turma)">
+              Editar
+            </button>
+            @if (turma.ativo) {
+              <button type="button" [class]="botao" [disabled]="ocupada()"
+                (click)="inativar(turma)">
+                Inativar
+              </button>
+            }
+          </div>
+        </li>
+      } @empty {
+        @if (!ocupada() && !erro()) {
+          <li class="py-3 text-sm text-stone-600">Nenhuma turma nesta situação.</li>
+        }
+      }
+    </ul>
+
+    @if (turmas().totalPaginas > 1) {
+      <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de turmas">
+        <button type="button" [class]="botao" [disabled]="ocupada() || turmas().pagina === 0"
+          (click)="listarTurmas(turmas().pagina - 1)">Anterior</button>
+        <span class="text-sm">{{ turmas().pagina + 1 }} de {{ turmas().totalPaginas }}</span>
+        <button type="button" [class]="botao"
+          [disabled]="ocupada() || turmas().pagina + 1 >= turmas().totalPaginas"
+          (click)="listarTurmas(turmas().pagina + 1)">Próxima</button>
+      </nav>
+    }
+  </section>
+
+  @if (turmaSelecionada(); as turma) {
+    <section [class]="cartao" aria-labelledby="titulo-matriculas">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="titulo-matriculas" class="text-xl font-bold">Matrículas de {{ turma.nome }}</h2>
+        <button type="button" [class]="botao" [disabled]="ocupada()"
+          (click)="turmaSelecionada.set(null)">
+          Fechar matrículas
+        </button>
+      </div>
+
+      @if (turma.ativo) {
+        <form class="flex flex-wrap items-end gap-2" (ngSubmit)="matricular()">
+          <label class="grid gap-1 text-sm font-semibold">
+            Aluno ativo
+            <select name="alunoId" [class]="campo" [(ngModel)]="alunoId"
+              required [disabled]="ocupada()">
+              <option value="">Selecione um aluno</option>
+              @for (aluno of alunos().itens; track aluno.id) {
+                <option [value]="aluno.id">
+                  {{ aluno.nome }} · {{ aluno.dataNascimento | date: 'dd/MM/yyyy' : 'UTC' }}
+                </option>
+              }
+            </select>
+          </label>
+          <button type="submit" [class]="primario" [disabled]="ocupada() || !alunoId">
+            Matricular
+          </button>
+          <button type="button" [class]="botao" [disabled]="ocupada()"
+            (click)="listarAlunos(alunos().pagina)">
+            Atualizar alunos
+          </button>
+        </form>
+
+        @if (alunos().totalPaginas > 1) {
+          <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de alunos ativos">
+            <button type="button" [class]="botao"
+              [disabled]="ocupada() || alunos().pagina === 0"
+              (click)="listarAlunos(alunos().pagina - 1)">Alunos anteriores</button>
+            <span class="text-sm">{{ alunos().pagina + 1 }} de {{ alunos().totalPaginas }}</span>
+            <button type="button" [class]="botao"
+              [disabled]="ocupada() || alunos().pagina + 1 >= alunos().totalPaginas"
+              (click)="listarAlunos(alunos().pagina + 1)">Próximos alunos</button>
+          </nav>
+        }
+      }
+
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" class="accent-creche-verde"
+            [ngModel]="incluirEncerradas" [disabled]="ocupada()"
+            (ngModelChange)="incluirEncerradas = $event; listarMatriculas(0)" />
+          Incluir matrículas encerradas
+        </label>
+        <button type="button" [class]="botao" [disabled]="ocupada()"
+          (click)="listarMatriculas(matriculas().pagina)">
+          Atualizar matrículas
+        </button>
+      </div>
+
+      <ul class="divide-y divide-stone-200">
+        @for (matricula of matriculas().itens; track matricula.id) {
+          <li class="flex flex-wrap items-center justify-between gap-2 py-3">
+            <div class="min-w-0">
+              <p class="font-semibold wrap-break-word">{{ matricula.nomeAluno }}</p>
+              <p class="text-sm text-stone-600">
+                Matrícula em {{ matricula.criadoEm | date: 'dd/MM/yyyy' }}
+                @if (matricula.encerradoEm) {
+                  · Encerrada em {{ matricula.encerradoEm | date: 'dd/MM/yyyy' }}
+                }
+              </p>
+            </div>
+            @if (turma.ativo && !matricula.encerradoEm) {
+              <button type="button" [class]="botao" [disabled]="ocupada()"
+                (click)="encerrar(matricula)">
+                Encerrar matrícula
+              </button>
+            }
+          </li>
+        } @empty {
+          @if (!ocupada() && !erro()) {
+            <li class="py-3 text-sm text-stone-600">Nenhuma matrícula neste filtro.</li>
+          }
+        }
+      </ul>
+
+      @if (matriculas().totalPaginas > 1) {
+        <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de matrículas">
+          <button type="button" [class]="botao"
+            [disabled]="ocupada() || matriculas().pagina === 0"
+            (click)="listarMatriculas(matriculas().pagina - 1)">Anterior</button>
+          <span class="text-sm">
+            {{ matriculas().pagina + 1 }} de {{ matriculas().totalPaginas }}
+          </span>
+          <button type="button" [class]="botao"
+            [disabled]="ocupada() || matriculas().pagina + 1 >= matriculas().totalPaginas"
+            (click)="listarMatriculas(matriculas().pagina + 1)">Próxima</button>
+        </nav>
+      }
+    </section>
+  }
+</section>
