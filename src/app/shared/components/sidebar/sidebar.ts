@@ -121,7 +121,10 @@ export class Sidebar {
     }
 
     if (perfil === 'PROFESSOR') {
-      itens.push({ titulo: 'Atividades', caminho: '/atividades' });
+      itens.push(
+        { titulo: 'Chamada do dia', caminho: '/chamada' },
+        { titulo: 'Atividades', caminho: '/atividades' },
+      );
     }
 
     itens.push({ titulo: 'Termos e privacidade', caminho: '/informacoes/termos' });

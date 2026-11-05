@@ -59,6 +59,12 @@ export const routes: Routes = [
           import('./atividades/atividades.component').then((m) => m.AtividadesComponent),
       },
       {
+        path: 'chamada',
+        title: 'Chamada do dia | CrecheConecta',
+        canActivate: [permitirPerfis('PROFESSOR')],
+        loadComponent: () => import('./chamada/chamada').then((m) => m.Chamada),
+      },
+      {
         path: 'alunos',
         title: 'Alunos | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO')],
