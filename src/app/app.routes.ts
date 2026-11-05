@@ -12,8 +12,7 @@ export const routes: Routes = [
       {
         path: 'login',
         title: 'Entrar | CrecheConecta',
-        loadComponent: () =>
-          import('./pages/auth/login/login').then((m) => m.Login),
+        loadComponent: () => import('./pages/auth/login/login').then((m) => m.Login),
       },
       {
         path: 'recuperar-senha',
@@ -22,10 +21,19 @@ export const routes: Routes = [
           import('./pages/auth/recuperacao/recuperacao').then((m) => m.Recuperacao),
       },
       {
+        path: 'cadastro/direcao',
+        title: 'Cadastro de direção | CrecheConecta',
+        loadComponent: () =>
+          import('./pages/auth/cadastro-direcao/cadastro-direcao').then(
+            (m) => m.CadastroDirecao,
+          ),
+      },
+      {
         path: 'cadastro',
         pathMatch: 'full',
         title: 'Cadastro de professor | CrecheConecta',
-        loadComponent: () =>import('./pages/auth/cadastro-professor/cadastro-professor').then(
+        loadComponent: () =>
+          import('./pages/auth/cadastro-professor/cadastro-professor').then(
             (m) => m.CadastroProfessor,
           ),
       },
@@ -66,8 +74,13 @@ export const routes: Routes = [
         path: 'professores',
         title: 'Professores | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO')],
-        loadComponent: () =>
-          import('./professores/professores').then((m) => m.Professores),
+        loadComponent: () => import('./professores/professores').then((m) => m.Professores),
+      },
+      {
+        path: 'direcao',
+        title: 'Equipe de Direção | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO')],
+        loadComponent: () => import('./direcao/direcao').then((m) => m.Direcao),
       },
     ],
   },
