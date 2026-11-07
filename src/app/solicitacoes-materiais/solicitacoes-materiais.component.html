@@ -1,0 +1,250 @@
+<section aria-labelledby="titulo-solicitacoes-materiais" class="space-y-5">
+
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1
+        id="titulo-solicitacoes-materiais"
+        class="text-2xl font-bold text-creche-texto md:text-3xl"
+      >
+        Solicitação de materiais
+      </h1>
+
+      <p class="mt-2 text-sm text-stone-600">
+        @if (ehDirecao()) {
+          Acompanhe os pedidos de materiais dos professores, converse e dê um retorno.
+        } @else {
+          Peça à direção os materiais de que sua sala precisa e acompanhe cada pedido.
+        }
+      </p>
+    </div>
+
+    @if (ehProfessor()) {
+      <button
+        type="button"
+        class="min-h-11 w-full cursor-pointer rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white enabled:hover:bg-creche-verde/90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        [disabled]="ocupada()"
+        (click)="abrirCadastro()"
+      >
+        Nova solicitação
+      </button>
+    }
+  </div>
+
+
+  <div class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
+    <div class="flex flex-wrap items-end gap-3">
+
+      <div class="min-w-0 flex-1 basis-48">
+        <label for="filtro-status-solicitacao" class="mb-2 block text-sm font-semibold">Status</label>
+
+        <select
+          id="filtro-status-solicitacao"
+          class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3
+                 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2
+                 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+          [(ngModel)]="filtroStatus"
+          [disabled]="ocupada()"
+          (ngModelChange)="aplicarFiltros()"
+        >
+          <option value="">Todos os status</option>
+
+          @for (status of listaStatus; track status) {
+            <option [value]="status">{{ rotulosStatus[status] }}</option>
+          }
+        </select>
+      </div>
+
+
+      <div class="min-w-0 flex-1 basis-48">
+        <label for="filtro-prioridade-solicitacao" class="mb-2 block text-sm font-semibold">Prioridade</label>
+
+        <select
+          id="filtro-prioridade-solicitacao"
+          class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3
+                 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2
+                 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+          [(ngModel)]="filtroPrioridade"
+          [disabled]="ocupada()"
+          (ngModelChange)="aplicarFiltros()"
+        >
+          <option value="">Todas as prioridades</option>
+
+          @for (prioridade of listaPrioridades; track prioridade) {
+            <option [value]="prioridade">{{ rotulosPrioridade[prioridade] }}</option>
+          }
+        </select>
+      </div>
+
+
+      @if (temFiltros()) {
+        <button
+          type="button"
+          class="min-h-11 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          [disabled]="ocupada()"
+          (click)="limparFiltros()"
+        >
+          Limpar filtros
+        </button>
+      }
+
+      <button
+        type="button"
+        class="min-h-11 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        [disabled]="ocupada()"
+        (click)="atualizar()"
+      >
+        Atualizar dados
+      </button>
+
+    </div>
+  </div>
+
+
+  @if (sucesso()) {
+    <p
+      role="status"
+      class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900"
+    >
+      {{ sucesso() }}
+    </p>
+  }
+
+  @if (erro()) {
+    <p
+      role="alert"
+      class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+    >
+      {{ erro() }}
+    </p>
+  }
+
+
+  <section
+    class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6"
+    aria-labelledby="titulo-lista-solicitacoes"
+    [attr.aria-busy]="carregando()"
+  >
+    <h2 id="titulo-lista-solicitacoes" class="sr-only">Lista de solicitações</h2>
+
+    @if (carregando()) {
+      <p role="status" class="text-sm text-stone-600">Carregando solicitações…</p>
+
+    } @else if (!erro() && solicitacoes().length === 0) {
+      <div class="space-y-3 py-4 text-center">
+        @if (temFiltros()) {
+          <p class="font-semibold">Nenhuma solicitação encontrada com esses filtros.</p>
+
+          <p class="text-sm text-stone-600">Troque os filtros ou limpe-os para ver todas.</p>
+        } @else if (ehProfessor()) {
+          <p class="font-semibold">Você ainda não fez nenhuma solicitação.</p>
+
+          <p class="text-sm text-stone-600">
+            Use “Nova solicitação” para pedir materiais à direção.
+          </p>
+        } @else {
+          <p class="font-semibold">Nenhuma solicitação de materiais recebida.</p>
+        }
+      </div>
+
+    } @else if (solicitacoes().length > 0) {
+      <p class="mb-3 text-sm text-stone-600">
+        {{ totalSolicitacoes() }}
+        {{ totalSolicitacoes() === 1 ? 'solicitação encontrada' : 'solicitações encontradas' }}
+      </p>
+
+      <ul class="grid gap-3 lg:grid-cols-2">
+        @for (solicitacao of solicitacoes(); track solicitacao.id) {
+          <li class="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-creche-creme/40 p-4">
+
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <h3 class="min-w-0 flex-1 text-base font-bold wrap-break-word">
+                {{ solicitacao.titulo }}
+              </h3>
+
+              <div class="flex flex-wrap gap-2">
+                <span
+                  class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                  [class]="coresPrioridade[solicitacao.prioridade]"
+                >
+                  Prioridade {{ rotulosPrioridade[solicitacao.prioridade] }}
+                </span>
+
+                <span
+                  class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                  [class]="coresStatus[solicitacao.status]"
+                >
+                  {{ rotulosStatus[solicitacao.status] }}
+                </span>
+              </div>
+            </div>
+
+
+            <p class="text-sm text-stone-600 wrap-break-word">
+              {{ solicitacao.sala }}
+              · {{ solicitacao.itens.length }} {{ solicitacao.itens.length === 1 ? 'item' : 'itens' }}
+              · Criada em
+              <time [attr.datetime]="solicitacao.criadoEm">
+                {{ solicitacao.criadoEm | date: 'dd/MM/yyyy HH:mm' }}
+              </time>
+            </p>
+
+            @if (ehDirecao()) {
+              <p class="text-sm text-stone-600 wrap-break-word">
+                Professor(a): <span class="font-semibold text-creche-texto">{{ solicitacao.professorNome }}</span>
+              </p>
+            }
+
+
+            <div class="mt-auto flex flex-wrap gap-2">
+              <a
+                class="inline-flex min-h-11 items-center rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde"
+                [routerLink]="['/solicitacoes-materiais', solicitacao.id]"
+                [attr.aria-label]="'Ver detalhes de ' + solicitacao.titulo"
+              >
+                Ver detalhes
+              </a>
+            </div>
+
+          </li>
+        }
+      </ul>
+    }
+
+
+    @if (totalPaginas() > 1 && !carregando()) {
+      <nav class="mt-5 flex flex-wrap items-center gap-2" aria-label="Páginas de solicitações">
+        <button
+          type="button"
+          class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="ocupada() || pagina() === 0"
+          (click)="carregar(pagina() - 1)"
+        >
+          Anterior
+        </button>
+
+        <span class="text-sm">Página {{ pagina() + 1 }} de {{ totalPaginas() }}</span>
+
+        <button
+          type="button"
+          class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="ocupada() || pagina() + 1 >= totalPaginas()"
+          (click)="carregar(pagina() + 1)"
+        >
+          Próxima
+        </button>
+      </nav>
+    }
+  </section>
+
+</section>
+
+
+@if (formularioAberto()) {
+  <app-modal-form-solicitacao
+    [salvando]="salvando()"
+    [erro]="erroFormulario()"
+    [camposServidor]="camposFormulario()"
+    (salvar)="criar($event)"
+    (fechar)="fecharFormulario()"
+  />
+}
