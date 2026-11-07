@@ -117,6 +117,7 @@ export class Sidebar {
         { titulo: 'Turmas', caminho: '/turmas' },
         { titulo: 'Professores', caminho: '/professores' },
         { titulo: 'Equipe de Direção', caminho: '/direcao' },
+        { titulo: 'Termos e LGPD', caminho: '/termos' },
       );
     }
 

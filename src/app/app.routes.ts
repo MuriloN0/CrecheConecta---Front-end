@@ -118,6 +118,12 @@ export const routes: Routes = [
         loadComponent: () => import('./direcao/direcao').then((m) => m.Direcao),
       },
       {
+        path: 'termos',
+        title: 'Termos e LGPD | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO')],
+        loadComponent: () => import('./termos/termos').then((m) => m.Termos),
+      },
+      {
         path: 'comunicados',
         title: 'Comunicados | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],

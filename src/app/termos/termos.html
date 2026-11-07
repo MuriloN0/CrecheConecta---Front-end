@@ -1,0 +1,186 @@
+<section class="space-y-5" aria-labelledby="titulo-termos-direcao">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 id="titulo-termos-direcao" class="text-3xl font-bold text-creche-texto">
+        Termos e LGPD
+      </h1>
+      <p class="mt-1 text-sm text-stone-600">
+        Gerencie os termos de uso e a política de privacidade. Ao publicar uma nova versão,
+        todos os responsáveis precisam aceitá-la no próximo acesso.
+      </p>
+    </div>
+    <button type="button" [class]="primario" [disabled]="ocupada()" (click)="abrirFormulario()">
+      Nova versão
+    </button>
+  </header>
+
+  @if (ocupada()) {
+    <p role="status" class="text-sm text-stone-600">Processando…</p>
+  }
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">{{ erro() }}</p>
+  }
+  @if (sucesso()) {
+    <p role="status" class="rounded-xl bg-green-50 p-4 text-sm text-green-900">{{ sucesso() }}</p>
+  }
+
+  @if (vigente(); as atual) {
+    <section class="grid gap-4 sm:grid-cols-2" aria-label="Indicadores de aceite">
+      <article class="rounded-2xl border border-stone-200 bg-white p-5">
+        <p class="text-sm text-stone-600">Versão vigente</p>
+        <p class="mt-1 wrap-break-word text-2xl font-bold text-creche-verde">{{ atual.identificador }}</p>
+        <p class="mt-1 text-xs text-stone-600">
+          Publicada em {{ atual.publicadoEm | date: 'dd/MM/yyyy HH:mm' }}
+        </p>
+      </article>
+      <article class="rounded-2xl border border-stone-200 bg-white p-5">
+        <p class="text-sm text-stone-600">Responsáveis que aceitaram a versão vigente</p>
+        <p class="mt-1 text-4xl font-bold text-creche-verde">{{ atual.aceites }}</p>
+      </article>
+    </section>
+  }
+
+  @if (formularioAberto()) {
+    <form [class]="cartao" (ngSubmit)="salvar()" aria-labelledby="titulo-form-termo">
+      <h2 id="titulo-form-termo" class="text-xl font-bold">
+        {{ editando() ? 'Editar rascunho' : 'Nova versão (rascunho)' }}
+      </h2>
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Identificador da versão</span>
+        <input name="identificador" type="text" [class]="campo" [(ngModel)]="identificador"
+          required maxlength="40" [disabled]="ocupada()" />
+        <span class="text-xs font-normal text-stone-600">
+          É o nome que o responsável aceita, por exemplo 2026-11-09-v3. Letras, números, ponto, hífen e sublinhado.
+        </span>
+      </label>
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Termo de uso</span>
+        <textarea name="termoUso" rows="12" [class]="campo" [(ngModel)]="termoUso"
+          required maxlength="20000" [disabled]="ocupada()"></textarea>
+        <span class="text-xs font-normal text-stone-600">Até 20.000 caracteres.</span>
+      </label>
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Política de privacidade</span>
+        <textarea name="politicaPrivacidade" rows="12" [class]="campo" [(ngModel)]="politicaPrivacidade"
+          required maxlength="20000" [disabled]="ocupada()"></textarea>
+        <span class="text-xs font-normal text-stone-600">Até 20.000 caracteres.</span>
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" [class]="primario" [disabled]="ocupada()">
+          {{ editando() ? 'Salvar alterações' : 'Salvar rascunho' }}
+        </button>
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (detalhe(); as termo) {
+    <section [class]="cartao" aria-labelledby="titulo-detalhe-termo">
+      <h2 id="titulo-detalhe-termo" class="wrap-break-word text-xl font-bold">
+        Versão {{ termo.identificador }} · {{ rotulos[termo.status] }}
+      </h2>
+      <h3 class="text-lg font-bold">Termo de uso</h3>
+      <div class="max-h-80 overflow-y-auto whitespace-pre-wrap wrap-break-word rounded-xl border border-stone-300 bg-stone-50 p-4 text-sm leading-relaxed"
+        tabindex="0" role="region" aria-label="Texto do termo de uso">{{ termo.termoUso }}</div>
+      <h3 class="text-lg font-bold">Política de privacidade</h3>
+      <div class="max-h-80 overflow-y-auto whitespace-pre-wrap wrap-break-word rounded-xl border border-stone-300 bg-stone-50 p-4 text-sm leading-relaxed"
+        tabindex="0" role="region" aria-label="Texto da política de privacidade">{{ termo.politicaPrivacidade }}</div>
+      <button type="button" [class]="botao" (click)="fecharPaineis()">Fechar</button>
+    </section>
+  }
+
+  @if (paraPublicar(); as termo) {
+    <section [class]="cartao" aria-labelledby="titulo-publicar-termo">
+      <h2 id="titulo-publicar-termo" class="text-xl font-bold">Publicar nova versão</h2>
+      <p class="wrap-break-word text-sm">
+        A versão “{{ termo.identificador }}” passará a ser a vigente e a atual será arquivada.
+        <strong>Todos os responsáveis precisarão aceitar os novos termos</strong> no próximo acesso.
+        Depois de publicada, a versão não pode mais ser editada.
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" [class]="primario" [disabled]="ocupada()" (click)="confirmarPublicacao()">
+          Confirmar publicação
+        </button>
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
+          Cancelar
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (paraExcluir(); as termo) {
+    <section [class]="cartao" aria-labelledby="titulo-excluir-termo">
+      <h2 id="titulo-excluir-termo" class="text-xl font-bold">Excluir rascunho</h2>
+      <p class="wrap-break-word text-sm">O rascunho “{{ termo.identificador }}” será excluído.</p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" [disabled]="ocupada()" (click)="confirmarExclusao()"
+          class="cursor-pointer rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold
+                 text-white hover:bg-red-800 focus-visible:ring-2 focus-visible:ring-red-700
+                 focus-visible:ring-offset-2 disabled:opacity-50">
+          Confirmar exclusão
+        </button>
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
+          Cancelar
+        </button>
+      </div>
+    </section>
+  }
+
+  <section class="space-y-4" aria-label="Versões dos termos" [attr.aria-busy]="ocupada()">
+    <button type="button" [class]="botao" [disabled]="ocupada()" (click)="carregar()">
+      Atualizar lista
+    </button>
+    @for (termo of versoes(); track termo.id) {
+      <article [class]="cartao">
+        <header class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h2 class="wrap-break-word text-xl font-bold">{{ termo.identificador }}</h2>
+            <p class="mt-1 text-sm text-stone-600">
+              <span class="font-semibold">{{ rotulos[termo.status] }}</span>
+              · Criada em {{ termo.criadoEm | date: 'dd/MM/yyyy HH:mm' }}
+              @if (termo.publicadoEm) {
+                · Publicada em {{ termo.publicadoEm | date: 'dd/MM/yyyy HH:mm' }}
+              }
+            </p>
+            @if (termo.status !== 'RASCUNHO') {
+              <p class="mt-1 text-sm text-stone-600">
+                {{ termo.aceites }} {{ termo.aceites === 1 ? 'responsável aceitou' : 'responsáveis aceitaram' }}
+              </p>
+            }
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" [class]="botao" [disabled]="ocupada()"
+              [attr.aria-label]="'Visualizar versão ' + termo.identificador" (click)="ver(termo)">
+              Visualizar
+            </button>
+            @if (termo.status === 'RASCUNHO') {
+              <button type="button" [class]="botao" [disabled]="ocupada()"
+                [attr.aria-label]="'Editar rascunho ' + termo.identificador"
+                (click)="abrirFormulario(termo)">
+                Editar
+              </button>
+              <button type="button" [class]="primario" [disabled]="ocupada()"
+                [attr.aria-label]="'Publicar versão ' + termo.identificador"
+                (click)="pedirPublicacao(termo)">
+                Publicar
+              </button>
+              <button type="button" [class]="botao" [disabled]="ocupada()"
+                [attr.aria-label]="'Excluir rascunho ' + termo.identificador"
+                (click)="pedirExclusao(termo)">
+                Excluir
+              </button>
+            }
+          </div>
+        </header>
+      </article>
+    } @empty {
+      @if (!ocupada() && !falhaListagem()) {
+        <p class="rounded-2xl border border-stone-200 bg-white p-5 text-sm text-stone-600">
+          Nenhuma versão cadastrada.
+        </p>
+      }
+    }
+  </section>
+</section>
