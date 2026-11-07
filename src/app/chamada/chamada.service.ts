@@ -15,7 +15,7 @@ interface PaginaChamada {
 
 interface PresencaRegistrada {
   alunoId: string;
-  presente: boolean;
+  presente: boolean | null;
   versao: number;
 }
 
@@ -29,9 +29,9 @@ export class ChamadaService {
     });
   }
 
-  registrar(turmaId: string, data: string, aluno: AlunoChamada, presente: boolean) {
-    const dados = aluno.versao === null
-      ? { presente }
+  registrar(turmaId: string, data: string, aluno: AlunoChamada, presente: boolean | null) {
+    const dados = presente === null
+      ? { limpar: true, versao: aluno.versao }
       : { presente, versao: aluno.versao };
 
     return this.http.put<PresencaRegistrada>(

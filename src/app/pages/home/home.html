@@ -13,10 +13,10 @@
           Olá, {{ usuario()?.nome || 'bem-vindo(a)' }}!
         </h1>
         <p class="mt-1 text-sm text-stone-600">
-          @if (perfil() === 'RESPONSAVEL') {
-            Acompanhe a rotina da criança e os avisos da creche.
+          @if (perfil() === 'PROFESSOR') {
+            Acompanhe a chamada da sua turma e os avisos da creche.
           } @else {
-            Veja os comunicados recentes da creche.
+            Acompanhe a rotina da criança e os avisos da creche.
           }
         </p>
       }
@@ -120,9 +120,9 @@
         }
       </section>
     }
-  }
-
-  @if (perfil() === 'RESPONSAVEL') {
+  } @else if (perfil() === 'PROFESSOR') {
+    <app-minha-turma />
+  } @else if (perfil() === 'RESPONSAVEL') {
     <app-painel-familia />
   }
 
