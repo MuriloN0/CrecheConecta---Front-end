@@ -123,13 +123,18 @@ export class Sidebar {
     if (perfil === 'PROFESSOR') {
       itens.push(
         { titulo: 'Chamada do dia', caminho: '/chamada' },
+        { titulo: 'Diário de rotina', caminho: '/diario' },
         { titulo: 'Atividades', caminho: '/atividades' },
         { titulo: 'Mala Virtual', caminho: '/mala-virtual' },
       );
     }
 
     if (perfil === 'RESPONSAVEL') {
-      itens.push({ titulo: 'Mala Virtual', caminho: '/familia/mala-virtual' });
+      itens.push(
+        { titulo: 'Mala Virtual', caminho: '/familia/mala-virtual' },
+        { titulo: 'Informações relevantes', caminho: '/informacoes' },
+        { titulo: 'Observações', caminho: '/observacoes' },
+      );
     }
 
     itens.push({ titulo: 'Termos e privacidade', caminho: '/informacoes/termos' });
