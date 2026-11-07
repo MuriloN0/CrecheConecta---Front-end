@@ -1,0 +1,248 @@
+<dialog
+  appDialogoModal
+  class="m-auto max-h-[calc(100dvh_-_1.5rem)] w-[calc(100%_-_1.5rem)] max-w-2xl rounded-2xl
+         border border-stone-200 bg-white p-0 text-creche-texto shadow-xl
+         backdrop:bg-creche-texto/45"
+  aria-labelledby="titulo-form-mala"
+  aria-describedby="descricao-form-mala"
+  [bloqueado]="salvando()"
+  (fecharDialogo)="fechar.emit()"
+>
+  <form class="space-y-5 p-4 sm:p-6" novalidate (ngSubmit)="enviar()">
+    <div>
+      <h2 id="titulo-form-mala" class="text-xl font-bold text-creche-texto">
+        {{ editando() ? 'Editar mala' : 'Nova mala' }}
+      </h2>
+
+      <p id="descricao-form-mala" class="mt-1 text-sm text-stone-600">
+        {{ nomeTurma() }} · Campos com * são obrigatórios.
+      </p>
+    </div>
+
+    @if (erro()) {
+      <p
+        role="alert"
+        class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+      >
+        {{ erro() }}
+      </p>
+    }
+
+    <div>
+      <label for="titulo-mala" class="mb-2 block text-sm font-semibold">Título *</label>
+
+      <input
+        id="titulo-mala"
+        name="titulo"
+        type="text"
+        class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-700 aria-invalid:bg-red-50"
+        maxlength="150"
+        autocomplete="off"
+        autofocus
+        [(ngModel)]="titulo"
+        [disabled]="salvando()"
+        [attr.aria-invalid]="erroTitulo() ? 'true' : null"
+        [attr.aria-describedby]="erroTitulo() ? 'erro-titulo-mala' : 'ajuda-titulo-mala'"
+      />
+
+      @if (erroTitulo(); as mensagem) {
+        <p id="erro-titulo-mala" class="mt-1 text-sm text-red-700">{{ mensagem }}</p>
+      } @else {
+        <p id="ajuda-titulo-mala" class="mt-1 text-xs text-stone-600">
+          Por exemplo: “Passeio ao parque”. Até 150 caracteres.
+        </p>
+      }
+    </div>
+
+    <div>
+      <label for="data-mala" class="mb-2 block text-sm font-semibold">Data da aula *</label>
+
+      <input
+        id="data-mala"
+        name="data"
+        type="date"
+        class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-700 aria-invalid:bg-red-50"
+        [attr.min]="dataMinima()"
+        [(ngModel)]="data"
+        [disabled]="salvando()"
+        [attr.aria-invalid]="erroData() ? 'true' : null"
+        [attr.aria-describedby]="erroData() ? 'erro-data-mala' : null"
+      />
+
+      @if (erroData(); as mensagem) {
+        <p id="erro-data-mala" class="mt-1 text-sm text-red-700">{{ mensagem }}</p>
+      } @else if (mala(); as original) {
+        @if (original.data < hoje) {
+          <p class="mt-1 text-xs text-stone-600">
+            A aula de {{ original.data | date: 'dd/MM/yyyy' : 'UTC' }} já passou.
+            Você pode editar os itens mantendo essa data.
+          </p>
+        }
+      }
+    </div>
+
+    <div>
+      <label for="observacao-mala" class="mb-2 block text-sm font-semibold">Observação para as famílias</label>
+
+      <textarea
+        id="observacao-mala"
+        name="observacao"
+        class="block min-h-11 w-full resize-y rounded-xl border border-stone-300 bg-white p-3
+               text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2
+               focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60
+               aria-invalid:border-red-700 aria-invalid:bg-red-50"
+        rows="3"
+        maxlength="1000"
+        [(ngModel)]="observacao"
+        [disabled]="salvando()"
+        [attr.aria-invalid]="erroObservacao() ? 'true' : null"
+        [attr.aria-describedby]="erroObservacao() ? 'erro-observacao-mala' : 'ajuda-observacao-mala'"
+      ></textarea>
+
+      @if (erroObservacao(); as mensagem) {
+        <p id="erro-observacao-mala" class="mt-1 text-sm text-red-700">{{ mensagem }}</p>
+      } @else {
+        <p id="ajuda-observacao-mala" class="mt-1 text-xs text-stone-600">
+          Opcional. {{ observacao.length }}/1000 caracteres.
+        </p>
+      }
+    </div>
+
+    <fieldset class="space-y-3" aria-describedby="ajuda-itens-mala">
+      <legend class="mb-2 block text-sm font-semibold">Itens *</legend>
+
+      <p id="ajuda-itens-mala" class="text-xs text-stone-600">
+        De 1 a {{ maxItens }} itens, sem nomes repetidos. Quantidade de 1 a 999.
+      </p>
+
+      @if (erroLista(); as mensagem) {
+        <p class="text-sm text-red-700">{{ mensagem }}</p>
+      }
+
+      <ul class="space-y-3">
+        @for (linha of itens; track linha.chave; let i = $index) {
+          <li class="rounded-2xl border border-stone-200 bg-white p-3">
+            <div class="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-3 sm:grid-cols-[minmax(0,1fr)_7rem_auto] sm:items-start">
+              <div>
+                <label [for]="'item-nome-' + linha.chave" class="mb-2 block text-sm font-semibold">
+                  Item {{ i + 1 }}
+                </label>
+
+                <input
+                  type="text"
+                  class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-700 aria-invalid:bg-red-50"
+                  maxlength="100"
+                  autocomplete="off"
+                  [id]="'item-nome-' + linha.chave"
+                  [name]="'item-nome-' + linha.chave"
+                  [(ngModel)]="linha.nome"
+                  [disabled]="salvando()"
+                  [attr.aria-invalid]="erroNome(i) ? 'true' : null"
+                  [attr.aria-describedby]="erroNome(i) ? 'erro-item-nome-' + linha.chave : null"
+                />
+              </div>
+
+              <div>
+                <label [for]="'item-quantidade-' + linha.chave" class="mb-2 block text-sm font-semibold">
+                  <span aria-hidden="true">Qtd.</span>
+                  <span class="sr-only">Quantidade do item {{ i + 1 }}</span>
+                </label>
+
+                <input
+                  type="number"
+                  class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-700 aria-invalid:bg-red-50"
+                  min="1"
+                  max="999"
+                  step="1"
+                  inputmode="numeric"
+                  [id]="'item-quantidade-' + linha.chave"
+                  [name]="'item-quantidade-' + linha.chave"
+                  [(ngModel)]="linha.quantidade"
+                  [disabled]="salvando()"
+                  [attr.aria-invalid]="erroQuantidade(i) ? 'true' : null"
+                  [attr.aria-describedby]="erroQuantidade(i) ? 'erro-item-quantidade-' + linha.chave : null"
+                />
+              </div>
+
+              <button
+                type="button"
+                class="col-span-2 min-h-11 cursor-pointer rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 enabled:hover:bg-red-100 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-1 sm:mt-7"
+                [disabled]="salvando() || itens.length <= 1"
+                [attr.aria-label]="'Remover item ' + (linha.nome.trim() || i + 1)"
+                (click)="removerItem(i)"
+              >
+                Remover
+              </button>
+            </div>
+
+            @if (erroNome(i); as mensagem) {
+              <p [id]="'erro-item-nome-' + linha.chave" class="mt-1 text-sm text-red-700">
+                {{ mensagem }}
+              </p>
+            }
+
+            @if (erroQuantidade(i); as mensagem) {
+              <p [id]="'erro-item-quantidade-' + linha.chave" class="mt-1 text-sm text-red-700">
+                {{ mensagem }}
+              </p>
+            }
+          </li>
+        }
+      </ul>
+
+      <button
+        id="adicionar-item-mala"
+        type="button"
+        class="min-h-11 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        [disabled]="salvando() || itens.length >= maxItens"
+        (click)="adicionarItem()"
+      >
+        Adicionar item
+      </button>
+    </fieldset>
+
+    @if (removidos.length > 0) {
+      <div
+        role="status"
+        class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+      >
+        <p class="font-semibold">
+          Itens removidos. Ao salvar, as marcações que os pais já fizeram neles serão perdidas:
+        </p>
+
+        <ul class="mt-2 space-y-2">
+          @for (linha of removidos; track linha.chave) {
+            <li class="flex flex-wrap items-center justify-between gap-2">
+              <span class="wrap-break-word">{{ linha.quantidade }} × {{ linha.nome }}</span>
+
+              <button
+                type="button"
+                class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+                [disabled]="salvando() || itens.length >= maxItens"
+                [attr.aria-label]="'Desfazer remoção de ' + linha.nome"
+                (click)="restaurarItem(linha)"
+              >
+                Desfazer
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+        [disabled]="salvando()"
+        (click)="fechar.emit()"
+      >
+        Cancelar
+      </button>
+
+      <button type="submit" class="min-h-11 cursor-pointer rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white enabled:hover:bg-creche-verde/90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60" [disabled]="salvando()">
+        {{ salvando() ? 'Salvando…' : 'Salvar mala' }}
+      </button>
+    </div>
+  </form>
+</dialog>
