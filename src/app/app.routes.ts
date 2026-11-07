@@ -59,6 +59,29 @@ export const routes: Routes = [
           import('./atividades/atividades.component').then((m) => m.AtividadesComponent),
       },
       {
+        path: 'mala-virtual',
+        title: 'Mala Virtual | CrecheConecta',
+        canActivate: [permitirPerfis('PROFESSOR')],
+        loadComponent: () =>
+          import('./mala-virtual/mala-virtual.component').then((m) => m.MalaVirtualComponent),
+      },
+      {
+        path: 'familia/mala-virtual',
+        canActivate: [permitirPerfis('RESPONSAVEL')],
+        canActivateChild: [termoAceitoGuard],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Mala Virtual | CrecheConecta',
+            loadComponent: () =>
+              import('./mala-virtual/mala-virtual-filho.component').then(
+                (m) => m.MalaVirtualFilhoComponent,
+              ),
+          },
+        ],
+      },
+      {
         path: 'chamada',
         title: 'Chamada do dia | CrecheConecta',
         canActivate: [permitirPerfis('PROFESSOR')],

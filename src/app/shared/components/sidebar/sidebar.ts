@@ -124,7 +124,12 @@ export class Sidebar {
       itens.push(
         { titulo: 'Chamada do dia', caminho: '/chamada' },
         { titulo: 'Atividades', caminho: '/atividades' },
+        { titulo: 'Mala Virtual', caminho: '/mala-virtual' },
       );
+    }
+
+    if (perfil === 'RESPONSAVEL') {
+      itens.push({ titulo: 'Mala Virtual', caminho: '/familia/mala-virtual' });
     }
 
     itens.push({ titulo: 'Termos e privacidade', caminho: '/informacoes/termos' });
