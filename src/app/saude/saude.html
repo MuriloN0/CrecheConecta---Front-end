@@ -1,81 +1,147 @@
-<div class="portal">
-  <aside class="sidebar">
-    <a class="marca" href="#">CrecheConecta</a>
-    <nav>
-      <a href="#">Informações Relevantes</a>
-      <a href="#" (click)="$event.preventDefault(); verTermos()">Termos de Uso</a>
-    </nav>
-  </aside>
-  <div class="conteudo">
-    <header class="topo">
-      <div>
-        <strong>Portal dos Pais</strong>
-        <span>Creche Municipal Girassol</span>
-      </div>
-    </header>
-    <main>
-      <div class="titulo">
-        <div>
-          <h1>Informações Relevantes</h1>
-          <p>Informações relevantes sobre alergias, condições ou observações do aluno.</p>
-        </div>
-        <button class="principal" type="button" (click)="irParaCadastro()">
-          Cadastrar nova informação
+<section class="space-y-5" aria-labelledby="titulo-saude">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 id="titulo-saude" class="text-3xl font-bold text-creche-texto">
+        Informações relevantes
+      </h1>
+      <p class="mt-1 text-sm text-stone-600">
+        Alergias, condições de saúde e outras informações importantes sobre a criança.
+      </p>
+    </div>
+    <button type="button" [class]="primario"
+      [disabled]="ocupada() || !familia.alunoId()" (click)="abrirNovo()">
+      Nova informação
+    </button>
+  </header>
+
+  @if (ocupada()) {
+    <p role="status" class="text-sm text-stone-600">Processando…</p>
+  }
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">{{ erro() }}</p>
+  }
+  @if (sucesso()) {
+    <p role="status" class="rounded-xl bg-green-50 p-4 text-sm text-green-900">{{ sucesso() }}</p>
+  }
+
+  @if (familia.filhos().length > 1) {
+    <label class="grid max-w-md gap-1 text-sm font-semibold">
+      Criança
+      <select [class]="campo" name="crianca" [ngModel]="familia.alunoId()"
+        (ngModelChange)="selecionarFilho($event)" [disabled]="ocupada()">
+        @for (filho of familia.filhos(); track filho.id) {
+          <option [value]="filho.id">{{ filho.nome }}</option>
+        }
+      </select>
+    </label>
+  } @else if (familia.filho(); as filho) {
+    <p class="text-sm text-stone-600">Criança: <strong>{{ filho.nome }}</strong></p>
+  }
+
+  @if (formularioAberto()) {
+    <form [class]="cartao" (ngSubmit)="salvar()" aria-labelledby="titulo-form-saude">
+      <h2 id="titulo-form-saude" class="text-xl font-bold">
+        {{ editando() ? 'Editar informação' : 'Cadastrar informação' }}
+      </h2>
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Título</span>
+        <input name="nome" type="text" [class]="campo" [(ngModel)]="nome"
+          required maxlength="120" placeholder="Ex.: Alergia a amendoim"
+          [disabled]="ocupada()" />
+        <span class="text-xs font-normal text-stone-600">Até 120 caracteres.</span>
+      </label>
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Observações</span>
+        <textarea name="observacoes" rows="6" [class]="campo" [(ngModel)]="observacoes"
+          maxlength="5000" placeholder="Descreva o que a equipe precisa saber…"
+          [disabled]="ocupada()"></textarea>
+        <span class="text-xs font-normal text-stone-600">Até 5.000 caracteres.</span>
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" [class]="primario" [disabled]="ocupada()">
+          {{ editando() ? 'Salvar alterações' : 'Cadastrar' }}
+        </button>
+        <button type="button" [class]="botao" [disabled]="ocupada()"
+          (click)="fecharPaineis()">
+          Cancelar
         </button>
       </div>
-      <section class="cartao">
-        @if (carregando()) {
-          <p class="mensagem">Carregando...</p>
-        }
-        @if (erro()) {
-          <p class="mensagem erro">{{ erro() }}</p>
-        }
-        @if (!carregando()) {
-          <table>
-            <thead>
-              <tr>
-                <th>NOME</th>
-                <th>DATA CRIAÇÃO</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (ficha of fichas(); track ficha.id) {
-                <tr>
-                  <td>{{ ficha.nome }}</td>
-                  <td>{{ ficha.dataCriacao | date: 'dd/MM/yyyy' }}</td>
-                  <td>
-                    <div class="acoes">
-                      <button class="ver" type="button" (click)="visualizar(ficha)">
-                        Visualizar
-                      </button>
-                      <button class="perigo" type="button" (click)="pedirExclusao(ficha)">
-                        Apagar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="3" class="vazio">Nenhuma informação cadastrada.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </section>
-    </main>
-  </div>
-</div>
+    </form>
+  }
 
-@if (fichaParaExcluir()) {
-  <div class="modal-fundo">
-    <div class="modal">
-      <h2>Tem certeza que deseja excluir?</h2>
-      <div class="modal-acoes">
-        <button class="ver" type="button" (click)="cancelarExclusao()">Não</button>
-        <button class="perigo" type="button" (click)="confirmarExclusao()">Sim</button>
+  @if (detalhe(); as ficha) {
+    <section [class]="cartao" aria-labelledby="titulo-detalhe-saude">
+      <h2 id="titulo-detalhe-saude" class="wrap-break-word text-xl font-bold">{{ ficha.nome }}</h2>
+      <p class="whitespace-pre-wrap wrap-break-word text-sm leading-relaxed">
+        {{ ficha.observacoes || 'Sem observações.' }}
+      </p>
+      <p class="text-xs text-stone-600">
+        Cadastrada em {{ ficha.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}
+        @if (ficha.dataAtualizacao !== ficha.dataCriacao) {
+          · Atualizada em {{ ficha.dataAtualizacao | date: 'dd/MM/yyyy HH:mm' }}
+        }
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="editar(ficha)">
+          Editar
+        </button>
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
+          Fechar
+        </button>
       </div>
-    </div>
-  </div>
-}
+    </section>
+  }
+
+  @if (paraExcluir(); as ficha) {
+    <section [class]="cartao" aria-labelledby="titulo-exclusao-saude">
+      <h2 id="titulo-exclusao-saude" class="text-xl font-bold">Excluir informação</h2>
+      <p class="wrap-break-word text-sm">
+        A informação “{{ ficha.nome }}” será excluída e a equipe da creche deixará de vê-la.
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" [disabled]="ocupada()" (click)="confirmarExclusao()"
+          class="cursor-pointer rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold
+                 text-white hover:bg-red-800 focus-visible:ring-2 focus-visible:ring-red-700
+                 focus-visible:ring-offset-2 disabled:opacity-50">
+          Confirmar exclusão
+        </button>
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
+          Cancelar
+        </button>
+      </div>
+    </section>
+  }
+
+  <section class="space-y-4" aria-label="Informações cadastradas" [attr.aria-busy]="ocupada()">
+    <button type="button" [class]="botao" [disabled]="ocupada()" (click)="atualizar()">
+      Atualizar lista
+    </button>
+    @for (ficha of fichas(); track ficha.id) {
+      <article [class]="cartao">
+        <header class="flex flex-wrap items-start justify-between gap-3">
+          <h2 class="min-w-0 wrap-break-word text-lg font-bold">{{ ficha.nome }}</h2>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" [class]="botao" [disabled]="ocupada()"
+              [attr.aria-label]="'Visualizar ' + ficha.nome" (click)="ver(ficha)">
+              Visualizar
+            </button>
+            <button type="button" [class]="botao" [disabled]="ocupada()"
+              [attr.aria-label]="'Editar ' + ficha.nome" (click)="editar(ficha)">
+              Editar
+            </button>
+            <button type="button" [class]="botao" [disabled]="ocupada()"
+              [attr.aria-label]="'Excluir ' + ficha.nome" (click)="pedirExclusao(ficha)">
+              Excluir
+            </button>
+          </div>
+        </header>
+      </article>
+    } @empty {
+      @if (!ocupada() && !falhaListagem()) {
+        <p class="rounded-2xl border border-stone-200 bg-white p-5 text-sm text-stone-600">
+          {{ familia.alunoId() ? 'Nenhuma informação cadastrada para esta criança.' : 'Nenhuma criança vinculada a esta conta.' }}
+        </p>
+      }
+    }
+  </section>
+</section>
