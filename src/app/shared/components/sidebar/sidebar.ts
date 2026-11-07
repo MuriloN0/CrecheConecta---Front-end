@@ -117,6 +117,7 @@ export class Sidebar {
         { titulo: 'Turmas', caminho: '/turmas' },
         { titulo: 'Professores', caminho: '/professores' },
         { titulo: 'Equipe de Direção', caminho: '/direcao' },
+        { titulo: 'Solicitação de materiais', caminho: '/solicitacoes-materiais' },
       );
     }
 
@@ -125,6 +126,7 @@ export class Sidebar {
         { titulo: 'Chamada do dia', caminho: '/chamada' },
         { titulo: 'Atividades', caminho: '/atividades' },
         { titulo: 'Mala Virtual', caminho: '/mala-virtual' },
+        { titulo: 'Solicitação de materiais', caminho: '/solicitacoes-materiais' },
       );
     }
 
