@@ -112,6 +112,29 @@ export const routes: Routes = [
         loadComponent: () => import('./direcao/direcao').then((m) => m.Direcao),
       },
       {
+        path: 'solicitacoes-materiais',
+        canActivate: [permitirPerfis('PROFESSOR', 'DIRECAO')],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Solicitação de materiais | CrecheConecta',
+            loadComponent: () =>
+              import('./solicitacoes-materiais/solicitacoes-materiais.component').then(
+                (m) => m.SolicitacoesMateriaisComponent,
+              ),
+          },
+          {
+            path: ':id',
+            title: 'Detalhe da solicitação | CrecheConecta',
+            loadComponent: () =>
+              import('./solicitacoes-materiais/solicitacao-material-detalhe.component').then(
+                (m) => m.SolicitacaoMaterialDetalheComponent,
+              ),
+          },
+        ],
+      },
+      {
         path: 'comunicados',
         title: 'Comunicados | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],
