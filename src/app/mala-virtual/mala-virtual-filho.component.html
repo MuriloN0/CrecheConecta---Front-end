@@ -1,0 +1,261 @@
+<section aria-labelledby="titulo-mala-filho" class="space-y-5">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 id="titulo-mala-filho" class="text-2xl font-bold text-creche-texto md:text-3xl">
+        Mala Virtual
+      </h1>
+
+      <p class="mt-2 text-sm text-stone-600">
+        Veja o que levar para a aula e marque o que você já mandou na mochila.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="min-h-11 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+      [disabled]="carregando()"
+      (click)="atualizar()"
+    >
+      {{ carregando() ? 'Atualizando…' : 'Atualizar' }}
+    </button>
+  </div>
+
+  @if (filhos().length > 1) {
+    <div class="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6">
+      <label for="filho-mala" class="mb-2 block text-sm font-semibold">Criança</label>
+
+      <select
+        id="filho-mala"
+        class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3
+               text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2
+               focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+        [ngModel]="alunoId()"
+        [disabled]="carregando()"
+        (ngModelChange)="selecionar($event)"
+      >
+        @for (filho of filhos(); track filho.id) {
+          <option [value]="filho.id">{{ filho.nome }}</option>
+        }
+      </select>
+    </div>
+  }
+
+  @if (aviso()) {
+    <p
+      role="status"
+      class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+    >
+      {{ aviso() }}
+    </p>
+  }
+
+  @if (erro()) {
+    <div
+      role="alert"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-xl border
+             border-red-200 bg-red-50 p-4 text-sm text-red-800"
+    >
+      <p>{{ erro() }}</p>
+      <button type="button" class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60" [disabled]="carregando()" (click)="atualizar()">
+        Tentar novamente
+      </button>
+    </div>
+  }
+
+  <section aria-labelledby="titulo-lista-mala-filho" [attr.aria-busy]="carregando()">
+    <h2 id="titulo-lista-mala-filho" class="sr-only">
+      Malas de {{ filhoSelecionado()?.nome || 'criança' }}
+    </h2>
+
+    @if (carregando()) {
+      <p role="status" class="rounded-2xl border border-stone-200 bg-white p-4 text-sm text-stone-600 shadow-sm sm:p-6">Carregando a mala…</p>
+    } @else if (erro()) {
+    } @else if (filhos().length === 0) {
+      <div class="space-y-2 rounded-2xl border border-stone-200 bg-white p-4 text-center shadow-sm sm:p-6">
+        <p class="font-semibold">Nenhuma criança vinculada a esta conta.</p>
+        <p class="text-sm text-stone-600">
+          Se isso não estiver certo, fale com a direção da creche.
+        </p>
+      </div>
+    } @else if (filhoSelecionado(); as filho) {
+      <p class="mb-3 text-sm text-stone-600">
+        <span class="font-semibold text-creche-texto">{{ filho.nome }}</span>
+        · {{ filho.turma ? 'Turma ' + filho.turma.nome : 'Sem turma atual' }}
+      </p>
+
+      @if (!filho.turma) {
+        <div class="space-y-2 rounded-2xl border border-stone-200 bg-white p-4 text-center shadow-sm sm:p-6">
+          <p class="font-semibold">{{ filho.nome }} ainda não está em uma turma.</p>
+          <p class="text-sm text-stone-600">
+            Quando a direção vincular a criança a uma turma, as listas de materiais
+            aparecerão aqui.
+          </p>
+        </div>
+      } @else if (malas().length === 0) {
+        <div class="space-y-2 rounded-2xl border border-stone-200 bg-white p-4 text-center shadow-sm sm:p-6">
+          <p class="font-semibold">Nenhuma mala por enquanto.</p>
+          <p class="text-sm text-stone-600">
+            Quando o professor montar a lista de materiais da aula, ela aparece aqui.
+          </p>
+        </div>
+      } @else {
+        <ul class="space-y-4">
+          @for (mala of malas(); track mala.id) {
+            <li>
+              <article class="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6" [attr.aria-labelledby]="'titulo-mala-' + mala.id">
+                <header class="space-y-2">
+                  <div class="flex flex-wrap items-start justify-between gap-2">
+                    <h3
+                      [id]="'titulo-mala-' + mala.id"
+                      class="min-w-0 flex-1 text-lg font-bold wrap-break-word"
+                    >
+                      {{ mala.titulo }}
+                    </h3>
+
+                    @if (mala.data === hoje) {
+                      <span class="rounded-full bg-creche-pessego px-2 py-0.5 text-xs font-semibold text-creche-texto">
+                        Hoje
+                      </span>
+                    }
+                  </div>
+
+                  <p class="text-sm text-stone-600">
+                    Aula de
+                    <time [attr.datetime]="mala.data">
+                      {{ mala.data | date: 'dd/MM/yyyy' : 'UTC' }}
+                    </time>
+                  </p>
+
+                  <p
+                    class="inline-block rounded-full px-3 py-1 text-sm font-semibold"
+                    [class.bg-creche-verde]="mala.itensPendentes === 0"
+                    [class.text-white]="mala.itensPendentes === 0"
+                    [class.bg-amber-100]="mala.itensPendentes > 0"
+                    [class.text-amber-900]="mala.itensPendentes > 0"
+                  >
+                    @if (mala.itensPendentes === 0) {
+                      Tudo pronto
+                    } @else {
+                      {{ mala.itensPendentes }}
+                      {{ mala.itensPendentes === 1 ? 'item pendente' : 'itens pendentes' }}
+                    }
+                  </p>
+                </header>
+
+                @if (!mala.podeMarcar) {
+                  <p class="rounded-xl bg-stone-100 p-3 text-sm text-stone-700">
+                    A aula já passou. Esta mala está disponível só para consulta.
+                  </p>
+                }
+
+                @if (mala.observacao) {
+                  <p class="whitespace-pre-wrap wrap-break-word rounded-xl bg-creche-creme p-3 text-sm">
+                    <span class="font-semibold">Recado do professor:</span>
+                    {{ mala.observacao }}
+                  </p>
+                }
+
+                @if (erroPorMala()[mala.id]; as mensagem) {
+                  <p
+                    role="alert"
+                    class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+                  >
+                    {{ mensagem }}
+                  </p>
+                }
+
+                <p class="sr-only" aria-live="polite">{{ confirmacaoPorMala()[mala.id] }}</p>
+
+                <ul class="divide-y divide-stone-100">
+                  @for (item of mala.itens; track item.id) {
+                    <li class="py-3">
+                      <div class="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          class="mt-0.5 size-6 shrink-0 cursor-pointer accent-creche-verde focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+                          [id]="'item-' + chave(mala, item)"
+                          [checked]="item.enviado"
+                          [disabled]="!mala.podeMarcar || salvandoItem(mala, item)"
+                          (change)="alternarEnviado(mala, item, $event)"
+                        />
+
+                        <label
+                          [for]="'item-' + chave(mala, item)"
+                          class="min-w-0 flex-1 cursor-pointer wrap-break-word"
+                          [class.cursor-not-allowed]="!mala.podeMarcar"
+                        >
+                          <span class="font-semibold">{{ item.quantidade }} × {{ item.nome }}</span>
+                          <span class="block text-sm text-stone-600">
+                            @if (salvandoItem(mala, item)) {
+                              Salvando…
+                            } @else {
+                              {{ item.enviado ? 'Enviado' : 'Ainda não enviado' }}
+                            }
+                          </span>
+                        </label>
+                      </div>
+
+                      @if (mala.podeMarcar) {
+                        @if (observacaoVisivel(mala, item)) {
+                          <div class="ml-9 mt-2 space-y-2">
+                            <label [for]="'observacao-' + chave(mala, item)" class="block text-xs font-semibold">
+                              Observação sobre {{ item.nome }} (opcional)
+                            </label>
+
+                            <textarea
+                              class="block min-h-11 w-full resize-y rounded-xl border border-stone-300 bg-white p-3
+                                     text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2
+                                     focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+                              rows="2"
+                              maxlength="500"
+                              [id]="'observacao-' + chave(mala, item)"
+                              [ngModel]="rascunho(mala, item)"
+                              (ngModelChange)="alterarRascunho(mala, item, $event)"
+                              [disabled]="salvandoItem(mala, item)"
+                              [attr.aria-describedby]="'limite-' + chave(mala, item)"
+                            ></textarea>
+
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                              <span [id]="'limite-' + chave(mala, item)" class="text-xs text-stone-600">
+                                {{ rascunho(mala, item).length }}/500
+                              </span>
+
+                              <button
+                                type="button"
+                                class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+                                [disabled]="salvandoItem(mala, item) || !observacaoAlterada(mala, item)"
+                                (click)="salvarObservacao(mala, item)"
+                              >
+                                {{ salvandoItem(mala, item) ? 'Salvando…' : 'Salvar observação' }}
+                              </button>
+                            </div>
+                          </div>
+                        } @else {
+                          <button
+                            type="button"
+                            class="ml-9 mt-1 rounded-lg px-1 text-sm font-semibold text-creche-verde
+                                   underline-offset-2 hover:underline focus-visible:outline-2
+                                   focus-visible:outline-offset-2 focus-visible:outline-creche-verde"
+                            [attr.aria-label]="'Adicionar observação sobre ' + item.nome"
+                            (click)="mostrarObservacao(mala, item)"
+                          >
+                            + Adicionar observação
+                          </button>
+                        }
+                      } @else if (item.observacao) {
+                        <p class="ml-9 mt-2 whitespace-pre-wrap wrap-break-word rounded-xl bg-creche-creme p-2 text-sm text-stone-700">
+                          <span class="font-semibold">Sua observação:</span>
+                          {{ item.observacao }}
+                        </p>
+                      }
+                    </li>
+                  }
+                </ul>
+              </article>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </section>
+</section>
