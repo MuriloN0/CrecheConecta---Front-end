@@ -5,11 +5,12 @@ import { firstValueFrom } from 'rxjs';
 import { Comunicado } from '../../comunicados/comunicados.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService, ResumoDirecao } from './dashboard.service';
+import { PainelFamilia } from './painel-familia';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, RouterLink],
+  imports: [DatePipe, DecimalPipe, RouterLink, PainelFamilia],
   templateUrl: './home.html',
 })
 export class Home implements OnInit {
@@ -34,7 +35,6 @@ export class Home implements OnInit {
 
   readonly indicadores = computed(() => {
     const resumo = this.resumo();
-    const totalComunicados = this.totalComunicados();
 
     return [
       {
@@ -49,7 +49,7 @@ export class Home implements OnInit {
       },
       {
         titulo: 'Comunicados publicados',
-        valor: totalComunicados,
+        valor: this.totalComunicados(),
         caminho: '/comunicados',
       },
     ];
@@ -73,6 +73,7 @@ export class Home implements OnInit {
     ].map((grupo) => {
       const total = grupo.ativos + grupo.inativos;
       const percentualAtivos = total > 0 ? (grupo.ativos / total) * 100 : 0;
+
       return { ...grupo, total, percentualAtivos };
     });
   });

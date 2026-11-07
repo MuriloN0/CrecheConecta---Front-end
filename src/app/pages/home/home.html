@@ -13,7 +13,11 @@
           Olá, {{ usuario()?.nome || 'bem-vindo(a)' }}!
         </h1>
         <p class="mt-1 text-sm text-stone-600">
-          Veja os comunicados recentes da creche.
+          @if (perfil() === 'RESPONSAVEL') {
+            Acompanhe a rotina da criança e os avisos da creche.
+          } @else {
+            Veja os comunicados recentes da creche.
+          }
         </p>
       }
     </div>
@@ -26,7 +30,13 @@
              text-sm font-semibold hover:bg-stone-50 focus-visible:ring-2
              focus-visible:ring-creche-verde disabled:cursor-wait disabled:opacity-50"
     >
-      {{ carregando() ? 'Atualizando…' : 'Atualizar painel' }}
+      @if (carregando()) {
+        Atualizando…
+      } @else if (perfil() === 'DIRECAO') {
+        Atualizar painel
+      } @else {
+        Atualizar mural
+      }
     </button>
   </header>
 
@@ -110,6 +120,10 @@
         }
       </section>
     }
+  }
+
+  @if (perfil() === 'RESPONSAVEL') {
+    <app-painel-familia />
   }
 
   <section
