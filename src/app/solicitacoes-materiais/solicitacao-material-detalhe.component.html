@@ -1,0 +1,359 @@
+<section aria-labelledby="titulo-detalhe-solicitacao" class="space-y-5">
+
+  <div>
+    <a
+      routerLink="/solicitacoes-materiais"
+      class="inline-flex min-h-11 items-center rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde"
+    >
+      Voltar para a lista
+    </a>
+  </div>
+
+
+  @if (sucesso()) {
+    <p
+      role="status"
+      class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900"
+    >
+      {{ sucesso() }}
+    </p>
+  }
+
+  @if (erro()) {
+    <p
+      role="alert"
+      class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+    >
+      {{ erro() }}
+    </p>
+  }
+
+
+  @if (carregando() && !solicitacao()) {
+    <h1 id="titulo-detalhe-solicitacao" class="sr-only">Detalhe da solicitação</h1>
+
+    <p role="status" class="text-sm text-stone-600">Carregando solicitação…</p>
+
+  } @else if (solicitacao(); as solicitacao) {
+
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1
+          id="titulo-detalhe-solicitacao"
+          class="text-2xl font-bold text-creche-texto wrap-break-word md:text-3xl"
+        >
+          {{ solicitacao.titulo }}
+        </h1>
+
+        <div class="mt-2 flex flex-wrap gap-2">
+          <span
+            class="rounded-full px-2 py-0.5 text-xs font-semibold"
+            [class]="coresPrioridade[solicitacao.prioridade]"
+          >
+            Prioridade {{ rotulosPrioridade[solicitacao.prioridade] }}
+          </span>
+
+          <span
+            class="rounded-full px-2 py-0.5 text-xs font-semibold"
+            [class]="coresStatus[solicitacao.status]"
+          >
+            {{ rotulosStatus[solicitacao.status] }}
+          </span>
+        </div>
+      </div>
+
+
+      <div class="flex w-full flex-wrap gap-2 sm:w-auto">
+        <button
+          type="button"
+          class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="ocupada()"
+          (click)="atualizar()"
+        >
+          {{ carregando() ? 'Atualizando…' : 'Atualizar dados' }}
+        </button>
+
+        @if (podeEditar()) {
+          <button
+            type="button"
+            class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="ocupada()"
+            (click)="abrirPainel('editar')"
+          >
+            Editar
+          </button>
+        }
+
+        @if (podeCancelar()) {
+          <button
+            type="button"
+            class="min-h-11 cursor-pointer rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 enabled:hover:bg-red-100 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="ocupada()"
+            (click)="abrirPainel('cancelar')"
+          >
+            Cancelar solicitação
+          </button>
+        }
+
+        @if (podeAtenderOuRecusar()) {
+          <button
+            type="button"
+            class="min-h-11 cursor-pointer rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white enabled:hover:bg-creche-verde/90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="ocupada()"
+            (click)="abrirPainel('atender')"
+          >
+            Atender
+          </button>
+
+          <button
+            type="button"
+            class="min-h-11 cursor-pointer rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 enabled:hover:bg-red-100 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="ocupada()"
+            (click)="abrirPainel('recusar')"
+          >
+            Recusar
+          </button>
+        }
+      </div>
+    </div>
+
+
+    @if (!aberta()) {
+      <p
+        role="status"
+        class="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm text-stone-700"
+      >
+        {{ avisoFinalizacao() }}
+      </p>
+    }
+
+
+    <div class="grid gap-5 lg:grid-cols-5">
+
+      <section
+        class="space-y-5 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6 lg:col-span-2"
+        aria-labelledby="titulo-dados-solicitacao"
+      >
+        <h2 id="titulo-dados-solicitacao" class="text-base font-bold">Dados da solicitação</h2>
+
+        <dl class="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1">
+          <div>
+            <dt class="text-stone-600">Sala</dt>
+            <dd class="font-semibold wrap-break-word">{{ solicitacao.sala }}</dd>
+          </div>
+
+          <div>
+            <dt class="text-stone-600">Professor(a)</dt>
+            <dd class="font-semibold wrap-break-word">{{ solicitacao.professorNome }}</dd>
+          </div>
+
+          <div>
+            <dt class="text-stone-600">Criada em</dt>
+            <dd class="font-semibold">
+              <time [attr.datetime]="solicitacao.criadoEm">
+                {{ solicitacao.criadoEm | date: 'dd/MM/yyyy HH:mm' }}
+              </time>
+            </dd>
+          </div>
+
+          <div>
+            <dt class="text-stone-600">Atualizada em</dt>
+            <dd class="font-semibold">
+              <time [attr.datetime]="solicitacao.atualizadoEm">
+                {{ solicitacao.atualizadoEm | date: 'dd/MM/yyyy HH:mm' }}
+              </time>
+            </dd>
+          </div>
+
+          @if (solicitacao.finalizadoEm) {
+            <div>
+              <dt class="text-stone-600">Finalizada em</dt>
+              <dd class="font-semibold">
+                <time [attr.datetime]="solicitacao.finalizadoEm">
+                  {{ solicitacao.finalizadoEm | date: 'dd/MM/yyyy HH:mm' }}
+                </time>
+              </dd>
+            </div>
+          }
+        </dl>
+
+
+        @if (solicitacao.descricao) {
+          <div>
+            <h3 class="mb-2 text-sm text-stone-600">Descrição</h3>
+
+            <p class="whitespace-pre-wrap wrap-break-word rounded-xl bg-creche-creme p-3 text-sm">
+              {{ solicitacao.descricao }}
+            </p>
+          </div>
+        }
+
+
+        <div>
+          <h3 class="text-base font-bold">Itens ({{ solicitacao.itens.length }})</h3>
+
+          <ul class="mt-2 flex flex-wrap gap-2">
+            @for (item of solicitacao.itens; track item.id) {
+              <li class="rounded-full border border-stone-200 bg-white px-3 py-1 text-sm wrap-break-word">
+                {{ item.quantidade }} × {{ item.nome }}
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+
+
+      <section
+        class="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-6 lg:col-span-3"
+        aria-labelledby="titulo-conversa-solicitacao"
+      >
+        <h2 id="titulo-conversa-solicitacao" class="text-base font-bold">Conversa</h2>
+
+        @if (mensagens().length === 0) {
+          <p class="text-sm text-stone-600">
+            Nenhuma mensagem ainda.
+            @if (podeConversar()) {
+              Use o campo abaixo para conversar sobre este pedido.
+            }
+          </p>
+        } @else {
+          <ol
+            #conversa
+            class="max-h-[28rem] space-y-3 overflow-y-auto pr-1"
+            aria-label="Mensagens da solicitação"
+          >
+            @for (mensagem of mensagens(); track mensagem.id) {
+              <li
+                class="max-w-[90%] rounded-2xl border p-3"
+                [class]="mensagemMinha(mensagem) ? coresMensagemMinha : coresMensagemOutros"
+              >
+                <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-600">
+                  <span class="text-sm font-semibold text-creche-texto wrap-break-word">
+                    {{ mensagem.autorNome }}
+                  </span>
+
+                  <span
+                    class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                    [class]="coresPerfilAutor[mensagem.autorPerfil]"
+                  >
+                    {{ rotulosPerfilAutor[mensagem.autorPerfil] }}
+                  </span>
+
+                  <time [attr.datetime]="mensagem.criadoEm">
+                    {{ mensagem.criadoEm | date: 'dd/MM/yyyy HH:mm' }}
+                  </time>
+                </p>
+
+                <p class="mt-2 whitespace-pre-wrap wrap-break-word text-sm">{{ mensagem.conteudo }}</p>
+              </li>
+            }
+          </ol>
+        }
+
+
+        @if (podeConversar()) {
+          <form class="space-y-3 border-t border-stone-100 pt-4" novalidate (ngSubmit)="enviarMensagem()">
+            <div>
+              <label for="nova-mensagem-solicitacao" class="mb-2 block text-sm font-semibold">
+                Nova mensagem
+              </label>
+
+              <textarea
+                id="nova-mensagem-solicitacao"
+                name="novaMensagem"
+                class="block min-h-11 w-full resize-y rounded-xl border border-stone-300 bg-white p-3
+                       text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2
+                       focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60
+                       aria-invalid:border-red-700 aria-invalid:bg-red-50"
+                rows="3"
+                [attr.maxlength]="maxMensagem"
+                [(ngModel)]="novaMensagem"
+                [disabled]="enviandoMensagem()"
+                [attr.aria-invalid]="erroMensagem() || erroCampoMensagem() ? 'true' : null"
+                [attr.aria-describedby]="erroMensagem() || erroCampoMensagem() ? 'erro-nova-mensagem' : 'ajuda-nova-mensagem'"
+                (ngModelChange)="erroMensagem.set('')"
+              ></textarea>
+
+              @if (erroCampoMensagem() || erroMensagem(); as mensagemErro) {
+                <p id="erro-nova-mensagem" role="alert" class="mt-1 text-sm text-red-700">{{ mensagemErro }}</p>
+              } @else {
+                <p id="ajuda-nova-mensagem" class="mt-1 text-xs text-stone-600">
+                  {{ novaMensagem.length }}/{{ maxMensagem }} caracteres.
+                </p>
+              }
+            </div>
+
+            <div class="flex justify-end">
+              <button
+                type="submit"
+                class="min-h-11 w-full cursor-pointer rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white enabled:hover:bg-creche-verde/90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                [disabled]="ocupada()"
+              >
+                {{ enviandoMensagem() ? 'Enviando…' : 'Enviar mensagem' }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+
+    </div>
+
+  } @else {
+    <h1 id="titulo-detalhe-solicitacao" class="text-2xl font-bold text-creche-texto md:text-3xl">
+      Solicitação indisponível
+    </h1>
+
+    <p class="text-sm text-stone-600">
+      Não foi possível exibir esta solicitação. Volte para a lista e tente novamente.
+    </p>
+  }
+
+</section>
+
+
+@if (solicitacao(); as solicitacao) {
+
+  @if (painel() === 'editar') {
+    <app-modal-form-solicitacao
+      [solicitacao]="solicitacao"
+      [salvando]="salvando()"
+      [erro]="erroPainel()"
+      [camposServidor]="camposPainel()"
+      (salvar)="salvarEdicao($event)"
+      (fechar)="fecharPainel()"
+    />
+  }
+
+  @if (painel() === 'cancelar') {
+    <app-modal-cancelar-solicitacao
+      [solicitacao]="solicitacao"
+      [cancelando]="salvando()"
+      [erro]="erroPainel()"
+      (confirmar)="confirmarCancelamento()"
+      (fechar)="fecharPainel()"
+    />
+  }
+
+  @if (painel() === 'atender') {
+    <app-modal-atender-solicitacao
+      [solicitacao]="solicitacao"
+      [salvando]="salvando()"
+      [erro]="erroPainel()"
+      [camposServidor]="camposPainel()"
+      (confirmar)="confirmarAtendimento($event)"
+      (fechar)="fecharPainel()"
+    />
+  }
+
+  @if (painel() === 'recusar') {
+    <app-modal-recusar-solicitacao
+      [solicitacao]="solicitacao"
+      [salvando]="salvando()"
+      [erro]="erroPainel()"
+      [camposServidor]="camposPainel()"
+      (confirmar)="confirmarRecusa($event)"
+      (fechar)="fecharPainel()"
+    />
+  }
+
+}

@@ -1,0 +1,213 @@
+<section class="space-y-5" aria-labelledby="titulo-diario">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 id="titulo-diario" class="text-3xl font-bold text-creche-texto">
+        Diário de rotina
+      </h1>
+      <p class="mt-1 text-sm text-stone-600">
+        Registre como foi o dia de cada criança. Os responsáveis veem este diário no portal.
+      </p>
+    </div>
+    <button type="button" [class]="botao" [disabled]="ocupada()" (click)="atualizarTurmas()">
+      Atualizar diário
+    </button>
+  </header>
+
+  @if (ocupada()) {
+    <p role="status" class="text-sm text-stone-600">Processando…</p>
+  }
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">{{ erro() }}</p>
+  }
+  @if (sucesso()) {
+    <p role="status" class="rounded-xl bg-green-50 p-4 text-sm text-green-900">{{ sucesso() }}</p>
+  }
+
+  <section [class]="cartao" aria-label="Diário da turma" [attr.aria-busy]="ocupada()">
+    @if (turmas().length > 0) {
+      <div class="flex flex-wrap items-end gap-4">
+        <label class="grid min-w-56 gap-1 text-sm font-semibold">
+          Turma
+          <select [class]="campo" [ngModel]="turmaId()" name="turma"
+            (ngModelChange)="selecionarTurma($event)" [disabled]="ocupada()">
+            @for (turma of turmas(); track turma.id) {
+              <option [value]="turma.id">{{ turma.nome }} · Sala {{ turma.numeroSala }}</option>
+            }
+          </select>
+        </label>
+        <label class="grid gap-1 text-sm font-semibold">
+          Data
+          <input type="date" name="data" [class]="campo" [max]="hoje"
+            [ngModel]="data()" (ngModelChange)="mudarData($event)"
+            [disabled]="ocupada()" />
+        </label>
+      </div>
+    } @else if (!ocupada() && !erro()) {
+      <p class="text-sm text-stone-600">Nenhuma turma ativa vinculada à sua conta.</p>
+    }
+
+    @if (carregada()) {
+      @if (paraExcluir(); as aluno) {
+        <section class="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4"
+          aria-labelledby="titulo-exclusao">
+          <h2 id="titulo-exclusao" class="text-lg font-bold">Excluir diário</h2>
+          <p class="wrap-break-word text-sm">
+            O diário de {{ aluno.nome }} do dia {{ data() | date: 'dd/MM/yyyy' : 'UTC' }}
+            será excluído e deixará de aparecer para os responsáveis.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" [disabled]="ocupada()" (click)="confirmarExclusao()"
+              class="cursor-pointer rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold
+                     text-white hover:bg-red-800 focus-visible:ring-2 focus-visible:ring-red-700
+                     focus-visible:ring-offset-2 disabled:opacity-50">
+              Confirmar exclusão
+            </button>
+            <button type="button" [class]="botao" [disabled]="ocupada()"
+              (click)="fecharPaineis()">
+              Cancelar
+            </button>
+          </div>
+        </section>
+      }
+
+      <ul class="divide-y divide-stone-200">
+        @for (aluno of alunos(); track aluno.alunoId) {
+          <li class="space-y-3 py-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0 wrap-break-word">
+                <p class="font-semibold">{{ aluno.nome }}</p>
+                <p class="text-sm text-stone-600">
+                  {{ aluno.diario ? 'Diário preenchido' : 'Diário pendente' }}
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @if (!aluno.diario) {
+                  <button type="button" [class]="primario" [disabled]="ocupada()"
+                    [attr.aria-label]="'Registrar diário de ' + aluno.nome"
+                    (click)="abrirFormulario(aluno)">
+                    Registrar
+                  </button>
+                } @else if (aluno.diario.editavel) {
+                  <button type="button" [class]="botao" [disabled]="ocupada()"
+                    [attr.aria-label]="'Editar diário de ' + aluno.nome"
+                    (click)="abrirFormulario(aluno)">
+                    Editar
+                  </button>
+                  <button type="button" [class]="botao" [disabled]="ocupada()"
+                    [attr.aria-label]="'Excluir diário de ' + aluno.nome"
+                    (click)="pedirExclusao(aluno)">
+                    Excluir
+                  </button>
+                } @else {
+                  <span class="text-sm text-stone-600">Registrado por outro professor</span>
+                }
+              </div>
+            </div>
+
+            @if (aluno.diario; as registro) {
+              <dl class="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-5">
+                <div>
+                  <dt class="font-semibold">Alimentação</dt>
+                  <dd>{{ rotulos[registro.alimentacao] }}</dd>
+                </div>
+                <div>
+                  <dt class="font-semibold">Sono</dt>
+                  <dd>{{ rotulos[registro.sono] }}</dd>
+                </div>
+                <div>
+                  <dt class="font-semibold">Humor</dt>
+                  <dd>{{ rotulos[registro.humor] }}</dd>
+                </div>
+                <div>
+                  <dt class="font-semibold">Higiene</dt>
+                  <dd>{{ rotulos[registro.higiene] }}</dd>
+                </div>
+                <div>
+                  <dt class="font-semibold">Evacuação</dt>
+                  <dd>{{ registro.evacuacao ? 'Sim' : 'Não' }}</dd>
+                </div>
+              </dl>
+              @if (registro.observacaoProfessor) {
+                <p class="whitespace-pre-wrap wrap-break-word text-sm">
+                  {{ registro.observacaoProfessor }}
+                </p>
+              }
+            }
+
+            @if (alunoAberto()?.alunoId === aluno.alunoId) {
+              <form class="space-y-4 rounded-xl border border-stone-200 bg-stone-50 p-4"
+                #form="ngForm" (ngSubmit)="salvar()"
+                [attr.aria-label]="'Diário de ' + aluno.nome">
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <label class="grid gap-1 text-sm font-semibold">
+                    Alimentação
+                    <select name="alimentacao" [class]="campo" [(ngModel)]="alimentacao"
+                      required [disabled]="ocupada()">
+                      <option value="" disabled>Escolha…</option>
+                      @for (opcao of opcoesAlimentacao; track opcao.valor) {
+                        <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="grid gap-1 text-sm font-semibold">
+                    Sono
+                    <select name="sono" [class]="campo" [(ngModel)]="sono"
+                      required [disabled]="ocupada()">
+                      <option value="" disabled>Escolha…</option>
+                      @for (opcao of opcoesSono; track opcao.valor) {
+                        <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="grid gap-1 text-sm font-semibold">
+                    Humor
+                    <select name="humor" [class]="campo" [(ngModel)]="humor"
+                      required [disabled]="ocupada()">
+                      <option value="" disabled>Escolha…</option>
+                      @for (opcao of opcoesHumor; track opcao.valor) {
+                        <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="grid gap-1 text-sm font-semibold">
+                    Higiene
+                    <select name="higiene" [class]="campo" [(ngModel)]="higiene"
+                      required [disabled]="ocupada()">
+                      <option value="" disabled>Escolha…</option>
+                      @for (opcao of opcoesHigiene; track opcao.valor) {
+                        <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                <label class="flex items-center gap-2 text-sm font-semibold">
+                  <input type="checkbox" name="evacuacao" [(ngModel)]="evacuacao"
+                    [disabled]="ocupada()"
+                    class="h-4 w-4 accent-creche-verde focus-visible:ring-2 focus-visible:ring-creche-verde" />
+                  Houve evacuação
+                </label>
+                <label class="block space-y-1 text-sm font-semibold">
+                  <span>Observação para a família (opcional)</span>
+                  <textarea name="observacao" rows="3" [class]="campo" [(ngModel)]="observacao"
+                    maxlength="1000" [disabled]="ocupada()"></textarea>
+                  <span class="text-xs font-normal text-stone-600">Até 1.000 caracteres.</span>
+                </label>
+                <div class="flex flex-wrap gap-2">
+                  <button type="submit" [class]="primario" [disabled]="ocupada()">
+                    {{ aluno.diario ? 'Salvar alterações' : 'Salvar diário' }}
+                  </button>
+                  <button type="button" [class]="botao" [disabled]="ocupada()"
+                    (click)="fecharPaineis()">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            }
+          </li>
+        } @empty {
+          <li class="py-3 text-sm text-stone-600">Nenhum aluno ativo matriculado nesta turma.</li>
+        }
+      </ul>
+    }
+  </section>
+</section>

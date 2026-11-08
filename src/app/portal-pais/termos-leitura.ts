@@ -1,38 +1,41 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { PortalPaisApi } from './portal-pais.api';
 import { TermoStatus } from './portal-pais.model';
 
 @Component({
   selector: 'app-termos-leitura',
-  imports: [CommonModule],
+  standalone: true,
+  imports: [RouterLink],
   templateUrl: './termos-leitura.html',
-  styleUrl: './portal-pais.css',
 })
 export class TermosLeitura implements OnInit {
   private readonly api = inject(PortalPaisApi);
-  private readonly router = inject(Router);
 
   readonly termo = signal<TermoStatus | null>(null);
-  readonly carregando = signal(false);
-  readonly erro = signal<string | null>(null);
+  readonly ocupada = signal(false);
+  readonly erro = signal('');
+
+  readonly cartao = 'space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6';
+  readonly documento = 'max-h-96 overflow-y-auto whitespace-pre-wrap wrap-break-word rounded-xl border border-stone-300 bg-stone-50 p-4 text-sm leading-relaxed focus-visible:ring-2 focus-visible:ring-creche-verde';
+  readonly botao = 'inline-block cursor-pointer rounded-xl border border-stone-300 px-4 py-2 text-sm font-semibold hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-creche-verde';
 
   ngOnInit(): void {
-    this.carregando.set(true);
-    this.api.statusTermo().subscribe({
-      next: (status) => {
-        this.termo.set(status);
-        this.carregando.set(false);
-      },
-      error: () => {
-        this.erro.set('Nao foi possivel carregar os termos.');
-        this.carregando.set(false);
-      },
-    });
+    void this.carregar();
   }
 
-  voltar(): void {
-    this.router.navigate(['/informacoes']);
+  async carregar(): Promise<void> {
+    if (this.ocupada()) return;
+    this.ocupada.set(true);
+    this.erro.set('');
+    try {
+      this.termo.set(await firstValueFrom(this.api.statusTermo()));
+    } catch {
+      this.termo.set(null);
+      this.erro.set('Não foi possível carregar os termos. Tente novamente.');
+    } finally {
+      this.ocupada.set(false);
+    }
   }
 }

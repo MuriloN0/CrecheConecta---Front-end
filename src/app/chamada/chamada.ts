@@ -88,34 +88,38 @@ export class Chamada implements OnInit {
     });
   }
 
-  marcar(aluno: AlunoChamada, presente: boolean): Promise<void> {
-    if (!this.chamadaCarregada() || aluno.presente === presente) {
-      return Promise.resolve();
+  marcar(aluno: AlunoChamada, presente: boolean | null): Promise<void> {
+  if (!this.chamadaCarregada() || aluno.presente === presente) {
+    return Promise.resolve();
+  }
+
+  return this.executar(async () => {
+    const turmaId = this.turmaId();
+    const data = this.data();
+
+    if (data !== this.hoje()) {
+      this.chamadaCarregada.set(false);
+      this.erro.set('O dia mudou. Clique em Atualizar chamada para continuar.');
+      return;
     }
 
-    return this.executar(async () => {
-      const turmaId = this.turmaId();
-      const data = this.data();
+    const registro = await firstValueFrom(
+      this.servico.registrar(turmaId, data, aluno, presente),
+    );
 
-      if (data !== this.hoje()) {
-        this.chamadaCarregada.set(false);
-        this.erro.set('O dia mudou. Clique em Atualizar chamada para continuar.');
-        return;
-      }
+    this.alunos.update((alunos) => alunos.map((item) =>
+      item.alunoId === registro.alunoId
+        ? { ...item, presente: registro.presente, versao: registro.versao }
+        : item,
+    ));
 
-      const registro = await firstValueFrom(
-        this.servico.registrar(turmaId, data, aluno, presente),
-      );
-
-      this.alunos.update((alunos) => alunos.map((item) =>
-        item.alunoId === registro.alunoId
-          ? { ...item, presente: registro.presente, versao: registro.versao }
-          : item,
-      ));
-
-      this.sucesso.set(`Chamada de ${aluno.nome} atualizada.`);
-    });
-  }
+    this.sucesso.set(
+      registro.presente === null
+        ? `A chamada de ${aluno.nome} voltou para pendente.`
+        : `Chamada de ${aluno.nome} atualizada.`,
+    );
+  });
+}
 
   private hoje(): string {
     return this.calendario.format(new Date());
