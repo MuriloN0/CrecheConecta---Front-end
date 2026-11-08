@@ -4,14 +4,10 @@ import { inject, Injectable } from '@angular/core';
 export interface Aluno {
   id: string;
   nome: string;
-  dataNascimento: string;
+  dataNascimento: string | null;
+  anoNascimento: number | null;
   ativo: boolean;
   versao: number;
-}
-
-export interface DadosAluno {
-  nome: string;
-  dataNascimento: string;
 }
 
 interface PaginaAlunos {
@@ -37,15 +33,18 @@ export class AlunosApi {
     return this.http.get<PaginaAlunos>(this.url, { params });
   }
 
-  cadastrar(dados: DadosAluno) {
-    return this.http.post<Aluno>(this.url, dados);
+  listarDisponiveis(pagina: number) {
+    return this.http.get<PaginaAlunos>(`${this.url}/disponiveis`, {
+      params: { pagina, tamanho: 20 },
+    });
   }
 
-  atualizar(aluno: Aluno, dados: DadosAluno) {
-    return this.http.put<Aluno>(`${this.url}/${aluno.id}`, {
-      ...dados,
-      versao: aluno.versao,
-    });
+  convidar(nome: string, email: string) {
+    return this.http.post<{ mensagem: string }>(`${this.url}/convites`, { nome, email });
+  }
+
+  consultar(id: string) {
+    return this.http.get<Aluno>(`${this.url}/${id}`);
   }
 
   inativar(aluno: Aluno) {

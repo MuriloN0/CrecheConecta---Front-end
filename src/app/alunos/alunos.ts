@@ -28,15 +28,11 @@ export class Alunos implements OnInit {
   readonly sucesso = signal('');
 
   readonly formularioAberto = signal(false);
-  readonly editando = signal<Aluno | null>(null);
+  readonly consultando = signal<Aluno | null>(null);
   readonly paraInativar = signal<Aluno | null>(null);
 
-  readonly hoje = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'America/Sao_Paulo',
-  }).format(new Date());
-
   nome = '';
-  dataNascimento = '';
+  email = '';
 
   ngOnInit(): void {
     void this.carregar(0);
@@ -67,15 +63,28 @@ export class Alunos implements OnInit {
     void this.carregar(pagina);
   }
 
-  abrirFormulario(aluno: Aluno | null = null): void {
+  abrirFormulario(): void {
     if (this.ocupado()) return;
 
     this.fecharPaineis();
     this.limparMensagens();
-    this.editando.set(aluno);
-    this.nome = aluno?.nome ?? '';
-    this.dataNascimento = aluno?.dataNascimento ?? '';
+    this.nome = '';
+    this.email = '';
     this.formularioAberto.set(true);
+  }
+
+  async consultar(aluno: Aluno): Promise<void> {
+    if (this.ocupado()) return;
+    this.fecharPaineis();
+    this.limparMensagens();
+    this.salvando.set(true);
+    try {
+      this.consultando.set(await firstValueFrom(this.api.consultar(aluno.id)));
+    } catch (erro: unknown) {
+      this.erro.set(this.mensagemErro(erro));
+    } finally {
+      this.salvando.set(false);
+    }
   }
 
   pedirInativacao(aluno: Aluno): void {
@@ -88,7 +97,7 @@ export class Alunos implements OnInit {
 
   fecharPaineis(): void {
     this.formularioAberto.set(false);
-    this.editando.set(null);
+    this.consultando.set(null);
     this.paraInativar.set(null);
   }
 
@@ -99,34 +108,15 @@ export class Alunos implements OnInit {
 
     const nome = this.nome.trim();
     if (!nome || nome.length > 150) {
-      this.erro.set('Informe um nome com até 150 caracteres.');
+      this.erro.set('Informe o nome do responsável com até 150 caracteres.');
       return;
     }
-
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(this.dataNascimento) ||
-      this.dataNascimento > this.hoje
-    ) {
-      this.erro.set('Informe uma data de nascimento válida até hoje.');
-      return;
-    }
-
-    const aluno = this.editando();
-    const dados = { nome, dataNascimento: this.dataNascimento };
 
     this.salvando.set(true);
-
     try {
-      if (aluno) {
-        await firstValueFrom(this.api.atualizar(aluno, dados));
-      } else {
-        await firstValueFrom(this.api.cadastrar(dados));
-        this.filtro.set('ativos');
-      }
-
+      const convite = await firstValueFrom(this.api.convidar(nome, this.email.trim()));
       this.fecharPaineis();
-      this.sucesso.set(aluno ? 'Aluno atualizado.' : 'Aluno cadastrado.');
-      await this.carregar(aluno ? this.pagina() : 0);
+      this.sucesso.set(convite.mensagem);
     } catch (erro: unknown) {
       this.erro.set(this.mensagemErro(erro));
     } finally {
@@ -192,7 +182,9 @@ export class Alunos implements OnInit {
         case 0:
           return 'Não foi possível conectar à API.';
         case 400:
-          return 'Confira o nome, a data e a situação do aluno.';
+          return typeof erro.error?.detail === 'string'
+            ? erro.error.detail
+            : 'Confira o nome e o e-mail do responsável.';
         case 401:
           return 'Sua sessão expirou. Entre novamente.';
         case 403:

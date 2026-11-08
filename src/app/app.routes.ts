@@ -6,8 +6,7 @@ import { termoAceitoGuard } from './portal-pais/termo.guard';
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () =>
-      import('./layouts/auth-layout/auth-layout').then((m) => m.AuthLayout),
+    loadComponent: () => import('./layouts/auth-layout/auth-layout').then((m) => m.AuthLayout),
     children: [
       {
         path: 'login',
@@ -21,12 +20,18 @@ export const routes: Routes = [
           import('./pages/auth/recuperacao/recuperacao').then((m) => m.Recuperacao),
       },
       {
+        path: 'cadastro/responsavel',
+        title: 'Cadastro do responsável | CrecheConecta',
+        loadComponent: () =>
+          import('./pages/auth/cadastro-responsavel/cadastro-responsavel').then(
+            (m) => m.CadastroResponsavel,
+          ),
+      },
+      {
         path: 'cadastro/direcao',
         title: 'Cadastro de direção | CrecheConecta',
         loadComponent: () =>
-          import('./pages/auth/cadastro-direcao/cadastro-direcao').then(
-            (m) => m.CadastroDirecao,
-          ),
+          import('./pages/auth/cadastro-direcao/cadastro-direcao').then((m) => m.CadastroDirecao),
       },
       {
         path: 'cadastro',
@@ -115,8 +120,7 @@ export const routes: Routes = [
         path: 'comunicados',
         title: 'Comunicados | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],
-        loadComponent: () =>
-          import('./comunicados/comunicados').then((m) => m.Comunicados),
+        loadComponent: () => import('./comunicados/comunicados').then((m) => m.Comunicados),
       },
     ],
   },
@@ -128,14 +132,12 @@ export const routes: Routes = [
       {
         path: 'portal-pais',
         title: 'Termos e privacidade | CrecheConecta',
-        loadComponent: () =>
-          import('./portal-pais/portal-pais').then((m) => m.PortalPais),
+        loadComponent: () => import('./portal-pais/portal-pais').then((m) => m.PortalPais),
       },
       {
         path: 'informacoes/termos',
         title: 'Consultar termos | CrecheConecta',
-        loadComponent: () =>
-          import('./portal-pais/termos-leitura').then((m) => m.TermosLeitura),
+        loadComponent: () => import('./portal-pais/termos-leitura').then((m) => m.TermosLeitura),
       },
       {
         path: 'informacoes',

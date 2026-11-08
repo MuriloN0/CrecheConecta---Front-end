@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Pagina } from '../turmas/turmas.service';
 
-export type SituacaoProfessor =  | 'PENDENTE_APROVACAO'  | 'APROVADO'| 'REJEITADO'| 'INATIVO';
+export type SituacaoProfessor = 'PENDENTE_APROVACAO' | 'APROVADO' | 'REJEITADO' | 'INATIVO';
 
 export interface Professor {
   id: string;
@@ -58,14 +58,6 @@ export class ProfessoresService {
     });
   }
 
-  atualizar(professor: Professor, nome: string, telefone: string) {
-    return this.http.put<Professor>(`${this.url}/${professor.id}`, {
-      nome,
-      telefone,
-      versao: professor.versao,
-    });
-  }
-
   decidir(professor: Professor, acao: 'aprovar' | 'rejeitar' | 'inativar') {
     return this.http.post<Professor>(`${this.url}/${professor.id}/${acao}`, {
       versao: professor.versao,
@@ -73,17 +65,13 @@ export class ProfessoresService {
   }
 
   listarVinculos(turmaId: string, pagina: number, incluirEncerrados: boolean) {
-    return this.http.get<Pagina<VinculoProfessor>>(
-      `/api/turmas/${turmaId}/professores`,
-      { params: { pagina, tamanho: 20, incluirEncerrados } },
-    );
+    return this.http.get<Pagina<VinculoProfessor>>(`/api/turmas/${turmaId}/professores`, {
+      params: { pagina, tamanho: 20, incluirEncerrados },
+    });
   }
 
   vincular(turmaId: string, professorId: string) {
-    return this.http.post<VinculoProfessor>(
-      `/api/turmas/${turmaId}/professores`,
-      { professorId },
-    );
+    return this.http.post<VinculoProfessor>(`/api/turmas/${turmaId}/professores`, { professorId });
   }
 
   encerrar(vinculo: VinculoProfessor) {
