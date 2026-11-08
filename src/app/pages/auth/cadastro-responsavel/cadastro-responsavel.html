@@ -1,0 +1,137 @@
+<section class="space-y-5" aria-labelledby="titulo-cadastro-responsavel">
+  <h1 id="titulo-cadastro-responsavel" class="text-2xl font-bold text-creche-texto">
+    Cadastro do responsável
+  </h1>
+
+  @if (ocupada()) {
+    <p role="status" class="text-sm text-stone-600">Processando…</p>
+  }
+
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-3 text-sm text-red-800">
+      {{ erro() }}
+    </p>
+  }
+
+  @if (sucesso()) {
+    <p role="status" class="rounded-xl bg-green-50 p-4 text-sm text-green-900">
+      {{ sucesso() }}
+    </p>
+  }
+
+  @if (convite(); as dados) {
+    <div class="wrap-break-word text-sm">
+      <p class="font-semibold">Convite para cadastrar seu acesso e um aluno</p>
+      <p class="text-stone-600">{{ dados.email }}</p>
+    </div>
+
+    <form #form="ngForm" class="space-y-4" (ngSubmit)="concluir(form)">
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Seu nome completo</span>
+        <input
+          name="nome"
+          autocomplete="name"
+          [class]="campo"
+          [(ngModel)]="nome"
+          required
+          maxlength="150"
+          [disabled]="ocupada()"
+        />
+      </label>
+
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Telefone com DDD</span>
+        <input
+          name="telefone"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="tel-national"
+          [class]="campo"
+          [(ngModel)]="telefone"
+          required
+          maxlength="11"
+          [disabled]="ocupada()"
+        />
+      </label>
+
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Senha</span>
+        <input
+          name="senha"
+          type="password"
+          autocomplete="new-password"
+          [class]="campo"
+          [(ngModel)]="senha"
+          required
+          maxlength="72"
+          [disabled]="ocupada()"
+        />
+        <span class="text-xs font-normal text-stone-600">Use pelo menos 12 caracteres.</span>
+      </label>
+
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Confirme a senha</span>
+        <input
+          name="confirmarSenha"
+          type="password"
+          autocomplete="new-password"
+          [class]="campo"
+          [(ngModel)]="confirmarSenha"
+          required
+          maxlength="72"
+          [disabled]="ocupada()"
+        />
+      </label>
+
+      <fieldset class="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <legend class="px-2 text-sm font-bold text-creche-verde">Dados do aluno</legend>
+
+        <label class="block space-y-1 text-sm font-semibold">
+          <span>Nome completo</span>
+          <input
+            name="nomeAluno"
+            [class]="campo"
+            [(ngModel)]="nomeAluno"
+            required
+            maxlength="150"
+            [disabled]="ocupada()"
+          />
+        </label>
+
+        <label class="block space-y-1 text-sm font-semibold">
+          <span>Data de nascimento</span>
+          <input
+            name="dataNascimento"
+            type="date"
+            [class]="campo"
+            [(ngModel)]="dataNascimento"
+            required
+            [min]="dataMinima"
+            [max]="hoje"
+            [disabled]="ocupada()"
+          />
+        </label>
+      </fieldset>
+
+      <button
+        type="submit"
+        [disabled]="ocupada() || form.invalid"
+        class="w-full rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
+      >
+        Concluir cadastro
+      </button>
+    </form>
+  } @else if (podeConsultar() && !ocupada()) {
+    <button
+      type="button"
+      (click)="consultar()"
+      class="rounded-xl border border-stone-300 px-4 py-2 text-sm font-semibold"
+    >
+      Consultar convite novamente
+    </button>
+  }
+
+  <a routerLink="/login" class="inline-block text-sm font-semibold text-creche-verde underline">
+    Ir para o login
+  </a>
+</section>

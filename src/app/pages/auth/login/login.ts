@@ -1,20 +1,25 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AcaoResponse } from '../../../core/models/auth.models';
-import { AuthService } from '../../../core/services/auth.service';
-
+import { AuthService, AvisoSessao } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [FormsModule, DatePipe, RouterLink],
   templateUrl: './login.html',
-
 })
 export class Login {
+  readonly avisoSessao = inject(AvisoSessao);
+  private readonly dialogo = viewChild<ElementRef<HTMLDialogElement>>('dialogoSessao');
+  private readonly abrirAviso = effect(() => {
+    const dialogo = this.dialogo()?.nativeElement;
+    if (this.avisoSessao.expirou() && dialogo && !dialogo.open) dialogo.showModal();
+  });
+
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
@@ -34,24 +39,17 @@ export class Login {
 
     this.erro.set('');
 
-    const segundos = Math.ceil(
-      (this.proximoEnvioEm - Date.now()) / 1000,
-    );
+    const segundos = Math.ceil((this.proximoEnvioEm - Date.now()) / 1000);
 
     if (segundos > 0) {
-      this.erro.set(
-        `Aguarde ${segundos} segundos antes de solicitar outro código.`,
-      );
+      this.erro.set(`Aguarde ${segundos} segundos antes de solicitar outro código.`);
       return;
     }
 
     this.carregando.set(true);
 
     try {
-      const resposta = await this.auth.iniciarLogin(
-        this.email.trim().toLowerCase(),
-        this.senha,
-      );
+      const resposta = await this.auth.iniciarLogin(this.email.trim().toLowerCase(), this.senha);
 
       this.acao.set(resposta);
       this.senha = '';
