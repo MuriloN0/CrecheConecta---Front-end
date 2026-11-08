@@ -1,62 +1,47 @@
-<div class="portal">
-  <aside class="sidebar">
-    <a class="marca" href="#">CrecheConecta</a>
-    <nav>
-      <a href="#">Termos de Uso</a>
-    </nav>
-  </aside>
+<section class="space-y-5" aria-labelledby="titulo-aceite">
+  <header>
+    <h1 id="titulo-aceite" class="text-3xl font-bold text-creche-texto">
+      Termos de uso e política de privacidade
+    </h1>
+    <p class="mt-1 text-sm text-stone-600">
+      Leia cada documento até o fim para poder aceitar e continuar.
+    </p>
+  </header>
 
-  <div class="conteudo">
-    <header class="topo">
-      <div>
-        <strong>Portal dos Pais</strong>
-        <span>Creche Municipal Girassol</span>
-      </div>
-    </header>
+  @if (ocupada()) {
+    <p role="status" class="text-sm text-stone-600">Processando…</p>
+  }
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">{{ erro() }}</p>
+  }
 
-    <main>
-      @if (carregando()) {
-        <p class="mensagem">Carregando...</p>
+  @if (termo(); as t) {
+    <section [class]="cartao" aria-label="Documentos para aceite">
+      <h2 class="text-lg font-bold">1. Termo de uso</h2>
+      <div id="documento-termo" [class]="documento" tabindex="0" role="region"
+        aria-label="Texto do termo de uso" (scroll)="aoRolar($event, 'termo')">{{ t.termoUso }}</div>
+
+      @if (leuTermo()) {
+        <h2 class="text-lg font-bold">2. Política de privacidade</h2>
+        <div id="documento-privacidade" [class]="documento" tabindex="0" role="region"
+          aria-label="Texto da política de privacidade"
+          (scroll)="aoRolar($event, 'privacidade')">{{ t.politicaPrivacidade }}</div>
       }
-      @if (erro()) {
-        <p class="mensagem erro">{{ erro() }}</p>
-      }
 
-      @if (termo(); as t) {
-        <div class="titulo">
-          <div>
-            <h1>Termos de Uso e Política de Privacidade</h1>
-            <p>Role cada documento até o fim para prosseguir.</p>
-          </div>
+      @if (leuTermo() && leuPrivacidade()) {
+        <p class="text-xs text-stone-600">Versão dos documentos: {{ t.versao }}</p>
+        <label class="flex items-start gap-2 text-sm font-semibold">
+          <input type="checkbox" (change)="alternarAceite($event)" [disabled]="ocupada()"
+            class="mt-1 h-4 w-4 accent-creche-verde focus-visible:ring-2 focus-visible:ring-creche-verde" />
+          <span>Li e aceito os Termos de Uso e a Política de Privacidade.</span>
+        </label>
+        <div>
+          <button type="button" [class]="primario" [disabled]="!aceito() || ocupada()"
+            (click)="confirmar()">
+            Confirmar e continuar
+          </button>
         </div>
-
-        <section class="cartao">
-
-          <h2 class="passo">1. Termo de Uso</h2>
-          <div class="documento" (scroll)="aoRolar($event, 'termo')">{{ t.termoUso }}</div>
-
-          @if (leuTermo()) {
-            <h2 class="passo">2. Política de Privacidade</h2>
-            <div class="documento" (scroll)="aoRolar($event, 'privacidade')">{{ t.politicaPrivacidade }}</div>
-          }
-
-          @if (leuTermo() && leuPrivacidade()) {
-            <p class="versao">Versão: {{ t.versao }}</p>
-
-            <label class="aceite">
-              <input type="checkbox" (change)="alternarAceite($event)" />
-              Li e aceito os Termos de Uso e a Política de Privacidade.
-            </label>
-
-            <div class="rodape">
-              <button class="principal" type="button"
-                      [disabled]="!aceito() || carregando()" (click)="confirmar()">
-                Confirmar e continuar
-              </button>
-            </div>
-          }
-        </section>
       }
-    </main>
-  </div>
-</div>
+    </section>
+  }
+</section>

@@ -1,5 +1,5 @@
-import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
 import { FichaSaude, FichaSaudeResumo, SalvarFichaSaude } from './saude.model';
 
 @Injectable({ providedIn: 'root' })
@@ -18,12 +18,11 @@ export class SaudeApi {
     return this.http.get<FichaSaude>(`${this.base(alunoId)}/${fichaId}`);
   }
 
-  cadastrar(alunoId: string, dados: SalvarFichaSaude, arquivos: File[]) {
-    // backend em camadas recebe JSON puro
-    return this.http.post<void>(this.base(alunoId), dados, { observe: 'response' });
+  cadastrar(alunoId: string, dados: SalvarFichaSaude) {
+    return this.http.post<void>(this.base(alunoId), dados);
   }
 
-  editar(alunoId: string, fichaId: string, dados: SalvarFichaSaude, novosArquivos: File[]) {
+  editar(alunoId: string, fichaId: string, dados: SalvarFichaSaude) {
     return this.http.put<FichaSaude>(`${this.base(alunoId)}/${fichaId}`, dados);
   }
 

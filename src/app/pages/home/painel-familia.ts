@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { ROTULOS_DIARIO } from '../../diario/diario.model';
 import {
   DiarioFilho,
   Filho,
@@ -28,6 +29,14 @@ export class PainelFamilia implements OnInit {
   readonly frequencia = signal<FrequenciaFilho | null>(null);
   readonly malas = signal<MalaFilho[]>([]);
   readonly erroDiario = signal(false);
+  readonly dataDiario = signal('');
+  readonly carregandoDiario = signal(false);
+  readonly hoje = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
   readonly erroFrequencia = signal(false);
   readonly erroMalas = signal(false);
 
@@ -50,19 +59,7 @@ export class PainelFamilia implements OnInit {
     }));
   });
 
-  readonly rotulos: Record<string, string> = {
-    COMEU_TUDO: 'Comeu tudo',
-    COMEU_BEM: 'Comeu bem',
-    COMEU_POUCO: 'Comeu pouco',
-    NAO_COMEU: 'Não comeu',
-    DORMIU_BEM: 'Dormiu bem',
-    DORMIU_POUCO: 'Dormiu pouco',
-    NAO_DORMIU: 'Não dormiu',
-    FELIZ: 'Feliz',
-    CALMO: 'Calmo',
-    AGITADO: 'Agitado',
-    CHOROSO: 'Choroso',
-  };
+  readonly rotulos = ROTULOS_DIARIO;
 
   readonly linkAnonimizacao =
     'mailto:crecheconecta@gmail.com'
@@ -120,8 +117,33 @@ export class PainelFamilia implements OnInit {
     }
   }
 
+  // data = 'AAAA-MM-DD' para um dia específico; null para o diário mais recente.
+  async buscarDiario(data: string | null): Promise<void> {
+    const alunoId = this.alunoId();
+    if (!alunoId || this.carregandoDiario() || this.carregando()) return;
+    if (data !== null && (!/^\d{4}-\d{2}-\d{2}$/.test(data) || data > this.hoje)) return;
+    this.carregandoDiario.set(true);
+    this.erroDiario.set(false);
+    try {
+      const registro = await firstValueFrom(
+        this.servico.consultarDiario(alunoId, data ?? undefined),
+      );
+      if (alunoId !== this.alunoId()) return;
+      this.diario.set(registro);
+      this.dataDiario.set(registro.data);
+    } catch (erro: unknown) {
+      if (alunoId !== this.alunoId()) return;
+      this.diario.set(null);
+      if (data !== null) this.dataDiario.set(data);
+      this.erroDiario.set(!(erro instanceof HttpErrorResponse && erro.status === 404));
+    } finally {
+      this.carregandoDiario.set(false);
+    }
+  }
+
   private limparDetalhes(): void {
     this.diario.set(null);
+    this.dataDiario.set('');
     this.frequencia.set(null);
     this.malas.set([]);
     this.erroDiario.set(false);
@@ -138,6 +160,7 @@ export class PainelFamilia implements OnInit {
 
     if (diario.status === 'fulfilled') {
       this.diario.set(diario.value);
+      this.dataDiario.set(diario.value.data);
     } else {
       const erro: unknown = diario.reason;
       this.erroDiario.set(!(erro instanceof HttpErrorResponse && erro.status === 404));

@@ -13,6 +13,7 @@ export interface DiarioFilho {
   sono: string;
   evacuacao: boolean;
   humor: string;
+  higiene: string;
   observacaoProfessor: string | null;
 }
 
@@ -20,7 +21,6 @@ export interface FrequenciaFilho {
   mes: string;
   presencas: number;
   faltas: number;
-  faltasJustificadas: number;
 }
 
 export interface MalaFilho {
@@ -45,8 +45,11 @@ export class PainelFamiliaService {
     return this.http.get<Filho[]>(this.base);
   }
 
-  consultarDiario(alunoId: string) {
-    return this.http.get<DiarioFilho>(`${this.base}/${alunoId}/diario`);
+  // Sem "data" o back devolve o diário mais recente.
+  consultarDiario(alunoId: string, data?: string) {
+    return this.http.get<DiarioFilho>(`${this.base}/${alunoId}/diario`, {
+      params: data ? { data } : {},
+    });
   }
 
   consultarFrequencia(alunoId: string) {

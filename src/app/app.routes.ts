@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { permitirPerfis } from './core/guards/perfil.guard';
-import { termoAceitoGuard } from './portal-pais/termo.guard';
+import { aceiteObrigatorioGuard, termoAceitoGuard } from './portal-pais/termo.guard';
 
 export const routes: Routes = [
   {
@@ -42,7 +42,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    canActivateChild: [authGuard],
+    canActivateChild: [authGuard, aceiteObrigatorioGuard],
     loadComponent: () =>
       import('./layouts/portal-layout/portal-layout').then((m) => m.PortalLayout),
     children: [
@@ -102,6 +102,12 @@ export const routes: Routes = [
         loadComponent: () => import('./chamada/chamada').then((m) => m.Chamada),
       },
       {
+        path: 'diario',
+        title: 'Diário de rotina | CrecheConecta',
+        canActivate: [permitirPerfis('PROFESSOR')],
+        loadComponent: () => import('./diario/diario').then((m) => m.Diario),
+      },
+      {
         path: 'alunos',
         title: 'Alunos | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO')],
@@ -124,6 +130,12 @@ export const routes: Routes = [
         title: 'Equipe de Direção | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO')],
         loadComponent: () => import('./direcao/direcao').then((m) => m.Direcao),
+      },
+      {
+        path: 'termos',
+        title: 'Termos e LGPD | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO')],
+        loadComponent: () => import('./termos/termos').then((m) => m.Termos),
       },
       {
         path: 'solicitacoes-materiais',
@@ -155,51 +167,30 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./comunicados/comunicados').then((m) => m.Comunicados),
       },
-    ],
-  },
-  {
-    path: '',
-    canActivate: [authGuard],
-    canActivateChild: [authGuard],
-    children: [
       {
         path: 'portal-pais',
-        title: 'Termos e privacidade | CrecheConecta',
+        title: 'Aceite dos termos | CrecheConecta',
         loadComponent: () =>
           import('./portal-pais/portal-pais').then((m) => m.PortalPais),
       },
       {
         path: 'informacoes/termos',
-        title: 'Consultar termos | CrecheConecta',
+        title: 'Termos e privacidade | CrecheConecta',
         loadComponent: () =>
           import('./portal-pais/termos-leitura').then((m) => m.TermosLeitura),
       },
       {
+        path: 'observacoes',
+        title: 'Observações | CrecheConecta',
+        canActivate: [permitirPerfis('RESPONSAVEL')],
+        loadComponent: () =>
+          import('./observacoes/observacoes').then((m) => m.Observacoes),
+      },
+      {
         path: 'informacoes',
-        canActivateChild: [termoAceitoGuard],
-        children: [
-          {
-            path: '',
-            pathMatch: 'full',
-            title: 'Fichas de saúde | CrecheConecta',
-            loadComponent: () => import('./saude/saude').then((m) => m.Saude),
-          },
-          {
-            path: 'nova',
-            title: 'Cadastrar ficha | CrecheConecta',
-            loadComponent: () => import('./saude/saude-form').then((m) => m.SaudeForm),
-          },
-          {
-            path: ':id/editar',
-            title: 'Editar ficha | CrecheConecta',
-            loadComponent: () => import('./saude/saude-editar').then((m) => m.SaudeEditar),
-          },
-          {
-            path: ':id',
-            title: 'Consultar ficha | CrecheConecta',
-            loadComponent: () => import('./saude/saude-detalhe').then((m) => m.SaudeDetalhe),
-          },
-        ],
+        title: 'Informações relevantes | CrecheConecta',
+        canActivate: [permitirPerfis('RESPONSAVEL')],
+        loadComponent: () => import('./saude/saude').then((m) => m.Saude),
       },
     ],
   },

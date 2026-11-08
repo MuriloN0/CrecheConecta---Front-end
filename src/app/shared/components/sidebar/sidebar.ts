@@ -117,6 +117,7 @@ export class Sidebar {
         { titulo: 'Turmas', caminho: '/turmas' },
         { titulo: 'Professores', caminho: '/professores' },
         { titulo: 'Equipe de Direção', caminho: '/direcao' },
+        { titulo: 'Termos e LGPD', caminho: '/termos' },
         { titulo: 'Solicitação de materiais', caminho: '/solicitacoes-materiais' },
       );
     }
@@ -124,6 +125,7 @@ export class Sidebar {
     if (perfil === 'PROFESSOR') {
       itens.push(
         { titulo: 'Chamada do dia', caminho: '/chamada' },
+        { titulo: 'Diário de rotina', caminho: '/diario' },
         { titulo: 'Atividades', caminho: '/atividades' },
         { titulo: 'Mala Virtual', caminho: '/mala-virtual' },
         { titulo: 'Solicitação de materiais', caminho: '/solicitacoes-materiais' },
@@ -134,6 +136,8 @@ export class Sidebar {
       itens.push(
         { titulo: 'Atividades', caminho: '/familia/atividades' },
         { titulo: 'Mala Virtual', caminho: '/familia/mala-virtual' },
+        { titulo: 'Informações relevantes', caminho: '/informacoes' },
+        { titulo: 'Observações', caminho: '/observacoes' },
       );
     }
 
