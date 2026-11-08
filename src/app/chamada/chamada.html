@@ -5,10 +5,18 @@
         Chamada do dia
       </h1>
       @if (data()) {
-        <p class="mt-1 text-sm text-stone-600">{{ data() | date: 'dd/MM/yyyy' : 'UTC' }}</p>
+        <p class="mt-1 text-sm text-stone-600">
+          {{ data() | date: 'dd/MM/yyyy' : 'UTC' }}
+        </p>
       }
     </div>
-    <button type="button" [class]="botao" [disabled]="ocupada()" (click)="atualizarTurmas()">
+
+    <button
+      type="button"
+      [class]="botao"
+      [disabled]="ocupada()"
+      (click)="atualizarTurmas()"
+    >
       Atualizar chamada
     </button>
   </header>
@@ -16,30 +24,43 @@
   @if (ocupada()) {
     <p role="status" class="text-sm text-stone-600">Processando…</p>
   }
+
   @if (erro()) {
     <p role="alert" class="rounded-xl bg-red-50 p-4 text-red-800">{{ erro() }}</p>
   }
+
   @if (sucesso()) {
-    <p role="status" class="rounded-xl bg-green-50 p-4 text-green-900">{{ sucesso() }}</p>
+    <p role="status" class="rounded-xl bg-green-50 p-4 text-green-900">
+      {{ sucesso() }}
+    </p>
   }
 
-  <section class="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6"
-    aria-label="Chamada da turma" [attr.aria-busy]="ocupada()">
+  <section
+    class="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6"
+    aria-label="Chamada da turma"
+    [attr.aria-busy]="ocupada()"
+  >
     @if (turmas().length > 0) {
       <label class="grid max-w-md gap-1 text-sm font-semibold">
         Turma
         <select
           class="rounded-xl border border-stone-300 bg-white px-3 py-2
                  focus-visible:ring-2 focus-visible:ring-creche-verde"
-          [ngModel]="turmaId()" (ngModelChange)="selecionarTurma($event)"
-          [disabled]="ocupada()">
+          [ngModel]="turmaId()"
+          (ngModelChange)="selecionarTurma($event)"
+          [disabled]="ocupada()"
+        >
           @for (turma of turmas(); track turma.id) {
-            <option [value]="turma.id">{{ turma.nome }} · Sala {{ turma.numeroSala }}</option>
+            <option [value]="turma.id">
+              {{ turma.nome }} · Sala {{ turma.numeroSala }}
+            </option>
           }
         </select>
       </label>
     } @else if (!ocupada() && !erro()) {
-      <p class="text-sm text-stone-600">Nenhuma turma ativa vinculada à sua conta.</p>
+      <p class="text-sm text-stone-600">
+        Nenhuma turma ativa vinculada à sua conta.
+      </p>
     }
 
     @if (chamadaCarregada()) {
@@ -52,38 +73,69 @@
                 {{ aluno.presente === null ? 'Pendente' : aluno.presente ? 'Presente' : 'Ausente' }}
               </p>
             </div>
+
             <div class="flex flex-wrap gap-2">
-              <button type="button" [class]="botao"
+              <button
+                type="button"
+                [class]="botao"
                 [attr.aria-label]="'Marcar presente: ' + aluno.nome"
                 [attr.aria-pressed]="aluno.presente === true"
                 [disabled]="ocupada() || aluno.presente === true"
-                (click)="marcar(aluno, true)">
+                (click)="marcar(aluno, true)"
+              >
                 Presente
               </button>
-              <button type="button" [class]="botao"
+
+              <button
+                type="button"
+                [class]="botao"
                 [attr.aria-label]="'Marcar ausente: ' + aluno.nome"
                 [attr.aria-pressed]="aluno.presente === false"
                 [disabled]="ocupada() || aluno.presente === false"
-                (click)="marcar(aluno, false)">
+                (click)="marcar(aluno, false)"
+              >
                 Ausente
               </button>
+
+              @if (aluno.presente !== null) {
+                <button
+                  type="button"
+                  [class]="botao"
+                  [attr.aria-label]="'Voltar para pendente: ' + aluno.nome"
+                  [disabled]="ocupada()"
+                  (click)="marcar(aluno, null)"
+                >
+                  Voltar para pendente
+                </button>
+              }
             </div>
           </li>
         } @empty {
-          <li class="py-3 text-sm text-stone-600">Nenhum aluno ativo matriculado nesta turma.</li>
+          <li class="py-3 text-sm text-stone-600">
+            Nenhum aluno ativo matriculado nesta turma.
+          </li>
         }
       </ul>
 
       @if (totalPaginas() > 1) {
         <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas da chamada">
-          <button type="button" [class]="botao" [disabled]="ocupada() || pagina() === 0"
-            (click)="mudarPagina(pagina() - 1)">
+          <button
+            type="button"
+            [class]="botao"
+            [disabled]="ocupada() || pagina() === 0"
+            (click)="mudarPagina(pagina() - 1)"
+          >
             Anterior
           </button>
+
           <span class="text-sm">Página {{ pagina() + 1 }} de {{ totalPaginas() }}</span>
-          <button type="button" [class]="botao"
+
+          <button
+            type="button"
+            [class]="botao"
             [disabled]="ocupada() || pagina() + 1 >= totalPaginas()"
-            (click)="mudarPagina(pagina() + 1)">
+            (click)="mudarPagina(pagina() + 1)"
+          >
             Próxima
           </button>
         </nav>

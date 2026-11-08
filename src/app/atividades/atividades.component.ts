@@ -1,9 +1,11 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
+import { hojeEmSaoPaulo } from '../mala-virtual/service/mala-virtual-erros';
+import { Filho, PainelFamiliaService } from '../pages/home/painel-familia.service';
 import {  AtividadeResponseDTO,  AtividadeTurma,  AtualizarAtividadeRequestDTO,  NovaAtividadeRequestDTO,  TipoAtividade,} from './model/atividades.model';
 import { AtividadesService } from './service/atividades.service';
 
@@ -12,14 +14,20 @@ import { AtividadesService } from './service/atividades.service';
   standalone: true,
   imports: [DatePipe, FormsModule],
   templateUrl: './atividades.component.html',
-  styleUrl: './atividades.component.css',
+  host: { class: 'block min-w-0' },
 })
 export class AtividadesComponent implements OnInit {
   readonly auth = inject(AuthService);
 
   private readonly api = inject(AtividadesService);
+  private readonly familia = inject(PainelFamiliaService);
+
+  readonly ehResponsavel = computed(
+    () => this.auth.usuario()?.perfil === 'RESPONSAVEL',
+  );
 
   readonly turmas = signal<AtividadeTurma[]>([]);
+  readonly filhos = signal<Filho[]>([]);
   readonly atividades = signal<AtividadeResponseDTO[]>([]);
 
   readonly iniciando = signal(true);
@@ -35,11 +43,15 @@ export class AtividadesComponent implements OnInit {
   readonly exclusao = signal<AtividadeResponseDTO | null>(null);
 
   turmaId = '';
+  alunoId = '';
   tipo: TipoAtividade = 'CASA';
 
   titulo = '';
   descricao = '';
   prazoConclusao = '';
+
+  private readonly hoje = hojeEmSaoPaulo();
+  private readonly amanha = hojeEmSaoPaulo(new Date(Date.now() + 864e5));
 
   private numeroConsulta = 0;
 
@@ -58,8 +70,22 @@ export class AtividadesComponent implements OnInit {
   }
 
   nomeTurma(): string {
+    if (this.ehResponsavel()) {
+      return this.filhoSelecionado()?.turma?.nome ?? '';
+    }
+
     return this.turmas().find((turma) => turma.id === this.turmaId)
       ?.nome ?? '';
+  }
+
+  avisoPrazo(atividade: AtividadeResponseDTO): 'hoje' | 'amanha' | null {
+    if (atividade.prazoConclusao === this.hoje) return 'hoje';
+    if (atividade.prazoConclusao === this.amanha) return 'amanha';
+    return null;
+  }
+
+  filhoSelecionado(): Filho | null {
+    return this.filhos().find((filho) => filho.id === this.alunoId) ?? null;
   }
 
   podeAlterar(atividade: AtividadeResponseDTO): boolean {
@@ -79,6 +105,11 @@ export class AtividadesComponent implements OnInit {
     this.numeroConsulta++;
     this.atividades.set([]);
 
+    if (this.ehResponsavel()) {
+      await this.carregarFilhos();
+      return;
+    }
+
     try {
       const turmas = await firstValueFrom(this.api.listarTurmas());
 
@@ -97,6 +128,31 @@ export class AtividadesComponent implements OnInit {
       }
     } catch (erro: unknown) {
       this.turmas.set([]);
+      this.turmaId = '';
+      this.erro.set(this.mensagemErro(erro));
+    } finally {
+      this.iniciando.set(false);
+    }
+  }
+
+  private async carregarFilhos(): Promise<void> {
+    try {
+      const filhos = await firstValueFrom(this.familia.listarFilhos());
+
+      this.filhos.set(filhos);
+
+      if (!filhos.some((filho) => filho.id === this.alunoId)) {
+        this.alunoId = filhos[0]?.id ?? '';
+      }
+
+      this.turmaId = this.filhoSelecionado()?.turma?.id ?? '';
+
+      if (this.turmaId) {
+        await this.carregarAtividades();
+      }
+    } catch (erro: unknown) {
+      this.filhos.set([]);
+      this.alunoId = '';
       this.turmaId = '';
       this.erro.set(this.mensagemErro(erro));
     } finally {
@@ -138,6 +194,20 @@ export class AtividadesComponent implements OnInit {
     void this.carregarAtividades();
   }
 
+  mudarFilho(): void {
+    this.turmaId = this.filhoSelecionado()?.turma?.id ?? '';
+    this.fecharPaineis();
+    this.sucesso.set('');
+    this.erro.set('');
+    this.numeroConsulta++;
+    this.atividades.set([]);
+    this.carregando.set(false);
+
+    if (this.turmaId) {
+      void this.carregarAtividades();
+    }
+  }
+
   mudarTipo(tipo: TipoAtividade): void {
     if (this.ocupada() || this.tipo === tipo) return;
 
@@ -148,7 +218,7 @@ export class AtividadesComponent implements OnInit {
   }
 
   abrirCadastro(): void {
-    if (this.ocupada() || !this.turmaId) return;
+    if (this.ocupada() || !this.turmaId || this.ehResponsavel()) return;
 
     this.fecharPaineis();
     this.erro.set('');
@@ -330,9 +400,13 @@ export class AtividadesComponent implements OnInit {
       case 401:
         return 'Sua sessão expirou. Entre novamente.';
       case 403:
-        return 'Acesso negado. Confira seu vínculo com a turma e a autoria da atividade.';
+        return this.ehResponsavel()
+          ? 'Acesso negado. Confira com a direção o vínculo com a criança e a turma.'
+          : 'Acesso negado. Confira seu vínculo com a turma e a autoria da atividade.';
       case 404:
-        return 'A atividade não foi encontrada. Atualize a listagem.';
+        return this.ehResponsavel()
+          ? 'Não encontramos as informações solicitadas. Atualize os dados.'
+          : 'A atividade não foi encontrada. Atualize a listagem.';
       case 409:
         return 'Não foi possível salvar devido a um conflito. Atualize os dados.';
       default:

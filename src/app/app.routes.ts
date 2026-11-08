@@ -66,6 +66,20 @@ export const routes: Routes = [
           import('./mala-virtual/mala-virtual.component').then((m) => m.MalaVirtualComponent),
       },
       {
+        path: 'familia/atividades',
+        canActivate: [permitirPerfis('RESPONSAVEL')],
+        canActivateChild: [termoAceitoGuard],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Atividades | CrecheConecta',
+            loadComponent: () =>
+              import('./atividades/atividades.component').then((m) => m.AtividadesComponent),
+          },
+        ],
+      },
+      {
         path: 'familia/mala-virtual',
         canActivate: [permitirPerfis('RESPONSAVEL')],
         canActivateChild: [termoAceitoGuard],
@@ -122,6 +136,29 @@ export const routes: Routes = [
         title: 'Termos e LGPD | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO')],
         loadComponent: () => import('./termos/termos').then((m) => m.Termos),
+      },
+      {
+        path: 'solicitacoes-materiais',
+        canActivate: [permitirPerfis('PROFESSOR', 'DIRECAO')],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Solicitação de materiais | CrecheConecta',
+            loadComponent: () =>
+              import('./solicitacoes-materiais/solicitacoes-materiais.component').then(
+                (m) => m.SolicitacoesMateriaisComponent,
+              ),
+          },
+          {
+            path: ':id',
+            title: 'Detalhe da solicitação | CrecheConecta',
+            loadComponent: () =>
+              import('./solicitacoes-materiais/solicitacao-material-detalhe.component').then(
+                (m) => m.SolicitacaoMaterialDetalheComponent,
+              ),
+          },
+        ],
       },
       {
         path: 'comunicados',

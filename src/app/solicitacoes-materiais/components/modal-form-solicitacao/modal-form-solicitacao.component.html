@@ -1,0 +1,267 @@
+<dialog
+  appDialogoModal
+  class="m-auto max-h-[calc(100dvh_-_1.5rem)] w-[calc(100%_-_1.5rem)] max-w-2xl rounded-2xl
+         border border-stone-200 bg-white p-0 text-creche-texto shadow-xl
+         backdrop:bg-creche-texto/45"
+  aria-labelledby="titulo-form-solicitacao"
+  aria-describedby="descricao-form-solicitacao"
+  [bloqueado]="salvando()"
+  (fecharDialogo)="fechar.emit()"
+>
+  <form class="space-y-5 p-4 sm:p-6" novalidate (ngSubmit)="enviar()">
+
+    <div>
+      <h2 id="titulo-form-solicitacao" class="text-xl font-bold text-creche-texto">
+        {{ editando() ? 'Editar solicitação' : 'Nova solicitação' }}
+      </h2>
+
+      <p id="descricao-form-solicitacao" class="mt-1 text-sm text-stone-600">
+        Peça à direção os materiais de que precisa. Campos com * são obrigatórios.
+      </p>
+    </div>
+
+
+    @if (erro()) {
+      <p
+        role="alert"
+        class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+      >
+        {{ erro() }}
+      </p>
+    }
+
+
+    <div>
+      <label for="titulo-solicitacao" class="mb-2 block text-sm font-semibold">Título *</label>
+
+      <input
+        id="titulo-solicitacao"
+        name="titulo"
+        type="text"
+        class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-700 aria-invalid:bg-red-50"
+        autocomplete="off"
+        autofocus
+        [attr.maxlength]="maxTitulo"
+        [(ngModel)]="titulo"
+        [disabled]="salvando()"
+        [attr.aria-invalid]="erroTitulo() ? 'true' : null"
+        [attr.aria-describedby]="erroTitulo() ? 'erro-titulo-solicitacao' : 'ajuda-titulo-solicitacao'"
+      />
+
+      @if (erroTitulo(); as mensagem) {
+        <p id="erro-titulo-solicitacao" class="mt-1 text-sm text-red-700">{{ mensagem }}</p>
+      } @else {
+        <p id="ajuda-titulo-solicitacao" class="mt-1 text-xs text-stone-600">
+          Por exemplo: “Material de lousa”. Até {{ maxTitulo }} caracteres.
+        </p>
+      }
+    </div>
+
+
+    <div class="grid gap-5 sm:grid-cols-2">
+
+      <div>
+        <label for="sala-solicitacao" class="mb-2 block text-sm font-semibold">Sala *</label>
+
+        <input
+          id="sala-solicitacao"
+          name="sala"
+          type="text"
+          class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-700 aria-invalid:bg-red-50"
+          autocomplete="off"
+          [attr.maxlength]="maxSala"
+          [(ngModel)]="sala"
+          [disabled]="salvando()"
+          [attr.aria-invalid]="erroSala() ? 'true' : null"
+          [attr.aria-describedby]="erroSala() ? 'erro-sala-solicitacao' : 'ajuda-sala-solicitacao'"
+        />
+
+        @if (erroSala(); as mensagem) {
+          <p id="erro-sala-solicitacao" class="mt-1 text-sm text-red-700">{{ mensagem }}</p>
+        } @else {
+          <p id="ajuda-sala-solicitacao" class="mt-1 text-xs text-stone-600">
+            Por exemplo: “Sala 3” ou “Brinquedoteca”.
+          </p>
+        }
+      </div>
+
+
+      <div>
+        <label for="prioridade-solicitacao" class="mb-2 block text-sm font-semibold">Prioridade *</label>
+
+        <select
+          id="prioridade-solicitacao"
+          name="prioridade"
+          class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-700 aria-invalid:bg-red-50"
+          [(ngModel)]="prioridade"
+          [disabled]="salvando()"
+          [attr.aria-invalid]="erroPrioridade() ? 'true' : null"
+          [attr.aria-describedby]="erroPrioridade() ? 'erro-prioridade-solicitacao' : null"
+        >
+          <option value="">Selecione a prioridade</option>
+
+          @for (opcao of prioridades; track opcao) {
+            <option [value]="opcao">{{ rotulosPrioridade[opcao] }}</option>
+          }
+        </select>
+
+        @if (erroPrioridade(); as mensagem) {
+          <p id="erro-prioridade-solicitacao" class="mt-1 text-sm text-red-700">{{ mensagem }}</p>
+        }
+      </div>
+
+    </div>
+
+
+    <div>
+      <label for="descricao-solicitacao" class="mb-2 block text-sm font-semibold">Descrição</label>
+
+      <textarea
+        id="descricao-solicitacao"
+        name="descricao"
+        class="block min-h-11 w-full resize-y rounded-xl border border-stone-300 bg-white p-3
+               text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2
+               focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60
+               aria-invalid:border-red-700 aria-invalid:bg-red-50"
+        rows="3"
+        [attr.maxlength]="maxDescricao"
+        [(ngModel)]="descricao"
+        [disabled]="salvando()"
+        [attr.aria-invalid]="erroDescricao() ? 'true' : null"
+        [attr.aria-describedby]="erroDescricao() ? 'erro-descricao-solicitacao' : 'ajuda-descricao-solicitacao'"
+      ></textarea>
+
+      @if (erroDescricao(); as mensagem) {
+        <p id="erro-descricao-solicitacao" class="mt-1 text-sm text-red-700">{{ mensagem }}</p>
+      } @else {
+        <p id="ajuda-descricao-solicitacao" class="mt-1 text-xs text-stone-600">
+          Opcional. {{ descricao.length }}/{{ maxDescricao }} caracteres.
+        </p>
+      }
+    </div>
+
+
+    <fieldset class="space-y-3" aria-describedby="ajuda-itens-solicitacao">
+      <legend class="mb-2 block text-sm font-semibold">Itens *</legend>
+
+      <p id="ajuda-itens-solicitacao" class="text-xs text-stone-600">
+        De 1 a {{ maxItens }} itens, sem nomes repetidos. Quantidade de 1 a 999.
+        @if (editando()) {
+          Ao salvar, esta lista substitui todos os itens atuais.
+        }
+      </p>
+
+      @if (erroLista(); as mensagem) {
+        <p class="text-sm text-red-700">{{ mensagem }}</p>
+      }
+
+      <ul class="space-y-3">
+        @for (linha of itens; track linha.chave; let i = $index) {
+          <li class="rounded-2xl border border-stone-200 bg-white p-3">
+            <div class="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-3 sm:grid-cols-[minmax(0,1fr)_7rem_auto] sm:items-start">
+
+              <div>
+                <label [for]="'item-nome-solicitacao-' + linha.chave" class="mb-2 block text-sm font-semibold">
+                  Item {{ i + 1 }}
+                </label>
+
+                <input
+                  type="text"
+                  class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-700 aria-invalid:bg-red-50"
+                  autocomplete="off"
+                  [attr.maxlength]="maxNomeItem"
+                  [id]="'item-nome-solicitacao-' + linha.chave"
+                  [name]="'item-nome-solicitacao-' + linha.chave"
+                  [(ngModel)]="linha.nome"
+                  [disabled]="salvando()"
+                  [attr.aria-invalid]="erroNome(i) ? 'true' : null"
+                  [attr.aria-describedby]="erroNome(i) ? 'erro-item-nome-solicitacao-' + linha.chave : null"
+                />
+              </div>
+
+              <div>
+                <label [for]="'item-quantidade-solicitacao-' + linha.chave" class="mb-2 block text-sm font-semibold">
+                  <span aria-hidden="true">Qtd.</span>
+                  <span class="sr-only">Quantidade do item {{ i + 1 }}</span>
+                </label>
+
+                <input
+                  type="number"
+                  class="block min-h-11 w-full rounded-xl border border-stone-300 bg-white p-3 text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-red-700 aria-invalid:bg-red-50"
+                  min="1"
+                  max="999"
+                  step="1"
+                  inputmode="numeric"
+                  [id]="'item-quantidade-solicitacao-' + linha.chave"
+                  [name]="'item-quantidade-solicitacao-' + linha.chave"
+                  [(ngModel)]="linha.quantidade"
+                  [disabled]="salvando()"
+                  [attr.aria-invalid]="erroQuantidade(i) ? 'true' : null"
+                  [attr.aria-describedby]="erroQuantidade(i) ? 'erro-item-quantidade-solicitacao-' + linha.chave : null"
+                />
+              </div>
+
+              <button
+                type="button"
+                class="col-span-2 min-h-11 cursor-pointer rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 enabled:hover:bg-red-100 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-1 sm:mt-7"
+                [disabled]="salvando() || itens.length <= 1"
+                [attr.aria-label]="'Remover item ' + (linha.nome.trim() || i + 1)"
+                (click)="removerItem(i)"
+              >
+                Remover
+              </button>
+
+            </div>
+
+            @if (erroNome(i); as mensagem) {
+              <p [id]="'erro-item-nome-solicitacao-' + linha.chave" class="mt-1 text-sm text-red-700">
+                {{ mensagem }}
+              </p>
+            }
+
+            @if (erroQuantidade(i); as mensagem) {
+              <p [id]="'erro-item-quantidade-solicitacao-' + linha.chave" class="mt-1 text-sm text-red-700">
+                {{ mensagem }}
+              </p>
+            }
+          </li>
+        }
+      </ul>
+
+      <button
+        id="adicionar-item-solicitacao"
+        type="button"
+        class="min-h-11 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        [disabled]="salvando() || itens.length >= maxItens"
+        (click)="adicionarItem()"
+      >
+        Adicionar item
+      </button>
+    </fieldset>
+
+
+    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+        [disabled]="salvando()"
+        (click)="fechar.emit()"
+      >
+        Voltar
+      </button>
+
+      <button
+        type="submit"
+        class="min-h-11 cursor-pointer rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white enabled:hover:bg-creche-verde/90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+        [disabled]="salvando()"
+      >
+        @if (salvando()) {
+          Salvando…
+        } @else {
+          {{ editando() ? 'Salvar alterações' : 'Enviar solicitação' }}
+        }
+      </button>
+    </div>
+
+  </form>
+</dialog>
