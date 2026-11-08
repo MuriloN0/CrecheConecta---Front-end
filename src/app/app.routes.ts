@@ -66,6 +66,20 @@ export const routes: Routes = [
           import('./mala-virtual/mala-virtual.component').then((m) => m.MalaVirtualComponent),
       },
       {
+        path: 'familia/atividades',
+        canActivate: [permitirPerfis('RESPONSAVEL')],
+        canActivateChild: [termoAceitoGuard],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Atividades | CrecheConecta',
+            loadComponent: () =>
+              import('./atividades/atividades.component').then((m) => m.AtividadesComponent),
+          },
+        ],
+      },
+      {
         path: 'familia/mala-virtual',
         canActivate: [permitirPerfis('RESPONSAVEL')],
         canActivateChild: [termoAceitoGuard],

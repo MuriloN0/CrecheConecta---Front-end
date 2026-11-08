@@ -131,7 +131,10 @@ export class Sidebar {
     }
 
     if (perfil === 'RESPONSAVEL') {
-      itens.push({ titulo: 'Mala Virtual', caminho: '/familia/mala-virtual' });
+      itens.push(
+        { titulo: 'Atividades', caminho: '/familia/atividades' },
+        { titulo: 'Mala Virtual', caminho: '/familia/mala-virtual' },
+      );
     }
 
     itens.push({ titulo: 'Termos e privacidade', caminho: '/informacoes/termos' });
