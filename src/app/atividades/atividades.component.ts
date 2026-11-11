@@ -1,190 +1,416 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { ModalNovaAtividadeComponent } from './components/modal-nova-atividade/modal-nova-atividade.component';
-import { ModalExcluirAtividadeComponent } from './components/modal-excluir-atividade/modal-excluir-atividade.component';
-import { AtividadeTabela, AtividadeResponseDTO, NovaAtividadeRequestDTO } from './model/atividades.model';
-import { ModalVisualizarAtividadeComponent } from './components/modal-visualizar-atividade/modal-visualizar-atividade.component';
+import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { FormsModule, NgForm } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
+import { AuthService } from '../core/services/auth.service';
+import { hojeEmSaoPaulo } from '../mala-virtual/service/mala-virtual-erros';
+import { Filho, PainelFamiliaService } from '../pages/home/painel-familia.service';
+import {  AtividadeResponseDTO,  AtividadeTurma,  AtualizarAtividadeRequestDTO,  NovaAtividadeRequestDTO,  TipoAtividade,} from './model/atividades.model';
 import { AtividadesService } from './service/atividades.service';
 
 @Component({
   selector: 'app-atividades',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ModalNovaAtividadeComponent,
-    ModalExcluirAtividadeComponent,
-    ModalVisualizarAtividadeComponent
-  ],
+  imports: [DatePipe, FormsModule],
   templateUrl: './atividades.component.html',
-  styleUrls: ['./atividades.component.css']
+  host: { class: 'block min-w-0' },
 })
 export class AtividadesComponent implements OnInit {
-  atividades: AtividadeTabela[] = [];
-  isHome: boolean = true;
-  mostrarModal: boolean = false;
-  isEditing: boolean = false;
-  atividadeParaEditar: AtividadeTabela | null = null;
-  mostrarModalExcluir: boolean = false;
-  atividadeParaExcluir: AtividadeTabela | null = null;
-  mostrarModalVisualizar: boolean = false;
-  atividadeParaVisualizar: AtividadeTabela | null = null;
-  mensagemSucesso: string = '';
+  readonly auth = inject(AuthService);
 
-  constructor(
-    private atividadesService: AtividadesService,
-    private cdr: ChangeDetectorRef
-  ) {}
+  private readonly api = inject(AtividadesService);
+  private readonly familia = inject(PainelFamiliaService);
+
+  readonly ehResponsavel = computed(
+    () => this.auth.usuario()?.perfil === 'RESPONSAVEL',
+  );
+
+  readonly turmas = signal<AtividadeTurma[]>([]);
+  readonly filhos = signal<Filho[]>([]);
+  readonly atividades = signal<AtividadeResponseDTO[]>([]);
+
+  readonly iniciando = signal(true);
+  readonly carregando = signal(false);
+  readonly salvando = signal(false);
+
+  readonly erro = signal('');
+  readonly sucesso = signal('');
+
+  readonly formularioAberto = signal(false);
+  readonly editando = signal<AtividadeResponseDTO | null>(null);
+  readonly detalhes = signal<AtividadeResponseDTO | null>(null);
+  readonly exclusao = signal<AtividadeResponseDTO | null>(null);
+
+  turmaId = '';
+  alunoId = '';
+  tipo: TipoAtividade = 'CASA';
+
+  titulo = '';
+  descricao = '';
+  prazoConclusao = '';
+
+  private readonly hoje = hojeEmSaoPaulo();
+  private readonly amanha = hojeEmSaoPaulo(new Date(Date.now() + 864e5));
+
+  private numeroConsulta = 0;
 
   ngOnInit(): void {
-    this.carregarAtividades();
+    void this.carregarTurmas();
   }
 
-  carregarAtividades(): void {
-    const tipoFiltro = this.isHome ? 'CASA' : 'DIA';
-
-    this.atividadesService.listarTodas(undefined, tipoFiltro).subscribe({
-      next: (dados: AtividadeResponseDTO[]) => {
-        this.atividades = dados.map(atividade => ({
-          id: atividade.id,
-          titulo: atividade.titulo,
-          turma: 'Turma Geral',
-          dataCriacao: this.formatarData(atividade.dataCriacao),
-          dataEntrega: atividade.prazoConclusao ? this.formatarData(atividade.prazoConclusao) : '-',
-          atividadeOriginal: atividade
-        }));
-        this.cdr.detectChanges();
-      },
-      error: (erro) => {
-        console.error(erro);
-      }
-    });
+  ocupada(): boolean {
+    return this.iniciando() || this.carregando() || this.salvando();
   }
 
-  private formatarData(dataString: string): string {
-    if (!dataString) return '';
-    if (dataString.length === 10 && dataString.includes('-')) {
-      const [ano, mes, dia] = dataString.split('-');
-      return `${dia}/${mes}/${ano}`;
+  tituloPagina(): string {
+    return this.tipo === 'CASA'
+      ? 'Atividades para casa'
+      : 'Atividades do dia';
+  }
+
+  nomeTurma(): string {
+    if (this.ehResponsavel()) {
+      return this.filhoSelecionado()?.turma?.nome ?? '';
     }
-    const date = new Date(dataString);
-    return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+
+    return this.turmas().find((turma) => turma.id === this.turmaId)
+      ?.nome ?? '';
   }
 
-  private exibirMensagem(texto: string): void {
-    this.mensagemSucesso = texto;
-    setTimeout(() => {
-      this.mensagemSucesso = '';
-      this.cdr.detectChanges();
-    }, 4000);
+  avisoPrazo(atividade: AtividadeResponseDTO): 'hoje' | 'amanha' | null {
+    if (atividade.prazoConclusao === this.hoje) return 'hoje';
+    if (atividade.prazoConclusao === this.amanha) return 'amanha';
+    return null;
   }
 
-  setHome(value: boolean): void {
-    if (this.isHome === value) {
+  filhoSelecionado(): Filho | null {
+    return this.filhos().find((filho) => filho.id === this.alunoId) ?? null;
+  }
+
+  podeAlterar(atividade: AtividadeResponseDTO): boolean {
+    const usuario = this.auth.usuario();
+
+    return usuario?.perfil === 'PROFESSOR'
+      && usuario.id === atividade.professorId;
+  }
+
+  async carregarTurmas(): Promise<void> {
+    if (this.salvando()) return;
+
+    this.iniciando.set(true);
+    this.erro.set('');
+    this.fecharPaineis();
+
+    this.numeroConsulta++;
+    this.atividades.set([]);
+
+    if (this.ehResponsavel()) {
+      await this.carregarFilhos();
       return;
     }
-    this.isHome = value;
-    this.carregarAtividades();
-  }
 
-  abrirModalCriar(): void {
-    this.isEditing = false;
-    this.atividadeParaEditar = null;
-    this.mostrarModal = true;
-  }
+    try {
+      const turmas = await firstValueFrom(this.api.listarTurmas());
 
-  abrirModalEditar(atividade: AtividadeTabela): void {
-    this.isEditing = true;
-    this.atividadeParaEditar = atividade;
-    this.mostrarModal = true;
-  }
+      this.turmas.set(turmas);
 
-  fecharModal(): void {
-    this.mostrarModal = false;
-    this.isEditing = false;
-    this.atividadeParaEditar = null;
-  }
+      const turmaAnteriorExiste = turmas.some(
+        (turma) => turma.id === this.turmaId,
+      );
 
-  salvarAtividade(dadosModal: any): void {
-    const tipoAtividade = this.isHome ? 'CASA' : 'DIA';
-    const professorIdTemp = '735cbac2-e883-4b4a-9323-c19f356ef4f0';
+      if (!turmaAnteriorExiste) {
+        this.turmaId = turmas[0]?.id ?? '';
+      }
 
-    if (dadosModal.isEdit) {
-      const payloadAtualizacao = {
-        tipo: tipoAtividade,
-        titulo: dadosModal.atividade.nome,
-        descricao: dadosModal.atividade.observacoes || null,
-        prazoConclusao: this.isHome && dadosModal.atividade.dataEntrega ? dadosModal.atividade.dataEntrega : null
-      };
-
-      this.atividadesService.atualizarParcial(dadosModal.id, payloadAtualizacao).subscribe({
-        next: () => {
-          this.fecharModal();
-          this.carregarAtividades();
-          this.exibirMensagem('Atividade editada com sucesso!');
-        },
-        error: (erro) => {
-          console.error(erro);
-        }
-      });
-    } else {
-      const novaAtiv: NovaAtividadeRequestDTO = {
-        professorId: dadosModal.atividade.professorId || professorIdTemp,
-        tipo: tipoAtividade,
-        titulo: dadosModal.atividade.nome,
-        descricao: dadosModal.atividade.observacoes || undefined,
-        prazoConclusao: this.isHome && dadosModal.atividade.dataEntrega ? dadosModal.atividade.dataEntrega : undefined
-      };
-
-      this.atividadesService.criar(novaAtiv, dadosModal.turmaId).subscribe({
-        next: () => {
-          this.fecharModal();
-          this.carregarAtividades();
-          this.exibirMensagem('Atividade cadastrada com sucesso!');
-        },
-        error: (erro) => {
-          console.error(erro);
-        }
-      });
+      if (this.turmaId) {
+        await this.carregarAtividades();
+      }
+    } catch (erro: unknown) {
+      this.turmas.set([]);
+      this.turmaId = '';
+      this.erro.set(this.mensagemErro(erro));
+    } finally {
+      this.iniciando.set(false);
     }
   }
 
-  visualizarAtividade(atividade: AtividadeTabela): void {
-    this.atividadeParaVisualizar = atividade;
-    this.mostrarModalVisualizar = true;
+  private async carregarFilhos(): Promise<void> {
+    try {
+      const filhos = await firstValueFrom(this.familia.listarFilhos());
+
+      this.filhos.set(filhos);
+
+      if (!filhos.some((filho) => filho.id === this.alunoId)) {
+        this.alunoId = filhos[0]?.id ?? '';
+      }
+
+      this.turmaId = this.filhoSelecionado()?.turma?.id ?? '';
+
+      if (this.turmaId) {
+        await this.carregarAtividades();
+      }
+    } catch (erro: unknown) {
+      this.filhos.set([]);
+      this.alunoId = '';
+      this.turmaId = '';
+      this.erro.set(this.mensagemErro(erro));
+    } finally {
+      this.iniciando.set(false);
+    }
   }
 
-  fecharModalVisualizar(): void {
-    this.mostrarModalVisualizar = false;
-    this.atividadeParaVisualizar = null;
+  async carregarAtividades(): Promise<void> {
+    const consulta = ++this.numeroConsulta;
+
+    this.carregando.set(true);
+    this.erro.set('');
+    this.atividades.set([]);
+
+    try {
+      if (!this.turmaId) return;
+
+      const dados = await firstValueFrom(
+        this.api.listarTodas(this.turmaId, this.tipo),
+      );
+
+      if (consulta === this.numeroConsulta) {
+        this.atividades.set(dados);
+      }
+    } catch (erro: unknown) {
+      if (consulta === this.numeroConsulta) {
+        this.erro.set(this.mensagemErro(erro));
+      }
+    } finally {
+      if (consulta === this.numeroConsulta) {
+        this.carregando.set(false);
+      }
+    }
   }
 
-  abrirModalApagar(atividade: AtividadeTabela): void {
-    this.atividadeParaExcluir = atividade;
-    this.mostrarModalExcluir = true;
+  mudarTurma(): void {
+    this.fecharPaineis();
+    this.sucesso.set('');
+    void this.carregarAtividades();
   }
 
-  fecharModalApagar(): void {
-    this.mostrarModalExcluir = false;
-    this.atividadeParaExcluir = null;
+  mudarFilho(): void {
+    this.turmaId = this.filhoSelecionado()?.turma?.id ?? '';
+    this.fecharPaineis();
+    this.sucesso.set('');
+    this.erro.set('');
+    this.numeroConsulta++;
+    this.atividades.set([]);
+    this.carregando.set(false);
+
+    if (this.turmaId) {
+      void this.carregarAtividades();
+    }
   }
 
-  confirmarExclusao(): void {
-    if (this.atividadeParaExcluir) {
-      this.atividadesService.deletar(this.atividadeParaExcluir.id).subscribe({
-        next: () => {
-          this.fecharModalApagar();
-          this.carregarAtividades();
-          this.exibirMensagem('Atividade excluída com sucesso!');
-        },
-        error: (erro) => {
-          console.error(erro);
-          this.fecharModalApagar();
-        }
-      });
-    } else {
-      this.fecharModalApagar();
+  mudarTipo(tipo: TipoAtividade): void {
+    if (this.ocupada() || this.tipo === tipo) return;
+
+    this.tipo = tipo;
+    this.fecharPaineis();
+    this.sucesso.set('');
+    void this.carregarAtividades();
+  }
+
+  abrirCadastro(): void {
+    if (this.ocupada() || !this.turmaId || this.ehResponsavel()) return;
+
+    this.fecharPaineis();
+    this.erro.set('');
+    this.sucesso.set('');
+    this.formularioAberto.set(true);
+  }
+
+  abrirEdicao(atividade: AtividadeResponseDTO): void {
+    if (this.ocupada() || !this.podeAlterar(atividade)) return;
+
+    this.fecharPaineis();
+    this.erro.set('');
+    this.sucesso.set('');
+
+    this.editando.set(atividade);
+    this.titulo = atividade.titulo;
+    this.descricao = atividade.descricao ?? '';
+    this.prazoConclusao = atividade.prazoConclusao ?? '';
+
+    this.formularioAberto.set(true);
+  }
+
+  visualizar(atividade: AtividadeResponseDTO): void {
+    if (this.ocupada()) return;
+
+    this.fecharPaineis();
+    this.detalhes.set(atividade);
+  }
+
+  solicitarExclusao(atividade: AtividadeResponseDTO): void {
+    if (this.ocupada() || !this.podeAlterar(atividade)) return;
+
+    this.fecharPaineis();
+    this.erro.set('');
+    this.sucesso.set('');
+    this.exclusao.set(atividade);
+  }
+
+  fecharPaineis(): void {
+    if (this.salvando()) return;
+
+    this.formularioAberto.set(false);
+    this.editando.set(null);
+    this.detalhes.set(null);
+    this.exclusao.set(null);
+
+    this.titulo = '';
+    this.descricao = '';
+    this.prazoConclusao = '';
+  }
+
+  async salvar(formulario: NgForm): Promise<void> {
+    if (this.ocupada()) return;
+
+    this.erro.set('');
+    this.sucesso.set('');
+    formulario.form.markAllAsTouched();
+
+    const usuario = this.auth.usuario();
+    const titulo = this.titulo.trim();
+
+    if (!usuario || usuario.perfil !== 'PROFESSOR') {
+      this.erro.set('Apenas professores podem cadastrar atividades.');
+      return;
+    }
+
+    if (!this.turmaId) {
+      this.erro.set('Selecione uma turma.');
+      return;
+    }
+
+    if (!titulo || titulo.length > 150 || formulario.invalid) {
+      this.erro.set('Confira o título e os demais campos do formulário.');
+      return;
+    }
+
+    if (this.tipo === 'CASA' && !this.prazoConclusao) {
+      this.erro.set('Informe o prazo de conclusão.');
+      return;
+    }
+
+    const atividade = this.editando();
+
+    if (atividade && !this.podeAlterar(atividade)) {
+      this.erro.set('Somente o autor pode editar esta atividade.');
+      return;
+    }
+
+    this.salvando.set(true);
+
+    try {
+      if (atividade) {
+        const dados: AtualizarAtividadeRequestDTO = {
+          tipo: this.tipo,
+          titulo,
+          descricao: this.descricao.trim(),
+          prazoConclusao:
+            this.tipo === 'CASA'
+              ? this.prazoConclusao
+              : undefined,
+        };
+
+        await firstValueFrom(
+          this.api.atualizarParcial(atividade.id, dados),
+        );
+      } else {
+        const dados: NovaAtividadeRequestDTO = {
+          professorId: usuario.id,
+          tipo: this.tipo,
+          titulo,
+          descricao: this.descricao.trim(),
+          prazoConclusao:
+            this.tipo === 'CASA'
+              ? this.prazoConclusao
+              : undefined,
+        };
+
+        await firstValueFrom(
+          this.api.criar(dados, this.turmaId),
+        );
+      }
+    } catch (erro: unknown) {
+      this.erro.set(this.mensagemErro(erro));
+      return;
+    } finally {
+      this.salvando.set(false);
+    }
+
+    this.fecharPaineis();
+
+    this.sucesso.set(
+      atividade
+        ? 'Atividade atualizada com sucesso.'
+        : 'Atividade cadastrada com sucesso.',
+    );
+
+    await this.carregarAtividades();
+  }
+
+  async confirmarExclusao(): Promise<void> {
+    const atividade = this.exclusao();
+
+    if (this.ocupada() || !atividade) return;
+
+    if (!this.podeAlterar(atividade)) {
+      this.erro.set('Somente o autor pode excluir esta atividade.');
+      return;
+    }
+
+    this.erro.set('');
+    this.sucesso.set('');
+    this.salvando.set(true);
+
+    try {
+      await firstValueFrom(this.api.deletar(atividade.id));
+    } catch (erro: unknown) {
+      this.erro.set(this.mensagemErro(erro));
+      return;
+    } finally {
+      this.salvando.set(false);
+    }
+
+    this.fecharPaineis();
+    this.sucesso.set('Atividade excluída com sucesso.');
+
+    await this.carregarAtividades();
+  }
+
+  private mensagemErro(erro: unknown): string {
+    if (!(erro instanceof HttpErrorResponse)) {
+      return 'Não foi possível concluir a operação. Tente novamente.';
+    }
+
+    switch (erro.status) {
+      case 0:
+        return 'Não foi possível conectar à API.';
+      case 400:
+        return 'Confira os campos enviados e o prazo da atividade.';
+      case 401:
+        return 'Sua sessão expirou. Entre novamente.';
+      case 403:
+        return this.ehResponsavel()
+          ? 'Acesso negado. Confira com a direção o vínculo com a criança e a turma.'
+          : 'Acesso negado. Confira seu vínculo com a turma e a autoria da atividade.';
+      case 404:
+        return this.ehResponsavel()
+          ? 'Não encontramos as informações solicitadas. Atualize os dados.'
+          : 'A atividade não foi encontrada. Atualize a listagem.';
+      case 409:
+        return 'Não foi possível salvar devido a um conflito. Atualize os dados.';
+      default:
+        return 'Não foi possível concluir a operação. Tente novamente.';
     }
   }
 }

@@ -1,0 +1,170 @@
+<section class="space-y-4" aria-labelledby="titulo-familia">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <h2 id="titulo-familia" class="text-2xl font-bold text-creche-texto">
+      Acompanhamento da criança
+    </h2>
+
+    <button type="button" (click)="atualizar()" [disabled]="carregando()"
+      class="rounded-xl border border-stone-300 bg-white px-4 py-2
+             text-sm font-semibold hover:bg-stone-50 disabled:opacity-50">
+      Atualizar acompanhamento
+    </button>
+  </header>
+
+  @if (filhos().length > 0) {
+    <label class="grid max-w-md gap-1 text-sm font-semibold">
+      Criança
+      <select [ngModel]="alunoId()" (ngModelChange)="selecionar($event)"
+        [disabled]="carregando()"
+        class="rounded-xl border border-stone-300 bg-white px-3 py-2
+               focus-visible:ring-2 focus-visible:ring-creche-verde">
+        @for (filho of filhos(); track filho.id) {
+          <option [value]="filho.id">{{ filho.nome }}</option>
+        }
+      </select>
+    </label>
+  }
+
+  @if (carregando()) {
+    <p role="status" class="text-sm text-stone-600">Consultando acompanhamento…</p>
+  } @else if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">
+      {{ erro() }}
+    </p>
+  } @else if (filhoSelecionado(); as filho) {
+    <p class="text-sm text-stone-600">
+      {{ filho.turma ? 'Turma ' + filho.turma.nome : 'Sem turma atual' }}
+    </p>
+
+    <div class="grid gap-4 lg:grid-cols-2">
+      <article class="space-y-3 rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 class="text-lg font-bold">Diário de rotina</h3>
+        <div class="flex flex-wrap items-end gap-2">
+          <label class="grid gap-1 text-sm font-semibold">
+            Dia
+            <input type="date" name="dataDiario" [max]="hoje"
+              [ngModel]="dataDiario()" (ngModelChange)="buscarDiario($event)"
+              [disabled]="carregandoDiario()"
+              class="rounded-xl border border-stone-300 bg-white px-3 py-2
+                     focus-visible:ring-2 focus-visible:ring-creche-verde" />
+          </label>
+          <button type="button" (click)="buscarDiario(null)" [disabled]="carregandoDiario()"
+            class="cursor-pointer rounded-xl border border-stone-300 px-3 py-2 text-sm
+                   font-semibold hover:bg-stone-50 focus-visible:ring-2
+                   focus-visible:ring-creche-verde disabled:opacity-50">
+            Ver o mais recente
+          </button>
+        </div>
+        @if (carregandoDiario()) {
+          <p role="status" class="text-sm text-stone-600">Consultando diário…</p>
+        }
+        @if (diario(); as registro) {
+          <p class="text-sm text-stone-600">{{ registro.data | date: 'dd/MM/yyyy' : 'UTC' }}</p>
+          <dl class="space-y-2 text-sm">
+            <div>
+              <dt class="font-semibold">Alimentação</dt>
+              <dd>{{ rotulos[registro.alimentacao] || registro.alimentacao }}</dd>
+            </div>
+            <div>
+              <dt class="font-semibold">Sono</dt>
+              <dd>{{ rotulos[registro.sono] || registro.sono }}</dd>
+            </div>
+            <div>
+              <dt class="font-semibold">Humor</dt>
+              <dd>{{ rotulos[registro.humor] || registro.humor }}</dd>
+            </div>
+            <div>
+              <dt class="font-semibold">Higiene</dt>
+              <dd>{{ rotulos[registro.higiene] || registro.higiene }}</dd>
+            </div>
+            <div>
+              <dt class="font-semibold">Evacuação</dt>
+              <dd>{{ registro.evacuacao ? 'Sim' : 'Não' }}</dd>
+            </div>
+          </dl>
+
+          @if (registro.observacaoProfessor) {
+            <p class="whitespace-pre-wrap wrap-break-word text-sm">
+              {{ registro.observacaoProfessor }}
+            </p>
+          }
+        } @else if (erroDiario()) {
+          <p role="status" class="text-sm text-red-800">Diário temporariamente indisponível.</p>
+        } @else {
+          <p class="text-sm text-stone-600">
+            {{ dataDiario() ? 'Não há diário registrado neste dia.' : 'Ainda não há diário disponível para esta criança.' }}
+          </p>
+        }
+      </article>
+
+      <article class="space-y-3 rounded-2xl border border-stone-200 bg-white p-5">
+        <h3 class="text-lg font-bold">Frequência do mês</h3>
+
+        @if (frequencia(); as dados) {
+          @if (dados.presencas + dados.faltas === 0) {
+            <p class="text-sm text-stone-600">Nenhuma marcação de chamada neste mês.</p>
+          } @else {
+            @for (item of barrasFrequencia(); track item.titulo) {
+              <figure class="space-y-1">
+                <figcaption class="flex justify-between gap-2 text-sm">
+                  <span>{{ item.titulo }}</span>
+                  <span>{{ item.valor }}</span>
+                </figcaption>
+                <div aria-hidden="true" class="h-3 overflow-hidden rounded-full bg-stone-100">
+                  <div [class]="'h-full ' + item.cor" [style.width.%]="item.percentual"></div>
+                </div>
+              </figure>
+            }
+          }
+        } @else if (erroFrequencia()) {
+          <p role="status" class="text-sm text-red-800">Frequência temporariamente indisponível.</p>
+        }
+      </article>
+    </div>
+
+    <article class="space-y-3 rounded-2xl border border-stone-200 bg-white p-5">
+      <h3 class="text-lg font-bold">Mala Virtual</h3>
+
+      @if (erroMalas()) {
+        <p role="status" class="text-sm text-red-800">Mala Virtual temporariamente indisponível.</p>
+      } @else {
+        @for (mala of malas(); track mala.id) {
+          <details class="rounded-xl border border-stone-200 p-3" [open]="$first">
+            <summary class="cursor-pointer text-sm font-semibold">
+              {{ mala.data | date: 'dd/MM/yyyy' : 'UTC' }} · {{ mala.itensPendentes }} pendente(s)
+            </summary>
+
+            @if (mala.observacao) {
+              <p class="mt-2 whitespace-pre-wrap wrap-break-word text-sm">{{ mala.observacao }}</p>
+            }
+
+            <ul class="mt-2 space-y-1 text-sm text-stone-700">
+              @for (item of mala.itens; track item.id) {
+                <li>{{ item.quantidade }} × {{ item.nome }} · {{ item.enviado ? 'Enviado' : 'Pendente' }}</li>
+              } @empty {
+                <li>Nenhum item registrado.</li>
+              }
+            </ul>
+          </details>
+        } @empty {
+          <p class="text-sm text-stone-600">Nenhuma mala registrada.</p>
+        }
+      }
+    </article>
+  } @else {
+    <p class="text-sm text-stone-600">Nenhuma criança vinculada a esta conta.</p>
+  }
+
+  <section class="space-y-2 rounded-2xl border border-stone-200 bg-white p-5"
+    aria-labelledby="titulo-privacidade-familia">
+    <h3 id="titulo-privacidade-familia" class="text-lg font-bold">Privacidade dos dados</h3>
+    <p class="text-sm text-stone-600">
+      Abra seu aplicativo de e-mail para enviar a solicitação à equipe da creche.
+    </p>
+    <a [href]="linkAnonimizacao"
+      class="inline-block rounded-xl border border-creche-verde px-4 py-2
+             text-sm font-semibold text-creche-verde hover:bg-stone-50">
+      Solicitar anonimização de dados
+    </a>
+  </section>
+</section>

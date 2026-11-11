@@ -1,0 +1,117 @@
+<section class="space-y-5" aria-labelledby="titulo-direcao">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 id="titulo-direcao" class="text-3xl font-bold text-creche-texto">
+        Equipe de Direção
+      </h1>
+      <p class="mt-1 text-sm text-stone-600">
+        Consulte a equipe, envie convites e gerencie sua conta.
+      </p>
+    </div>
+    <button type="button" [class]="botao" [disabled]="ocupada()" (click)="recarregar()">
+      Atualizar dados
+    </button>
+  </header>
+
+  @if (ocupada()) {
+    <p role="status" class="text-sm text-stone-600">Processando…</p>
+  }
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-red-800">{{ erro() }}</p>
+  }
+  @if (sucesso()) {
+    <p role="status" class="rounded-xl bg-green-50 p-4 text-green-900">{{ sucesso() }}</p>
+  }
+
+  <div class="grid gap-5 lg:grid-cols-2">
+    @if (minhaConta(); as conta) {
+      <form #contaForm="ngForm" (ngSubmit)="salvarConta(contaForm)"
+        class="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
+        <h2 class="text-xl font-bold">Minha conta</h2>
+        <p class="break-all text-sm text-stone-600">{{ conta.email }}</p>
+
+        <label class="block space-y-1 text-sm font-semibold">
+          <span>Nome</span>
+          <input name="nome" [class]="campo" [(ngModel)]="nome"
+            required maxlength="150" [disabled]="ocupada()" />
+        </label>
+
+        <label class="block space-y-1 text-sm font-semibold">
+          <span>Telefone com DDD</span>
+          <input name="telefone" type="tel" inputmode="numeric" [class]="campo"
+            [(ngModel)]="telefone" required pattern="[1-9][0-9]{9,10}"
+            maxlength="11" [disabled]="ocupada()" />
+        </label>
+
+        <div class="flex flex-wrap gap-2">
+          <button type="submit" [class]="primario" [disabled]="ocupada() || contaForm.invalid">
+            Salvar alterações
+          </button>
+          <button type="button" [class]="botao" [disabled]="ocupada()" (click)="inativarConta()">
+            Inativar minha conta
+          </button>
+        </div>
+      </form>
+    }
+
+    <form #conviteForm="ngForm" (ngSubmit)="enviarConvite(conviteForm)"
+      class="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
+      <h2 class="text-xl font-bold">Convidar integrante</h2>
+
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Nome</span>
+        <input name="nomeConvite" [class]="campo" [(ngModel)]="nomeConvite"
+          required maxlength="150" [disabled]="ocupada()" />
+      </label>
+
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>E-mail</span>
+        <input name="emailConvite" type="email" [class]="campo" [(ngModel)]="emailConvite"
+          required email maxlength="254" [disabled]="ocupada()" />
+      </label>
+
+      <button type="submit" [class]="primario" [disabled]="ocupada() || conviteForm.invalid">
+        Enviar convite
+      </button>
+    </form>
+  </div>
+
+  <section class="space-y-4 rounded-2xl border border-stone-200 bg-white p-5"
+    aria-labelledby="titulo-equipe">
+    <h2 id="titulo-equipe" class="text-xl font-bold">Integrantes</h2>
+    <ul class="divide-y divide-stone-200">
+      @for (integrante of equipe(); track integrante.id) {
+        <li class="flex flex-wrap justify-between gap-2 py-3">
+          <div class="min-w-0 wrap-break-word">
+            <p class="font-semibold">
+              {{ integrante.nome }}
+              @if (integrante.id === minhaConta()?.id) {
+                <span class="text-sm font-normal text-stone-600">· Você</span>
+              }
+            </p>
+            <p class="text-sm text-stone-600">{{ integrante.email }}</p>
+            @if (integrante.telefone) {
+              <p class="text-sm text-stone-600">{{ integrante.telefone }}</p>
+            }
+          </div>
+          <span class="text-sm text-stone-700">{{ integrante.ativo ? 'Ativo' : 'Inativo' }}</span>
+        </li>
+      } @empty {
+        @if (!ocupada() && !erro()) {
+          <li class="py-3 text-sm text-stone-600">Nenhum integrante encontrado.</li>
+        }
+      }
+    </ul>
+
+    @if (totalPaginas() > 1) {
+      <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas da equipe">
+        <button type="button" [class]="botao" [disabled]="ocupada() || pagina() === 0"
+          (click)="carregarEquipe(pagina() - 1)">Anterior</button>
+        <span class="text-sm">{{ pagina() + 1 }} de {{ totalPaginas() }}</span>
+        <button type="button" [class]="botao"
+          [disabled]="ocupada() || pagina() + 1 >= totalPaginas()"
+          (click)="carregarEquipe(pagina() + 1)">Próxima</button>
+      </nav>
+    }
+  </section>
+</section>

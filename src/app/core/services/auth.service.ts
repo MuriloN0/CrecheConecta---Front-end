@@ -11,9 +11,15 @@ import {
 } from '../models/auth.models';
 
 @Injectable({ providedIn: 'root' })
+export class AvisoSessao {
+  readonly expirou = signal(false);
+}
+
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly aviso = inject(AvisoSessao);
 
   private readonly usuarioInterno = signal<UsuarioLogado | null>(null);
 
@@ -24,9 +30,7 @@ export class AuthService {
   private temporizador?: ReturnType<typeof setTimeout>;
 
   iniciarLogin(email: string, senha: string): Promise<AcaoResponse> {
-    return firstValueFrom(
-      this.http.post<AcaoResponse>('/api/auth/login', { email, senha }),
-    );
+    return firstValueFrom(this.http.post<AcaoResponse>('/api/auth/login', { email, senha }));
   }
 
   async confirmarLogin(acaoId: string, codigo: string): Promise<void> {
@@ -48,13 +52,23 @@ export class AuthService {
     }
 
     this.temporizador = setTimeout(() => {
-      this.limparSessao();
-      void this.router.navigateByUrl('/login');
+      this.encerrarSessaoExpirada(this.token);
     }, this.expiraEm - Date.now());
   }
 
   possuiSessao(): boolean {
-    return this.token !== null && this.expiraEm > Date.now();
+    if (this.token && this.expiraEm <= Date.now()) {
+      this.encerrarSessaoExpirada(this.token);
+    }
+    return this.token !== null;
+  }
+
+  encerrarSessaoExpirada(tokenDaRequisicao: string | null): void {
+    if (!tokenDaRequisicao || tokenDaRequisicao !== this.token) return;
+
+    this.limparSessao();
+    this.aviso.expirou.set(true);
+    void this.router.navigateByUrl('/login');
   }
 
   async carregarUsuario(): Promise<UsuarioLogado> {
@@ -73,37 +87,23 @@ export class AuthService {
   }
 
   solicitarRecuperacao(email: string): Promise<AcaoResponse> {
-    return firstValueFrom(
-      this.http.post<AcaoResponse>('/api/auth/esqueci-senha', { email }),
-    );
+    return firstValueFrom(this.http.post<AcaoResponse>('/api/auth/esqueci-senha', { email }));
   }
 
-  confirmarRecuperacao(
-    acaoId: string,
-    codigo: string,
-  ): Promise<RecuperacaoConfirmada> {
+  confirmarRecuperacao(acaoId: string, codigo: string): Promise<RecuperacaoConfirmada> {
     return firstValueFrom(
-      this.http.post<RecuperacaoConfirmada>(
-        '/api/auth/confirmar-recuperacao',
-        { acaoId, codigo },
-      ),
+      this.http.post<RecuperacaoConfirmada>('/api/auth/confirmar-recuperacao', { acaoId, codigo }),
     );
   }
 
   redefinirSenha(dados: RedefinirSenhaRequest): Promise<void> {
-    return firstValueFrom(
-      this.http.post<void>('/api/auth/redefinir-senha', dados),
-    );
+    return firstValueFrom(this.http.post<void>('/api/auth/redefinir-senha', dados));
   }
 
   async logout(): Promise<void> {
     if (this.possuiSessao()) {
       await firstValueFrom(
-        this.http.post<void>(
-          '/api/auth/logout',
-          {},
-          { headers: this.cabecalhos() },
-        ),
+        this.http.post<void>('/api/auth/logout', {}, { headers: this.cabecalhos() }),
       );
     }
 

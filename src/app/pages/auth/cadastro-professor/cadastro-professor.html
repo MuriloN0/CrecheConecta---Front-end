@@ -1,0 +1,89 @@
+<section class="space-y-5" aria-labelledby="titulo-cadastro">
+  <header>
+    <h1 id="titulo-cadastro" class="text-2xl font-bold text-creche-texto">
+      Cadastro de professor
+    </h1>
+    <p class="mt-2 text-sm text-stone-600">
+      Complete seus dados para solicitar a aprovação da direção.
+    </p>
+  </header>
+
+  @if (consultando()) {
+    <p role="status" class="text-sm text-stone-600">Consultando convite…</p>
+  }
+
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-3 text-sm text-red-800">
+      {{ erro() }}
+    </p>
+  }
+
+  @if (sucesso()) {
+    <div role="status" class="rounded-xl bg-green-50 p-4 text-sm text-green-900">
+      <p class="font-semibold">{{ sucesso() }}</p>
+      <p class="mt-1">O acesso será liberado após a aprovação da direção.</p>
+    </div>
+  }
+
+  @if (convite(); as dados) {
+    <form #form="ngForm" class="space-y-4" (ngSubmit)="concluir(form)">
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>E-mail do convite</span>
+        <input type="email" [value]="dados.email" readonly
+          class="w-full rounded-xl border border-stone-300 bg-stone-50 px-3 py-2" />
+      </label>
+
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Nome completo</span>
+        <input name="nome" type="text" autocomplete="name"
+          [(ngModel)]="nome" required maxlength="150" [disabled]="enviando()"
+          class="w-full rounded-xl border border-stone-300 px-3 py-2
+                 focus-visible:ring-2 focus-visible:ring-creche-verde" />
+      </label>
+
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Telefone com DDD</span>
+        <input name="telefone" type="tel" autocomplete="tel-national" inputmode="numeric"
+          [(ngModel)]="telefone" required maxlength="11" [disabled]="enviando()"
+          class="w-full rounded-xl border border-stone-300 px-3 py-2
+                 focus-visible:ring-2 focus-visible:ring-creche-verde" />
+        <span class="text-xs font-normal text-stone-600">Use somente números.</span>
+      </label>
+
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Senha</span>
+        <input name="senha" type="password" autocomplete="new-password"
+          [(ngModel)]="senha" required maxlength="72" [disabled]="enviando()"
+          class="w-full rounded-xl border border-stone-300 px-3 py-2
+                 focus-visible:ring-2 focus-visible:ring-creche-verde" />
+        <span class="text-xs font-normal text-stone-600">Use pelo menos 8 caracteres.</span>
+      </label>
+
+      <label class="block space-y-1 text-sm font-semibold">
+        <span>Confirme a senha</span>
+        <input name="confirmarSenha" type="password" autocomplete="new-password"
+          [(ngModel)]="confirmarSenha" required maxlength="72" [disabled]="enviando()"
+          class="w-full rounded-xl border border-stone-300 px-3 py-2
+                 focus-visible:ring-2 focus-visible:ring-creche-verde" />
+      </label>
+
+      <button type="submit" [disabled]="enviando()"
+        class="w-full cursor-pointer rounded-xl bg-creche-verde px-4 py-2.5
+               text-sm font-semibold text-white hover:bg-teal-800
+               focus-visible:ring-2 focus-visible:ring-creche-verde
+               focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+        {{ enviando() ? 'Enviando…' : 'Concluir cadastro' }}
+      </button>
+    </form>
+  } @else if (podeConsultar() && !consultando()) {
+    <button type="button" (click)="consultar()"
+      class="cursor-pointer rounded-xl border border-stone-300 px-4 py-2
+             text-sm font-semibold hover:bg-stone-50">
+      Consultar convite novamente
+    </button>
+  }
+
+  <a routerLink="/login" class="inline-block text-sm font-semibold text-creche-verde underline">
+    Ir para o login
+  </a>
+</section>

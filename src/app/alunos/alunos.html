@@ -1,0 +1,276 @@
+<section class="space-y-5" aria-labelledby="titulo-alunos">
+  <header class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-wider text-creche-verde">Gestão escolar</p>
+      <h1 id="titulo-alunos" class="text-3xl font-bold text-creche-texto">Alunos</h1>
+      <p class="mt-2 text-sm text-stone-600">Consulte e gerencie os cadastros da creche.</p>
+    </div>
+
+    <button
+      type="button"
+      class="cursor-pointer rounded-xl bg-orange-200 px-4 py-2.5 text-sm font-semibold text-teal-950 hover:bg-orange-300 focus-visible:ring-2 focus-visible:ring-creche-verde focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      [disabled]="ocupado()"
+      (click)="abrirFormulario()"
+    >
+      Cadastrar aluno
+    </button>
+  </header>
+
+  @if (erro()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">
+      {{ erro() }}
+    </p>
+  }
+
+  @if (sucesso()) {
+    <p role="status" class="rounded-xl bg-green-50 p-4 text-sm text-green-900">
+      {{ sucesso() }}
+    </p>
+  }
+
+  @if (formularioAberto()) {
+    <section
+      class="rounded-2xl border border-stone-200 bg-white p-4 md:p-6"
+      aria-labelledby="titulo-formulario-aluno"
+    >
+      <h2 id="titulo-formulario-aluno" class="text-xl font-bold">Convidar responsável</h2>
+
+      <p class="mt-1 text-sm text-stone-600">
+        O responsável receberá um convite para cadastrar seu acesso e um aluno.
+      </p>
+      <form #form="ngForm" class="mt-4 max-w-lg space-y-4" (ngSubmit)="salvar()">
+        <div>
+          <label for="nome-aluno" class="mb-1 block text-sm font-semibold">
+            Nome completo do responsável
+          </label>
+          <input
+            id="nome-aluno"
+            name="nome"
+            type="text"
+            class="w-full rounded-xl border border-stone-300 px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:bg-stone-100"
+            [(ngModel)]="nome"
+            required
+            maxlength="150"
+            [disabled]="ocupado()"
+          />
+        </div>
+
+        <label class="block space-y-1 text-sm font-semibold">
+          <span>E-mail do responsável</span>
+          <input
+            name="email"
+            type="email"
+            autocomplete="email"
+            class="w-full rounded-xl border border-stone-300 px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-creche-verde"
+            [(ngModel)]="email"
+            required
+            email
+            maxlength="254"
+            [disabled]="ocupado()"
+          />
+        </label>
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="submit"
+            class="cursor-pointer rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            [disabled]="ocupado() || form.invalid"
+          >
+            {{ salvando() ? 'Enviando…' : 'Enviar convite' }}
+          </button>
+          <button
+            type="button"
+            class="cursor-pointer rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+            [disabled]="ocupado()"
+            (click)="fecharPaineis()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (consultando(); as aluno) {
+    <section
+      class="rounded-2xl border border-stone-200 bg-white p-5"
+      aria-labelledby="detalhes-aluno"
+    >
+      <h2 id="detalhes-aluno" class="text-lg font-bold">{{ aluno.nome }}</h2>
+      <p class="mt-2 text-sm text-stone-600">
+        Nascimento
+        {{
+          aluno.dataNascimento
+            ? (aluno.dataNascimento | date: 'dd/MM/yyyy' : 'UTC')
+            : aluno.anoNascimento
+        }}
+      </p>
+      <p class="text-sm">{{ aluno.ativo ? 'Ativo' : 'Inativo' }}</p>
+      <button
+        type="button"
+        class="mt-3 rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold"
+        (click)="fecharPaineis()"
+      >
+        Fechar detalhes
+      </button>
+    </section>
+  }
+
+  @if (paraInativar(); as aluno) {
+    <section
+      class="rounded-2xl border border-red-200 bg-white p-4 md:p-6"
+      aria-labelledby="titulo-inativacao"
+    >
+      <h2 id="titulo-inativacao" class="text-xl font-bold">Inativar aluno</h2>
+      <p class="mt-2 wrap-break-word">
+        Deseja inativar {{ aluno.nome }}? A matrícula atual, caso exista, também será encerrada.
+      </p>
+
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="cursor-pointer rounded-xl bg-red-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="ocupado()"
+          (click)="inativar(aluno)"
+        >
+          {{ salvando() ? 'Inativando…' : 'Confirmar inativação' }}
+        </button>
+        <button
+          type="button"
+          class="cursor-pointer rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="ocupado()"
+          (click)="fecharPaineis()"
+        >
+          Cancelar
+        </button>
+      </div>
+    </section>
+  }
+
+  <section
+    class="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6"
+    aria-label="Lista de alunos"
+    [attr.aria-busy]="carregando()"
+  >
+    <div class="flex flex-wrap items-end gap-3">
+      <div>
+        <label for="filtro-alunos" class="mb-1 block text-sm font-semibold"> Situação </label>
+        <select
+          id="filtro-alunos"
+          class="rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-creche-verde disabled:opacity-50"
+          [ngModel]="filtro()"
+          [disabled]="ocupado()"
+          (ngModelChange)="mudarFiltro($event)"
+        >
+          <option value="ativos">Ativos</option>
+          <option value="inativos">Inativos</option>
+          <option value="todos">Todos</option>
+        </select>
+      </div>
+      <button
+        type="button"
+        class="cursor-pointer rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="ocupado()"
+        (click)="atualizarLista()"
+      >
+        Atualizar lista
+      </button>
+    </div>
+
+    @if (carregando()) {
+      <p role="status" class="text-sm text-stone-600">Carregando alunos…</p>
+    } @else if (falhaListagem()) {
+      <p class="text-sm text-stone-600">Use Atualizar lista para tentar novamente.</p>
+    } @else if (alunos().length === 0) {
+      <p class="text-sm text-stone-600">Nenhum aluno nesta situação.</p>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <caption class="sr-only">
+            Alunos cadastrados
+          </caption>
+          <thead class="border-b border-amber-100 bg-amber-50 text-stone-700">
+            <tr>
+              <th scope="col" class="p-3">Nome</th>
+              <th scope="col" class="p-3">Nascimento</th>
+              <th scope="col" class="p-3">Situação</th>
+              <th scope="col" class="p-3">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (aluno of alunos(); track aluno.id) {
+              <tr class="border-b border-stone-100">
+                <th scope="row" class="min-w-40 p-3 font-semibold wrap-break-word">
+                  {{ aluno.nome }}
+                </th>
+                <td class="p-3 whitespace-nowrap">
+                  {{
+                    aluno.dataNascimento
+                      ? (aluno.dataNascimento | date: 'dd/MM/yyyy' : 'UTC')
+                      : aluno.anoNascimento
+                  }}
+                </td>
+                <td class="p-3">
+                  <span
+                    class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                    [class]="
+                      aluno.ativo ? 'bg-teal-50 text-teal-900' : 'bg-stone-100 text-stone-700'
+                    "
+                  >
+                    {{ aluno.ativo ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </td>
+                <td class="p-3">
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      class="cursor-pointer rounded-lg border border-stone-300 px-3 py-2 font-semibold hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      [disabled]="ocupado()"
+                      [attr.aria-label]="'Consultar ' + aluno.nome"
+                      (click)="consultar(aluno)"
+                    >
+                      Consultar
+                    </button>
+                    @if (aluno.ativo) {
+                      <button
+                        type="button"
+                        class="cursor-pointer rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-semibold text-red-800 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        [disabled]="ocupado()"
+                        [attr.aria-label]="'Inativar ' + aluno.nome"
+                        (click)="pedirInativacao(aluno)"
+                      >
+                        Inativar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (totalPaginas() > 1) {
+        <nav class="flex flex-wrap items-center gap-3" aria-label="Páginas de alunos">
+          <button
+            type="button"
+            class="cursor-pointer rounded-lg border border-stone-300 px-3 py-2 text-sm hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+            [disabled]="ocupado() || pagina() === 0"
+            (click)="mudarPagina(pagina() - 1)"
+          >
+            Anterior
+          </button>
+          <span class="text-sm">Página {{ pagina() + 1 }} de {{ totalPaginas() }}</span>
+          <button
+            type="button"
+            class="cursor-pointer rounded-lg border border-stone-300 px-3 py-2 text-sm hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+            [disabled]="ocupado() || pagina() + 1 >= totalPaginas()"
+            (click)="mudarPagina(pagina() + 1)"
+          >
+            Próxima
+          </button>
+        </nav>
+      }
+    }
+  </section>
+</section>

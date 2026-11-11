@@ -1,96 +1,539 @@
-<div class="dashboard-layout">
-  <aside class="sidebar">
-    <div class="brand">
-      <span class="logo-text">CrecheConecta</span>
+<section aria-labelledby="titulo-atividades" class="space-y-5">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1
+        id="titulo-atividades"
+        class="text-2xl font-bold text-creche-texto md:text-3xl"
+      >
+        {{ tituloPagina() }}
+      </h1>
+
+      <p class="mt-2 text-sm text-stone-600">
+        {{
+          ehResponsavel()
+            ? 'Acompanhe as atividades passadas pela turma da criança.'
+            : 'Organize e acompanhe as atividades da turma.'
+        }}
+      </p>
     </div>
-    <nav class="sidebar-nav">
-      <button>
-         [class.active]="isHome"
-         (click)="setHome(true)">
-        Atividades para casa
+
+    @if (!ehResponsavel()) {
+      <button
+        type="button"
+        class="min-h-11 cursor-pointer rounded-xl border border-transparent bg-[#b95432] px-4 py-2.5
+               text-sm font-semibold text-white enabled:hover:bg-[#9e4427]
+               focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+               disabled:cursor-not-allowed disabled:opacity-60"
+        [disabled]="ocupada() || !turmaId"
+        (click)="abrirCadastro()"
+      >
+        Criar atividade
       </button>
-      <button>
-         [class.active]="!isHome"
-         (click)="setHome(false)">
-        Atividades do dia
-      </button>
-    </nav>
-  </aside>
+    }
+  </div>
 
-  <div class="main-container">
+  <div
+    class="flex flex-wrap gap-2"
+    role="group"
+    aria-label="Tipo de atividade"
+  >
+    <button
+      type="button"
+      class="min-h-11 cursor-pointer rounded-xl border border-[#cfc8bc] bg-[#fffdfa] px-4 py-2.5
+             text-sm font-semibold text-creche-verde not-aria-pressed:enabled:hover:bg-[#f0eee7]
+             aria-pressed:border-creche-verde aria-pressed:bg-creche-verde aria-pressed:text-white
+             focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+             disabled:cursor-not-allowed disabled:opacity-60"
+      [attr.aria-pressed]="tipo === 'CASA'"
+      [disabled]="ocupada()"
+      (click)="mudarTipo('CASA')"
+    >
+      Para casa
+    </button>
 
-    <header class="top-header">
-      <div class="header-titles">
-        <h1>Portal do Professor</h1>
-        <p>Creche Municipal Girassol</p>
-      </div>
-      <div class="user-profile">
-        <span class="user-name">Professora Ana</span>
-        <div class="user-avatar"></div>
-      </div>
-    </header>
+    <button
+      type="button"
+      class="min-h-11 cursor-pointer rounded-xl border border-[#cfc8bc] bg-[#fffdfa] px-4 py-2.5
+             text-sm font-semibold text-creche-verde not-aria-pressed:enabled:hover:bg-[#f0eee7]
+             aria-pressed:border-creche-verde aria-pressed:bg-creche-verde aria-pressed:text-white
+             focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+             disabled:cursor-not-allowed disabled:opacity-60"
+      [attr.aria-pressed]="tipo === 'DIA'"
+      [disabled]="ocupada()"
+      (click)="mudarTipo('DIA')"
+    >
+      Do dia
+    </button>
+  </div>
 
-    <main class="content-area">
-      <div class="page-header">
-        <div class="page-info">
-          <h2>{{ isHome ? 'Atividades para casa' : 'Atividades do dia' }}</h2>
-          <p>{{ isHome ? 'Atividades cadastradas pelo professor para os alunos realizarem em casa!' : 'Atividades realizadas durante o dia pelo professor' }}</p>
+  <div
+    class="rounded-[1.25rem] border border-[#e7dfd3] bg-[#fffdfa] p-4
+           shadow-[0_3px_10px_rgb(37_56_49/5%)] sm:p-6"
+  >
+    <div class="flex flex-wrap items-end gap-3">
+      @if (ehResponsavel()) {
+        <div class="min-w-0 flex-1">
+          <label for="filho-atividade" class="mb-2 block text-sm font-semibold">
+            Criança
+          </label>
+
+          <select
+            id="filho-atividade"
+            class="block min-h-11 w-full rounded-xl border border-[#cfc8bc] bg-white p-3
+                   text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-3
+                   focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+            [(ngModel)]="alunoId"
+            [disabled]="ocupada() || filhos().length === 0"
+            (ngModelChange)="mudarFilho()"
+          >
+            @for (filho of filhos(); track filho.id) {
+              <option [value]="filho.id">
+                {{ filho.nome }}
+                @if (filho.turma) {
+                  — {{ filho.turma.nome }}
+                }
+              </option>
+            }
+          </select>
         </div>
-        <button class="btn-primary" (click)="abrirModalCriar()">Criar atividade</button>
+      } @else {
+        <div class="min-w-0 flex-1">
+          <label for="turma-atividade" class="mb-2 block text-sm font-semibold">
+            Turma
+          </label>
+
+          <select
+            id="turma-atividade"
+            class="block min-h-11 w-full rounded-xl border border-[#cfc8bc] bg-white p-3
+                   text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-3
+                   focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+            [(ngModel)]="turmaId"
+            [disabled]="ocupada() || turmas().length === 0"
+            (ngModelChange)="mudarTurma()"
+          >
+            <option value="">Selecione uma turma</option>
+
+            @for (turma of turmas(); track turma.id) {
+              <option [value]="turma.id">
+                {{ turma.nome }} — Sala {{ turma.numeroSala }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+
+      <button
+        type="button"
+        class="min-h-11 cursor-pointer rounded-xl border border-[#cfc8bc] bg-[#fffdfa] px-4 py-2.5
+               text-sm font-semibold text-creche-verde enabled:hover:bg-[#f0eee7]
+               focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+               disabled:cursor-not-allowed disabled:opacity-60"
+        [disabled]="ocupada()"
+        (click)="carregarTurmas()"
+      >
+        Atualizar dados
+      </button>
+    </div>
+  </div>
+
+  @if (sucesso()) {
+    <p
+      role="status"
+      class="rounded-xl border border-green-200 bg-green-50
+             p-4 text-sm text-green-900"
+    >
+      {{ sucesso() }}
+    </p>
+  }
+
+  @if (erro()) {
+    <p
+      role="alert"
+      class="rounded-xl border border-red-200 bg-red-50
+             p-4 text-sm text-red-800"
+    >
+      {{ erro() }}
+    </p>
+  }
+
+  @if (formularioAberto() && !ehResponsavel()) {
+    <section
+      class="rounded-[1.25rem] border border-[#e7dfd3] bg-[#fffdfa] p-4
+             shadow-[0_3px_10px_rgb(37_56_49/5%)] sm:p-6"
+      aria-labelledby="titulo-formulario"
+    >
+      <h2 id="titulo-formulario" class="text-xl font-bold">
+        {{ editando() ? 'Editar atividade' : 'Nova atividade' }}
+      </h2>
+
+      <p class="mt-1 text-sm text-stone-600">
+        {{ nomeTurma() }} · {{ tituloPagina() }}
+      </p>
+
+      <form
+        #formulario="ngForm"
+        class="mt-5 space-y-4"
+        (ngSubmit)="salvar(formulario)"
+      >
+        <div>
+          <label for="titulo-atividade" class="mb-2 block text-sm font-semibold">
+            Título *
+          </label>
+
+          <input
+            id="titulo-atividade"
+            name="titulo"
+            class="block min-h-11 w-full rounded-xl border border-[#cfc8bc] bg-white p-3
+                   text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-3
+                   focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+            type="text"
+            required
+            maxlength="150"
+            [(ngModel)]="titulo"
+            [disabled]="salvando()"
+            #tituloCampo="ngModel"
+            [attr.aria-invalid]="
+              tituloCampo.touched && !titulo.trim() ? 'true' : null
+            "
+            aria-describedby="ajuda-titulo"
+          />
+
+          <p id="ajuda-titulo" class="mt-1 text-xs text-stone-600">
+            Informe até 150 caracteres.
+          </p>
+
+          @if (tituloCampo.touched && !titulo.trim()) {
+            <p class="mt-1 text-sm text-red-700">
+              Informe o título da atividade.
+            </p>
+          }
+        </div>
+
+        <div>
+          <label for="descricao-atividade" class="mb-2 block text-sm font-semibold">
+            Descrição e orientações
+          </label>
+
+          <textarea
+            id="descricao-atividade"
+            name="descricao"
+            class="block min-h-11 w-full resize-y rounded-xl border border-[#cfc8bc] bg-white p-3
+                   text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-3
+                   focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+            rows="5"
+            [(ngModel)]="descricao"
+            [disabled]="salvando()"
+          ></textarea>
+        </div>
+
+        @if (tipo === 'CASA') {
+          <div>
+            <label for="prazo-atividade" class="mb-2 block text-sm font-semibold">
+              Prazo de conclusão *
+            </label>
+
+            <input
+              id="prazo-atividade"
+              name="prazoConclusao"
+              type="date"
+              class="block min-h-11 w-full rounded-xl border border-[#cfc8bc] bg-white p-3
+                     text-creche-texto focus-visible:outline-3 focus-visible:outline-offset-3
+                     focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+              required
+              [(ngModel)]="prazoConclusao"
+              [disabled]="salvando()"
+              #prazoCampo="ngModel"
+              [attr.aria-invalid]="
+                prazoCampo.touched && prazoCampo.invalid
+                  ? 'true'
+                  : null
+              "
+            />
+
+            @if (prazoCampo.touched && prazoCampo.invalid) {
+              <p class="mt-1 text-sm text-red-700">
+                Informe uma data válida.
+              </p>
+            }
+          </div>
+        }
+
+        <div class="flex flex-wrap gap-3">
+          <button
+            type="submit"
+            class="min-h-11 cursor-pointer rounded-xl border border-transparent bg-[#b95432] px-4 py-2.5
+                   text-sm font-semibold text-white enabled:hover:bg-[#9e4427]
+                   focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+                   disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="ocupada()"
+          >
+            {{ salvando() ? 'Salvando…' : 'Salvar atividade' }}
+          </button>
+
+          <button
+            type="button"
+            class="min-h-11 cursor-pointer rounded-xl border border-[#cfc8bc] bg-[#fffdfa] px-4 py-2.5
+                   text-sm font-semibold text-creche-verde enabled:hover:bg-[#f0eee7]
+                   focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+                   disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="salvando()"
+            (click)="fecharPaineis()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (detalhes(); as atividade) {
+    <section
+      class="rounded-[1.25rem] border border-[#e7dfd3] bg-[#fffdfa] p-4
+             shadow-[0_3px_10px_rgb(37_56_49/5%)] sm:p-6"
+      aria-labelledby="titulo-detalhes"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <h2 id="titulo-detalhes" class="text-xl font-bold">
+          {{ atividade.titulo }}
+        </h2>
+
+        <button
+          type="button"
+          class="min-h-11 cursor-pointer rounded-xl border border-[#cfc8bc] bg-[#fffdfa] px-4 py-2.5
+                 text-sm font-semibold text-creche-verde enabled:hover:bg-[#f0eee7]
+                 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+                 disabled:cursor-not-allowed disabled:opacity-60"
+          (click)="fecharPaineis()"
+        >
+          Fechar detalhes
+        </button>
       </div>
 
-      <div class="mensagem-sucesso" *ngIf="mensagemSucesso">
-        {{ mensagemSucesso }}
-      </div>
+      <p class="mt-2 text-sm text-stone-600">
+        {{ nomeTurma() }} ·
+        {{ atividade.tipo === 'CASA' ? 'Para casa' : 'Do dia' }}
+      </p>
 
-      <div class="table-wrapper">
-        <table class="custom-table">
+      <p class="mt-2 text-sm text-stone-600">
+        Criada em
+        {{ atividade.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}
+      </p>
+
+      @if (atividade.prazoConclusao) {
+        <p class="mt-2 text-sm text-stone-600">
+          Prazo:
+          {{ atividade.prazoConclusao | date: 'dd/MM/yyyy' : 'UTC' }}
+        </p>
+
+        @switch (avisoPrazo(atividade)) {
+          @case ('hoje') {
+            <p
+              role="status"
+              class="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800"
+            >
+              Esta atividade deve ser entregue hoje.
+            </p>
+          }
+          @case ('amanha') {
+            <p
+              role="status"
+              class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900"
+            >
+              Esta atividade deve ser entregue amanhã.
+            </p>
+          }
+        }
+      }
+
+      <p class="mt-5 whitespace-pre-wrap wrap-break-word">
+        {{ atividade.descricao || 'Sem descrição.' }}
+      </p>
+    </section>
+  }
+
+  @if (exclusao(); as atividade) {
+    <section
+      class="rounded-[1.25rem] border border-red-200 bg-[#fffdfa] p-4
+             shadow-[0_3px_10px_rgb(37_56_49/5%)] sm:p-6"
+      aria-labelledby="titulo-exclusao"
+    >
+      <h2 id="titulo-exclusao" class="text-lg font-bold">
+        Excluir atividade
+      </h2>
+
+      <p class="mt-3 wrap-break-word">
+        Deseja excluir “{{ atividade.titulo }}”?
+        Essa ação remove a atividade.
+      </p>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button
+          type="button"
+          class="min-h-11 cursor-pointer rounded-xl border border-red-200 bg-rose-50 px-4 py-2.5
+                 text-sm font-semibold text-red-800 enabled:hover:bg-rose-100
+                 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+                 disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="ocupada()"
+          (click)="confirmarExclusao()"
+        >
+          {{ salvando() ? 'Excluindo…' : 'Confirmar exclusão' }}
+        </button>
+
+        <button
+          type="button"
+          class="min-h-11 cursor-pointer rounded-xl border border-[#cfc8bc] bg-[#fffdfa] px-4 py-2.5
+                 text-sm font-semibold text-creche-verde enabled:hover:bg-[#f0eee7]
+                 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+                 disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="salvando()"
+          (click)="fecharPaineis()"
+        >
+          Cancelar
+        </button>
+      </div>
+    </section>
+  }
+
+  <section
+    class="rounded-[1.25rem] border border-[#e7dfd3] bg-[#fffdfa] p-4
+           shadow-[0_3px_10px_rgb(37_56_49/5%)] sm:p-6"
+    aria-label="Atividades cadastradas"
+    [attr.aria-busy]="iniciando() || carregando()"
+  >
+    @if (iniciando() || carregando()) {
+      <p role="status" class="text-sm text-stone-600">
+        Carregando atividades…
+      </p>
+    } @else if (ehResponsavel() && filhos().length === 0) {
+      @if (!erro()) {
+        <p class="text-sm text-stone-600">
+          Nenhuma criança vinculada à sua conta.
+          Caso necessário, solicite à direção a conferência do vínculo.
+        </p>
+      }
+    } @else if (ehResponsavel() && !turmaId) {
+      <p class="text-sm text-stone-600">
+        {{ filhoSelecionado()?.nome }} não está matriculado(a) em uma turma ativa
+        no momento. Caso necessário, procure a direção.
+      </p>
+    } @else if (!ehResponsavel() && turmas().length === 0) {
+      <p class="text-sm text-stone-600">
+        Nenhuma turma ativa disponível para sua conta.
+        Caso necessário, solicite à direção a conferência do vínculo.
+      </p>
+    } @else if (!erro() && atividades().length === 0) {
+      <p class="text-sm text-stone-600">
+        Nenhuma atividade cadastrada para a turma e o tipo selecionados.
+      </p>
+    } @else if (atividades().length > 0) {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <caption class="sr-only">
+            Atividades de {{ nomeTurma() }}
+          </caption>
+
           <thead>
-            <tr>
-              <th>TITULO ATIVIDADE</th>
-              <th>TURMA</th>
-              <th>DATA CRIAÇÃO</th>
-              <th>DATA ENTREGA</th>
-              <th class="actions-column"></th>
+            <tr class="border-b border-stone-200 text-stone-600">
+              <th scope="col" class="p-3">Título</th>
+              <th scope="col" class="p-3">Criação</th>
+              <th scope="col" class="p-3">Prazo</th>
+              <th scope="col" class="p-3">Ações</th>
             </tr>
           </thead>
+
           <tbody>
-            <tr *ngFor="let atividade of atividades">
-              <td class="bold-text">{{ atividade.titulo }}</td>
-              <td class="light-text">{{ atividade.turma }}</td>
-              <td class="light-text">{{ atividade.dataCriacao }}</td>
-              <td class="light-text">{{ atividade.dataEntrega }}</td>
-              <td class="actions-cell">
-                <button class="btn-view" (click)="visualizarAtividade(atividade)">Visualizar atividade</button>
-                <button class="btn-edit" (click)="abrirModalEditar(atividade)">Editar</button>
-                <button class="btn-delete" (click)="abrirModalApagar(atividade)">Apagar</button>
-              </td>
-            </tr>
+            @for (atividade of atividades(); track atividade.id) {
+              <tr class="border-b border-stone-100">
+                <th
+                  scope="row"
+                  class="min-w-48 p-3 font-semibold wrap-break-word"
+                >
+                  {{ atividade.titulo }}
+                </th>
+
+                <td class="whitespace-nowrap p-3">
+                  {{ atividade.dataCriacao | date: 'dd/MM/yyyy' }}
+                </td>
+
+                <td class="whitespace-nowrap p-3">
+                  @if (atividade.prazoConclusao) {
+                    {{
+                      atividade.prazoConclusao
+                        | date: 'dd/MM/yyyy' : 'UTC'
+                    }}
+
+                    @switch (avisoPrazo(atividade)) {
+                      @case ('hoje') {
+                        <span
+                          class="ml-2 inline-block rounded-full border border-red-200 bg-red-100
+                                 px-2.5 py-0.5 text-xs font-semibold text-red-800"
+                        >
+                          Entrega hoje
+                        </span>
+                      }
+                      @case ('amanha') {
+                        <span
+                          class="ml-2 inline-block rounded-full border border-amber-200 bg-amber-100
+                                 px-2.5 py-0.5 text-xs font-semibold text-amber-900"
+                        >
+                          Entrega amanhã
+                        </span>
+                      }
+                    }
+                  } @else {
+                    —
+                  }
+                </td>
+
+                <td class="p-3">
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      class="min-h-11 cursor-pointer rounded-xl border border-[#cfc8bc] bg-[#fffdfa] px-4 py-2.5
+                             text-sm font-semibold text-creche-verde enabled:hover:bg-[#f0eee7]
+                             focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+                             disabled:cursor-not-allowed disabled:opacity-60"
+                      [disabled]="ocupada()"
+                      [attr.aria-label]="'Visualizar ' + atividade.titulo"
+                      (click)="visualizar(atividade)"
+                    >
+                      Visualizar
+                    </button>
+
+                    @if (podeAlterar(atividade)) {
+                      <button
+                        type="button"
+                        class="min-h-11 cursor-pointer rounded-xl border border-[#cfc8bc] bg-[#fffdfa] px-4 py-2.5
+                               text-sm font-semibold text-creche-verde enabled:hover:bg-[#f0eee7]
+                               focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+                               disabled:cursor-not-allowed disabled:opacity-60"
+                        [disabled]="ocupada()"
+                        [attr.aria-label]="'Editar ' + atividade.titulo"
+                        (click)="abrirEdicao(atividade)"
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        type="button"
+                        class="min-h-11 cursor-pointer rounded-xl border border-red-200 bg-rose-50 px-4 py-2.5
+                               text-sm font-semibold text-red-800 enabled:hover:bg-rose-100
+                               focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-creche-verde
+                               disabled:cursor-not-allowed disabled:opacity-60"
+                        [disabled]="ocupada()"
+                        [attr.aria-label]="'Excluir ' + atividade.titulo"
+                        (click)="solicitarExclusao(atividade)"
+                      >
+                        Excluir
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
           </tbody>
         </table>
       </div>
-    </main>
-  </div>
-</div>
-
-<app-modal-nova-atividade
-   *ngIf="mostrarModal"
-   [isHome]="isHome"
-   [isEditing]="isEditing"
-   [atividadeEdicao]="atividadeParaEditar"
-   (fechar)="fecharModal()"
-   (salvar)="salvarAtividade($event)">
-</app-modal-nova-atividade>
-
-<app-modal-excluir-atividade
-  *ngIf="mostrarModalExcluir"
-  (cancelar)="fecharModalApagar()"
-  (confirmar)="confirmarExclusao()">
-</app-modal-excluir-atividade>
-
-<app-modal-visualizar-atividade
-  *ngIf="mostrarModalVisualizar"
-  [isHome]="isHome"
-  [atividade]="atividadeParaVisualizar"
-  (fechar)="fecharModalVisualizar()">
-</app-modal-visualizar-atividade>
+    }
+  </section>
+</section>
