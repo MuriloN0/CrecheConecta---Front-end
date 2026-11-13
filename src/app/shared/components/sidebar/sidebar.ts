@@ -108,7 +108,10 @@ export class Sidebar {
     ];
 
     if (perfil) {
-      itens.push({ titulo: 'Comunicados', caminho: '/comunicados' });
+      itens.push(
+        { titulo: 'Comunicados', caminho: '/comunicados' },
+        { titulo: 'Conversas', caminho: '/conversas' },
+      );
     }
 
     if (perfil === 'DIRECAO') {

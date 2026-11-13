@@ -166,6 +166,18 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'conversas',
+        title: 'Conversas | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],
+        loadComponent: () => import('./conversas/conversas').then((m) => m.Conversas),
+      },
+      {
+        path: 'notificacoes',
+        title: 'Notificações | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],
+        loadComponent: () => import('./notificacoes/notificacoes').then((m) => m.Notificacoes),
+      },
+      {
         path: 'comunicados',
         title: 'Comunicados | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],
