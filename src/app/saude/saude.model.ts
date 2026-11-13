@@ -2,14 +2,6 @@
 export interface FichaSaudeResumo {
   id: string;
   nome: string;
-  quantidadeAnexos: number;
-}
-
-export interface AnexoResponse {
-  id: string;
-  nomeArquivo: string;
-  tipoConteudo: string;
-  tamanhoBytes: number;
 }
 
 export interface FichaSaude {
@@ -18,7 +10,6 @@ export interface FichaSaude {
   nome: string;
   observacoes: string | null;
   versao: number;
-  anexos: AnexoResponse[];
   dataCriacao: string;
   dataAtualizacao: string;
 }
