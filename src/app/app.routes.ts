@@ -196,9 +196,23 @@ export const routes: Routes = [
       {
         path: 'observacoes',
         title: 'Observações | CrecheConecta',
-        canActivate: [permitirPerfis('RESPONSAVEL')],
+        canActivate: [permitirPerfis('PROFESSOR')],
         loadComponent: () =>
-          import('./observacoes/observacoes').then((m) => m.Observacoes),
+          import('./observacoes/observacoes-professor').then((m) => m.ObservacoesProfessor),
+      },
+      {
+        path: 'familia/observacoes',
+        canActivate: [permitirPerfis('RESPONSAVEL')],
+        canActivateChild: [termoAceitoGuard],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Observações | CrecheConecta',
+            loadComponent: () =>
+              import('./observacoes/observacoes').then((m) => m.Observacoes),
+          },
+        ],
       },
       {
         path: 'informacoes',

@@ -2,8 +2,11 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ROTULOS_DIARIO } from '../../diario/diario.model';
+import { ObservacoesApi } from '../../observacoes/observacoes.api';
+import { Observacao } from '../../observacoes/observacoes.model';
 import {
   DiarioFilho,
   Filho,
@@ -15,11 +18,15 @@ import {
 @Component({
   selector: 'app-painel-familia',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './painel-familia.html',
 })
 export class PainelFamilia implements OnInit {
+  // Quantas observações recentes aparecem no painel (as demais ficam em /familia/observacoes).
+  private static readonly OBSERVACOES_NO_PAINEL = 3;
+
   private readonly servico = inject(PainelFamiliaService);
+  private readonly observacoesApi = inject(ObservacoesApi);
 
   readonly filhos = signal<Filho[]>([]);
   readonly alunoId = signal('');
@@ -39,6 +46,9 @@ export class PainelFamilia implements OnInit {
   }).format(new Date());
   readonly erroFrequencia = signal(false);
   readonly erroMalas = signal(false);
+  readonly observacoes = signal<Observacao[]>([]);
+  readonly totalObservacoes = signal(0);
+  readonly erroObservacoes = signal(false);
 
   readonly filhoSelecionado = computed(
     () => this.filhos().find((filho) => filho.id === this.alunoId()),
@@ -149,14 +159,26 @@ export class PainelFamilia implements OnInit {
     this.erroDiario.set(false);
     this.erroFrequencia.set(false);
     this.erroMalas.set(false);
+    this.observacoes.set([]);
+    this.totalObservacoes.set(0);
+    this.erroObservacoes.set(false);
   }
 
   private async carregarDetalhes(alunoId: string): Promise<void> {
-    const [diario, frequencia, malas] = await Promise.allSettled([
+    const [diario, frequencia, malas, observacoes] = await Promise.allSettled([
       firstValueFrom(this.servico.consultarDiario(alunoId)),
       firstValueFrom(this.servico.consultarFrequencia(alunoId)),
       firstValueFrom(this.servico.listarMalas(alunoId)),
+      firstValueFrom(this.observacoesApi.listar(alunoId)),
     ]);
+
+    // O back já devolve da mais recente para a mais antiga.
+    if (observacoes.status === 'fulfilled') {
+      this.totalObservacoes.set(observacoes.value.length);
+      this.observacoes.set(observacoes.value.slice(0, PainelFamilia.OBSERVACOES_NO_PAINEL));
+    } else {
+      this.erroObservacoes.set(true);
+    }
 
     if (diario.status === 'fulfilled') {
       this.diario.set(diario.value);
