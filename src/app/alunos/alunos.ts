@@ -30,6 +30,7 @@ export class Alunos implements OnInit {
   readonly formularioAberto = signal(false);
   readonly consultando = signal<Aluno | null>(null);
   readonly paraInativar = signal<Aluno | null>(null);
+  readonly paraAnonimizar = signal<Aluno | null>(null);
 
   nome = '';
   email = '';
@@ -95,10 +96,42 @@ export class Alunos implements OnInit {
     this.paraInativar.set(aluno);
   }
 
+  // LGPD: só aluno inativo e ainda não anonimizado.
+  pedirAnonimizacao(aluno: Aluno): void {
+    if (this.ocupado() || aluno.ativo || aluno.anonimizado) return;
+
+    this.fecharPaineis();
+    this.limparMensagens();
+    this.paraAnonimizar.set(aluno);
+  }
+
   fecharPaineis(): void {
     this.formularioAberto.set(false);
     this.consultando.set(null);
     this.paraInativar.set(null);
+    this.paraAnonimizar.set(null);
+  }
+
+  async anonimizar(aluno: Aluno): Promise<void> {
+    if (this.ocupado() || this.paraAnonimizar()?.id !== aluno.id) return;
+
+    this.limparMensagens();
+    this.salvando.set(true);
+
+    try {
+      const resultado = await firstValueFrom(this.api.anonimizar(aluno));
+      this.fecharPaineis();
+      this.sucesso.set(
+        `Dados anonimizados. Responsáveis anonimizados: ${resultado.responsaveisAnonimizados}; `
+        + `informações relevantes removidas: ${resultado.informacoesRelevantesRemovidas}; `
+        + `observações removidas: ${resultado.observacoesRemovidas}.`,
+      );
+      await this.carregar(this.pagina());
+    } catch (erro: unknown) {
+      this.erro.set(this.mensagemErro(erro));
+    } finally {
+      this.salvando.set(false);
+    }
   }
 
   async salvar(): Promise<void> {
