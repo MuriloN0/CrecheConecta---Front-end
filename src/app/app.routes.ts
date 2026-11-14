@@ -218,7 +218,7 @@ export const routes: Routes = [
         path: 'informacoes',
         title: 'Informações relevantes | CrecheConecta',
         canActivate: [permitirPerfis('RESPONSAVEL')],
-        loadComponent: () => import('./saude/saude').then((m) => m.Saude),
+        loadComponent: () => import('./informacoes-relevantes/informacoes-relevantes').then((m) => m.InformacoesRelevantes),
       },
     ],
   },

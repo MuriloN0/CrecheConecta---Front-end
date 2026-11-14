@@ -194,12 +194,24 @@
     aria-labelledby="titulo-privacidade-familia">
     <h3 id="titulo-privacidade-familia" class="text-lg font-bold">Privacidade dos dados</h3>
     <p class="text-sm text-stone-600">
-      Abra seu aplicativo de e-mail para enviar a solicitação à equipe da creche.
+      Baixe uma cópia dos dados que a creche guarda sobre você e a criança, ou peça a anonimização
+      pelo seu aplicativo de e-mail.
     </p>
-    <a [href]="linkAnonimizacao"
-      class="inline-block rounded-xl border border-creche-verde px-4 py-2
-             text-sm font-semibold text-creche-verde hover:bg-stone-50">
-      Solicitar anonimização de dados
-    </a>
+    @if (erroExportacao()) {
+      <p role="alert" class="rounded-xl bg-red-50 p-3 text-sm text-red-800">{{ erroExportacao() }}</p>
+    }
+    <div class="flex flex-wrap gap-2">
+      <button type="button" (click)="baixarMeusDados()" [disabled]="baixandoDados()"
+        class="cursor-pointer rounded-xl bg-creche-verde px-4 py-2 text-sm font-semibold text-white
+               hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde
+               focus-visible:ring-offset-2 disabled:opacity-50">
+        {{ baixandoDados() ? 'Gerando arquivo…' : 'Baixar meus dados' }}
+      </button>
+      <a [href]="linkAnonimizacao"
+        class="inline-block rounded-xl border border-creche-verde px-4 py-2
+               text-sm font-semibold text-creche-verde hover:bg-stone-50">
+        Solicitar anonimização de dados
+      </a>
+    </div>
   </section>
 </section>

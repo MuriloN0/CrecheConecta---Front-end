@@ -1,7 +1,7 @@
-<section class="space-y-5" aria-labelledby="titulo-saude">
+<section class="space-y-5" aria-labelledby="titulo-informacoes">
   <header class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h1 id="titulo-saude" class="text-3xl font-bold text-creche-texto">
+      <h1 id="titulo-informacoes" class="text-3xl font-bold text-creche-texto">
         Informações relevantes
       </h1>
       <p class="mt-1 text-sm text-stone-600">
@@ -39,8 +39,8 @@
   }
 
   @if (formularioAberto()) {
-    <form [class]="cartao" (ngSubmit)="salvar()" aria-labelledby="titulo-form-saude">
-      <h2 id="titulo-form-saude" class="text-xl font-bold">
+    <form [class]="cartao" (ngSubmit)="salvar()" aria-labelledby="titulo-form-informacao">
+      <h2 id="titulo-form-informacao" class="text-xl font-bold">
         {{ editando() ? 'Editar informação' : 'Cadastrar informação' }}
       </h2>
       <label class="block space-y-1 text-sm font-semibold">
@@ -69,20 +69,20 @@
     </form>
   }
 
-  @if (detalhe(); as ficha) {
-    <section [class]="cartao" aria-labelledby="titulo-detalhe-saude">
-      <h2 id="titulo-detalhe-saude" class="wrap-break-word text-xl font-bold">{{ ficha.nome }}</h2>
+  @if (detalhe(); as informacao) {
+    <section [class]="cartao" aria-labelledby="titulo-detalhe-informacao">
+      <h2 id="titulo-detalhe-informacao" class="wrap-break-word text-xl font-bold">{{ informacao.nome }}</h2>
       <p class="whitespace-pre-wrap wrap-break-word text-sm leading-relaxed">
-        {{ ficha.observacoes || 'Sem observações.' }}
+        {{ informacao.observacoes || 'Sem observações.' }}
       </p>
       <p class="text-xs text-stone-600">
-        Cadastrada em {{ ficha.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}
-        @if (ficha.dataAtualizacao !== ficha.dataCriacao) {
-          · Atualizada em {{ ficha.dataAtualizacao | date: 'dd/MM/yyyy HH:mm' }}
+        Cadastrada em {{ informacao.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}
+        @if (informacao.dataAtualizacao !== informacao.dataCriacao) {
+          · Atualizada em {{ informacao.dataAtualizacao | date: 'dd/MM/yyyy HH:mm' }}
         }
       </p>
       <div class="flex flex-wrap gap-2">
-        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="editar(ficha)">
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="editar(informacao)">
           Editar
         </button>
         <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
@@ -92,11 +92,11 @@
     </section>
   }
 
-  @if (paraExcluir(); as ficha) {
-    <section [class]="cartao" aria-labelledby="titulo-exclusao-saude">
-      <h2 id="titulo-exclusao-saude" class="text-xl font-bold">Excluir informação</h2>
+  @if (paraExcluir(); as informacao) {
+    <section [class]="cartao" aria-labelledby="titulo-exclusao-informacao">
+      <h2 id="titulo-exclusao-informacao" class="text-xl font-bold">Excluir informação</h2>
       <p class="wrap-break-word text-sm">
-        A informação “{{ ficha.nome }}” será excluída e a equipe da creche deixará de vê-la.
+        A informação “{{ informacao.nome }}” será excluída e a equipe da creche deixará de vê-la.
       </p>
       <div class="flex flex-wrap gap-2">
         <button type="button" [disabled]="ocupada()" (click)="confirmarExclusao()"
@@ -116,21 +116,21 @@
     <button type="button" [class]="botao" [disabled]="ocupada()" (click)="atualizar()">
       Atualizar lista
     </button>
-    @for (ficha of fichas(); track ficha.id) {
+    @for (informacao of informacoes(); track informacao.id) {
       <article [class]="cartao">
         <header class="flex flex-wrap items-start justify-between gap-3">
-          <h2 class="min-w-0 wrap-break-word text-lg font-bold">{{ ficha.nome }}</h2>
+          <h2 class="min-w-0 wrap-break-word text-lg font-bold">{{ informacao.nome }}</h2>
           <div class="flex flex-wrap gap-2">
             <button type="button" [class]="botao" [disabled]="ocupada()"
-              [attr.aria-label]="'Visualizar ' + ficha.nome" (click)="ver(ficha)">
+              [attr.aria-label]="'Visualizar ' + informacao.nome" (click)="ver(informacao)">
               Visualizar
             </button>
             <button type="button" [class]="botao" [disabled]="ocupada()"
-              [attr.aria-label]="'Editar ' + ficha.nome" (click)="editar(ficha)">
+              [attr.aria-label]="'Editar ' + informacao.nome" (click)="editar(informacao)">
               Editar
             </button>
             <button type="button" [class]="botao" [disabled]="ocupada()"
-              [attr.aria-label]="'Excluir ' + ficha.nome" (click)="pedirExclusao(ficha)">
+              [attr.aria-label]="'Excluir ' + informacao.nome" (click)="pedirExclusao(informacao)">
               Excluir
             </button>
           </div>
