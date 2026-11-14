@@ -1,135 +1,179 @@
-<section class="space-y-4" aria-labelledby="titulo-conversas">
-  <header>
-    <h1 id="titulo-conversas" class="text-2xl font-bold">Conversas</h1>
-    <p class="text-sm text-stone-600">Envie mensagens privadas de texto para seus contatos.</p>
-  </header>
+<section class="mx-auto max-w-6xl" aria-labelledby="titulo-conversas">
+  <h1 id="titulo-conversas" class="mb-4 text-2xl font-bold text-creche-texto sm:text-3xl">
+    Conversas
+  </h1>
 
-  <div class="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
-    <aside
-      [class.hidden]="selecionado()"
-      class="min-w-0 rounded-2xl border border-stone-200 bg-white p-4 lg:block"
-      aria-label="Contatos e conversas"
-    >
-      <div class="mb-3 flex flex-wrap gap-2">
+  <div class="grid overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm
+              lg:h-[clamp(30rem,calc(100dvh-12rem),49rem)] lg:grid-cols-[17rem_minmax(0,1fr)]
+              xl:grid-cols-[20rem_minmax(0,1fr)]">
+    <aside [class.hidden]="selecionado()"
+      class="min-h-0 min-w-0 flex-col bg-stone-50 p-3 sm:p-4 lg:flex lg:border-r lg:border-stone-200"
+      aria-label="Contatos e conversas">
+      <form (submit)="pesquisar($event)" class="flex gap-2">
+        <label for="busca-chat" class="sr-only">Buscar por nome</label>
+        <input id="busca-chat" type="search" maxlength="100" placeholder="Buscar por nome"
+          [value]="busca()" (input)="busca.set($any($event.target).value)"
+          class="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm
+                 focus-visible:outline-2 focus-visible:outline-creche-verde" />
+        <button type="submit" aria-label="Buscar contatos"
+          class="grid min-h-11 min-w-11 place-items-center rounded-xl border border-stone-200
+                 bg-white text-creche-verde hover:bg-creche-creme focus-visible:outline-2">
+          <span aria-hidden="true" class="relative block size-4 rounded-full border-2 border-current
+                 after:absolute after:top-full after:left-full after:h-0.5 after:w-1.5
+                 after:origin-left after:rotate-45 after:bg-current"></span>
+        </button>
+      </form>
+
+      <div class="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-stone-200/65 p-1" aria-label="Tipo de lista">
         <button type="button" (click)="escolherLista(false)" [attr.aria-pressed]="!somenteConversas()"
-          class="rounded-lg border border-stone-300 px-3 py-2 text-sm aria-pressed:bg-creche-verde aria-pressed:text-white">
+          class="min-h-10 rounded-lg px-2 text-sm font-semibold text-stone-600
+                 aria-pressed:bg-white aria-pressed:text-creche-verde aria-pressed:shadow-sm">
           Contatos
         </button>
         <button type="button" (click)="escolherLista(true)" [attr.aria-pressed]="somenteConversas()"
-          class="rounded-lg border border-stone-300 px-3 py-2 text-sm aria-pressed:bg-creche-verde aria-pressed:text-white">
+          class="min-h-10 rounded-lg px-2 text-sm font-semibold text-stone-600
+                 aria-pressed:bg-white aria-pressed:text-creche-verde aria-pressed:shadow-sm">
           Em conversa
         </button>
       </div>
 
-      <form (submit)="pesquisar($event)" class="flex flex-wrap items-end gap-2">
-        <label class="min-w-28 flex-1 text-sm font-semibold" for="busca-chat">
-          Buscar por nome
-          <input id="busca-chat" type="search" maxlength="100" [value]="busca()"
-            (input)="busca.set($any($event.target).value)"
-            class="mt-1 w-full rounded-lg border border-stone-300 p-2 font-normal" />
-        </label>
-        <button type="submit" class="rounded-lg bg-creche-verde px-3 py-2 text-sm text-white">
-          Buscar
-        </button>
-      </form>
-
-      @if (erroContatos()) {
-        <p class="mt-3 text-sm text-red-800" role="alert">{{ erroContatos() }}</p>
-      } @else if (carregandoContatos()) {
-        <p class="mt-3 text-sm" role="status">Carregando contatos…</p>
-      } @else {
-        <ul class="mt-3 divide-y divide-stone-100">
-          @for (contato of contatos(); track contato.id) {
-            <li>
-              <button type="button" (click)="abrir(contato)"
-                [attr.aria-current]="selecionado()?.id === contato.id ? 'true' : null"
-                class="w-full rounded-lg px-2 py-3 text-left hover:bg-stone-100 aria-current:bg-stone-100">
-                <span class="block wrap-break-word font-semibold">{{ contato.nome }}</span>
-                <span class="text-sm text-stone-600">{{ nomesPerfil[contato.perfil] }}</span>
-              </button>
-            </li>
-          } @empty {
-            <li class="py-3 text-sm text-stone-600">Nenhum contato nesta lista.</li>
-          }
-        </ul>
-
-        @if (pagina() > 0 || temProxima()) {
-          <div class="mt-3 flex flex-wrap justify-between gap-2 text-sm">
-            <button type="button" [disabled]="pagina() === 0" (click)="carregarContatos(pagina() - 1)"
-              class="rounded border border-stone-300 px-2 py-1 disabled:opacity-50">Anterior</button>
-            <span>Página {{ pagina() + 1 }}</span>
-            <button type="button" [disabled]="!temProxima()" (click)="carregarContatos(pagina() + 1)"
-              class="rounded border border-stone-300 px-2 py-1 disabled:opacity-50">Próxima</button>
-          </div>
+      <div class="mt-3 max-h-[60dvh] min-h-0 flex-1 overflow-y-auto overscroll-contain p-1 lg:max-h-none">
+        @if (erroContatos()) {
+          <p role="alert" class="px-2 py-3 text-sm text-red-800">{{ erroContatos() }}</p>
+        } @else if (carregandoContatos()) {
+          <p role="status" class="px-2 py-3 text-sm text-stone-600">Carregando contatos…</p>
+        } @else {
+          <ul class="space-y-2">
+            @for (contato of contatos(); track contato.id) {
+              <li>
+                <button type="button" (click)="abrir(contato)"
+                  [attr.aria-current]="selecionado()?.id === contato.id ? 'true' : null"
+                  class="flex w-full items-center gap-3 rounded-2xl border border-stone-200/70
+                         bg-white p-3 text-left shadow-xs transition-colors hover:border-creche-verde/30
+                         focus-visible:outline-2 focus-visible:outline-creche-verde
+                         aria-current:border-creche-verde/35 aria-current:bg-creche-verde/8">
+                  <span aria-hidden="true"
+                    class="grid size-10 shrink-0 place-items-center rounded-full bg-creche-pessego/50
+                           text-sm font-bold text-creche-texto">{{ iniciais(contato.nome) }}</span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-bold text-creche-texto">{{ contato.nome }}</span>
+                    <span class="block text-xs text-stone-600">{{ nomesPerfil[contato.perfil] }}</span>
+                  </span>
+                  @if (contato.ultimaMensagemEm; as ultima) {
+                    <time [attr.datetime]="ultima" class="shrink-0 self-start pt-0.5 text-xs text-stone-600">
+                      {{ ultima | date:'dd/MM' }}
+                    </time>
+                  }
+                </button>
+              </li>
+            } @empty {
+              <li class="px-2 py-3 text-sm text-stone-600">Nenhum contato nesta lista.</li>
+            }
+          </ul>
         }
+      </div>
+
+      @if (!carregandoContatos() && !erroContatos() && (pagina() > 0 || temProxima())) {
+        <nav aria-label="Páginas de contatos" class="mt-3 flex items-center justify-between gap-2 text-xs">
+          <button type="button" [disabled]="pagina() === 0" (click)="carregarContatos(pagina() - 1)"
+            class="min-h-10 rounded-lg border border-stone-200 bg-white px-2 disabled:opacity-50">Anterior</button>
+          <span>Página {{ pagina() + 1 }}</span>
+          <button type="button" [disabled]="!temProxima()" (click)="carregarContatos(pagina() + 1)"
+            class="min-h-10 rounded-lg border border-stone-200 bg-white px-2 disabled:opacity-50">Próxima</button>
+        </nav>
       }
     </aside>
 
     @if (selecionado(); as contato) {
-      <section class="min-w-0 rounded-2xl border border-stone-200 bg-white p-4" aria-label="Conversa aberta">
-        <button type="button" (click)="voltar(); carregarContatos(0)"
-          class="mb-2 rounded-lg border border-stone-300 px-3 py-2 text-sm">
-          Voltar aos contatos
-        </button>
-
-        <h2 class="wrap-break-word text-xl font-semibold">{{ contato.nome }}</h2>
-        <p class="mb-3 text-sm text-stone-600">{{ nomesPerfil[contato.perfil] }}</p>
+      <section class="flex h-[min(42rem,78dvh)] min-h-[20rem] min-w-0 flex-col bg-creche-creme/65 lg:h-full lg:min-h-0"
+        aria-labelledby="chat-contato">
+        <header class="flex shrink-0 items-center gap-3 border-b border-stone-200 bg-white px-3 py-3 sm:px-5">
+          <button type="button" (click)="voltar(); carregarContatos(0)" aria-label="Voltar aos contatos"
+            class="grid size-11 shrink-0 place-items-center rounded-xl border border-stone-200
+                   text-xl text-creche-verde hover:bg-creche-creme lg:hidden">
+            <span aria-hidden="true">←</span>
+          </button>
+          <span aria-hidden="true" class="grid size-11 shrink-0 place-items-center rounded-full
+                 bg-creche-pessego/55 text-sm font-bold text-creche-texto">{{ iniciais(contato.nome) }}</span>
+          <div class="min-w-0">
+            <h2 id="chat-contato" class="truncate font-bold text-creche-texto">{{ contato.nome }}</h2>
+            <p class="text-xs text-stone-600">{{ nomesPerfil[contato.perfil] }}</p>
+          </div>
+        </header>
 
         @if (erroMensagem()) {
-          <p class="mb-3 text-sm text-red-800" role="alert">{{ erroMensagem() }}</p>
+          <p role="alert" class="mx-3 mt-2 shrink-0 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800 sm:mx-5">
+            {{ erroMensagem() }}
+          </p>
         }
 
-        <div class="max-h-[55dvh] overflow-y-auto overscroll-contain rounded-xl bg-stone-50 p-3"
-          tabindex="0" aria-label="Histórico de mensagens">
+        <div #historico tabindex="0" aria-label="Histórico de mensagens"
+          class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4
+                 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-creche-verde sm:px-5">
           @if (cursor()) {
-            <button type="button" (click)="carregarMensagens(contato, true)" [disabled]="carregandoMensagens()"
-              class="mb-3 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm disabled:opacity-50">
-              Carregar mensagens anteriores
-            </button>
+            <div class="mb-4 text-center">
+              <button type="button" (click)="carregarMensagens(contato, true)" [disabled]="carregandoMensagens()"
+                class="min-h-10 rounded-full border border-stone-200 bg-white px-4 text-xs
+                       font-semibold text-creche-verde disabled:opacity-60">
+                Carregar mensagens anteriores
+              </button>
+            </div>
           }
 
-          <ol class="space-y-2">
+          <ol class="space-y-3">
             @for (mensagem of mensagens(); track mensagem.id) {
-              <li class="flex" [class.justify-end]="mensagem.autorId === auth.usuario()?.id">
-                <div class="max-w-[90%] rounded-xl border border-stone-200 bg-white px-3 py-2 sm:max-w-[75%]"
-                  [class.border-creche-verde]="mensagem.autorId === auth.usuario()?.id">
-                  <p class="text-xs font-semibold text-stone-600">
-                    {{ mensagem.autorId === auth.usuario()?.id ? 'Você' : contato.nome }}
-                    · <time [attr.datetime]="mensagem.criadaEm">{{ mensagem.criadaEm | date:'dd/MM/yyyy HH:mm' }}</time>
-                  </p>
-                  <p class="mt-1 wrap-anywhere whitespace-pre-wrap text-sm">{{ mensagem.texto }}</p>
+              @let minha = mensagem.autorId === auth.usuario()?.id;
+              <li class="flex" [class.justify-end]="minha">
+                <div class="max-w-[86%] min-w-0 sm:max-w-[75%]">
+                  <div class="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-xs"
+                    [class]="minha
+                      ? 'rounded-br-sm bg-creche-verde text-white'
+                      : 'rounded-bl-sm border border-stone-200 bg-white text-creche-texto'">
+                    <span class="sr-only">{{ minha ? 'Você' : contato.nome }}</span>
+                    <p class="wrap-anywhere whitespace-pre-wrap">{{ mensagem.texto }}</p>
+                  </div>
+                  <time [attr.datetime]="mensagem.criadaEm" [class.text-right]="minha"
+                    class="mt-1 block px-1 text-xs text-stone-600">
+                    {{ mensagem.criadaEm | date:'dd/MM · HH:mm' }}
+                  </time>
                 </div>
               </li>
             } @empty {
               @if (!erroMensagem()) {
-                <li class="text-sm text-stone-600">
-                  {{ carregandoMensagens() ? 'Carregando mensagens…' : 'Ainda não há mensagens.' }}
+                <li class="pt-6 text-center text-sm text-stone-600" role="status">
+                  {{ carregandoMensagens() ? 'Carregando mensagens…' : 'Ainda não há mensagens nesta conversa.' }}
                 </li>
               }
             }
           </ol>
         </div>
 
-        <form (submit)="enviar($event)" class="mt-3 space-y-2">
-          <label class="block text-sm font-semibold" for="texto-chat">Mensagem</label>
-          <textarea id="texto-chat" rows="3" maxlength="2000" [value]="texto()" [readOnly]="enviando()"
-            (input)="texto.set($any($event.target).value)"
-            class="w-full rounded-lg border border-stone-300 p-2"></textarea>
-
+        <form (submit)="enviar($event)" class="shrink-0 border-t border-stone-200 bg-white p-3 sm:px-5">
           @if (erroEnvio()) {
-            <p class="text-sm text-red-800" role="alert">{{ erroEnvio() }}</p>
+            <p role="alert" class="mb-2 text-sm text-red-800">{{ erroEnvio() }}</p>
           }
-
-          <button type="submit" [disabled]="enviando() || carregandoMensagens() || !texto().trim()"
-            class="rounded-lg bg-creche-verde px-4 py-2 text-sm text-white disabled:opacity-50">
-            {{ enviando() ? 'Enviando…' : 'Enviar mensagem' }}
-          </button>
+          <div class="flex items-end gap-2 rounded-2xl border border-stone-200 bg-stone-50 p-2">
+            <label for="texto-chat" class="sr-only">Mensagem</label>
+            <textarea id="texto-chat" rows="2" maxlength="4000" placeholder="Escreva uma mensagem"
+              [value]="texto()" [readOnly]="enviando()" (input)="texto.set($any($event.target).value)"
+              class="min-w-0 flex-1 resize-none rounded-lg bg-transparent px-2 py-2 text-sm
+                     focus-visible:outline-2 focus-visible:outline-creche-verde"></textarea>
+            <button type="submit" [disabled]="enviando() || carregandoMensagens() || !texto().trim()"
+              class="min-h-11 shrink-0 rounded-xl bg-creche-verde px-3 text-sm font-bold text-white
+                     focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-creche-verde
+                     disabled:opacity-50 sm:px-4">
+              {{ enviando() ? 'Enviando…' : 'Enviar' }}
+            </button>
+          </div>
         </form>
       </section>
     } @else {
-      <p class="hidden rounded-2xl border border-stone-200 bg-white p-5 text-sm text-stone-600 lg:block">
-        Selecione um contato para abrir a conversa.
-      </p>
+      <div class="hidden min-w-0 place-items-center bg-creche-creme/65 p-8 text-center lg:grid">
+        <div>
+          <p class="text-lg font-bold text-creche-texto">Selecione um contato</p>
+          <p class="mt-1 text-sm text-stone-600">Suas mensagens vão aparecer aqui.</p>
+        </div>
+      </div>
     }
   </div>
 </section>

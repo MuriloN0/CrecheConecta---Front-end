@@ -1,6 +1,16 @@
 import { DatePipe, DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  Injector,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, timer } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
@@ -18,6 +28,8 @@ export class Conversas implements OnInit {
   private readonly api = inject(ConversasService);
   private readonly destroy = inject(DestroyRef);
   private readonly doc = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
+  private readonly historico = viewChild<ElementRef<HTMLDivElement>>('historico');
 
   readonly busca = signal('');
   readonly somenteConversas = signal(false);
@@ -101,7 +113,15 @@ export class Conversas implements OnInit {
     }
   }
 
+  iniciais(nome: string): string {
+    const partes = nome.trim().split(/\s+/).filter(Boolean);
+    const primeira = partes[0]?.[0] ?? '';
+    const ultima = partes.length > 1 ? partes.at(-1)?.[0] ?? '' : '';
+    return (primeira + ultima).toLocaleUpperCase('pt-BR');
+  }
+
   abrir(contato: ContatoChat): void {
+    if (this.selecionado()?.id === contato.id) return;
     this.voltar();
     this.selecionado.set(contato);
     void this.carregarMensagens(contato, false);
@@ -119,12 +139,17 @@ export class Conversas implements OnInit {
     this.erroEnvio.set('');
   }
 
-  async carregarMensagens(contato: ContatoChat, anteriores: boolean): Promise<void> {
+  async carregarMensagens(
+    contato: ContatoChat,
+    anteriores: boolean,
+    aposEnvio = false,
+  ): Promise<void> {
     const cursor = anteriores ? this.cursor() : null;
     if (this.carregandoMensagens() || (anteriores && !cursor)) return;
 
     const geracao = this.geracao;
     this.carregandoMensagens.set(true);
+
     try {
       const dados = await firstValueFrom(
         this.api.mensagens(contato.id, cursor ?? undefined)
@@ -134,6 +159,11 @@ export class Conversas implements OnInit {
       if (!dados || geracao !== this.geracao) return;
 
       const existentes = this.mensagens();
+      const painel = this.historico()?.nativeElement;
+      const alturaAnterior = painel?.scrollHeight ?? 0;
+      const posicaoAnterior = painel?.scrollTop ?? 0;
+      const pertoDoFim = !painel || alturaAnterior - posicaoAnterior - painel.clientHeight <= 72;
+
       if (anteriores) {
         const jaExibidas = new Set(existentes.map((m) => m.id));
         this.mensagens.set([...dados.itens.filter((m) => !jaExibidas.has(m.id)), ...existentes]);
@@ -149,6 +179,19 @@ export class Conversas implements OnInit {
           this.mensagens.set([...existentes.filter((m) => !recentes.has(m.id)), ...dados.itens]);
         }
       }
+
+      if (anteriores || aposEnvio || existentes.length === 0 || pertoDoFim) {
+        afterNextRender(() => {
+          if (geracao !== this.geracao) return;
+          const atualizado = this.historico()?.nativeElement;
+          if (!atualizado) return;
+
+          atualizado.scrollTop = anteriores
+            ? posicaoAnterior + atualizado.scrollHeight - alturaAnterior
+            : atualizado.scrollHeight;
+        }, { injector: this.injector });
+      }
+
       this.erroMensagem.set('');
     } catch (erro) {
       if (geracao !== this.geracao) return;
@@ -181,7 +224,7 @@ export class Conversas implements OnInit {
       if (!enviada || geracao !== this.geracao) return;
 
       this.texto.set('');
-      await this.carregarMensagens(contato, false);
+      await this.carregarMensagens(contato, false, true);
       void this.carregarContatos(this.pagina(), true);
     } catch (erro) {
       if (geracao === this.geracao) {
