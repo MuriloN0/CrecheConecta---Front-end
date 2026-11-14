@@ -10,6 +10,14 @@ export interface Aluno {
   versao: number;
 }
 
+export interface ResponsavelAluno {
+  id: string;
+  responsavelId: string;
+  nome: string | null;
+  email: string | null;
+  telefone: string | null;
+}
+
 interface PaginaAlunos {
   content: Aluno[];
   totalPages: number;
@@ -20,15 +28,11 @@ export class AlunosApi {
   private readonly http = inject(HttpClient);
   private readonly url = '/api/alunos';
 
-  listar(pagina: number, ativo: boolean | null) {
-    const params: Record<string, number | boolean> = {
-      pagina,
-      tamanho: 20,
-    };
+  listar(pagina: number, ativo: boolean | null, nome = '') {
+    const params: Record<string, string | number | boolean> = { pagina, tamanho: 20 };
 
-    if (ativo !== null) {
-      params['ativo'] = ativo;
-    }
+    if (ativo !== null) params['ativo'] = ativo;
+    if (nome) params['nome'] = nome;
 
     return this.http.get<PaginaAlunos>(this.url, { params });
   }
@@ -45,6 +49,10 @@ export class AlunosApi {
 
   consultar(id: string) {
     return this.http.get<Aluno>(`${this.url}/${id}`);
+  }
+
+  listarResponsaveis(id: string) {
+    return this.http.get<ResponsavelAluno[]>(`${this.url}/${id}/responsaveis`);
   }
 
   inativar(aluno: Aluno) {
