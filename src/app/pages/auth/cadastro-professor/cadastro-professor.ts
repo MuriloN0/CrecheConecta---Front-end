@@ -4,7 +4,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import {  CadastroProfessorService,  DadosConviteProfessor} from './cadastro-professor.service';
+import { CadastroProfessorService, DadosConviteProfessor } from './cadastro-professor.service';
 
 @Component({
   selector: 'app-cadastro-professor',
@@ -52,10 +52,7 @@ export class CadastroProfessor implements OnInit {
     this.consultando.set(true);
 
     try {
-      const convite = await firstValueFrom(
-        this.servico.consultarConvite(this.token),
-      );
-
+      const convite = await firstValueFrom(this.servico.consultarConvite(this.token));
       this.nome = convite.nome;
       this.convite.set(convite);
     } catch (erro: unknown) {
@@ -121,9 +118,7 @@ export class CadastroProfessor implements OnInit {
       this.podeConsultar.set(false);
       this.convite.set(null);
       this.localizacao.replaceState(this.localizacao.path(false));
-      this.sucesso.set(
-        resultado.mensagem || 'Cadastro concluído. Aguarde a aprovação da direção.',
-      );
+      this.sucesso.set(resultado.mensagem || 'Cadastro concluído. Você já pode entrar.');
     } catch (erro: unknown) {
       this.erro.set(this.mensagemErro(erro, 'Não foi possível concluir o cadastro.'));
     } finally {

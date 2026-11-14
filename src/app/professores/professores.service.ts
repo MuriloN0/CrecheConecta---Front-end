@@ -35,10 +35,7 @@ export class ProfessoresService {
   private readonly url = '/api/professores';
 
   listar(pagina: number, situacao: SituacaoProfessor | '') {
-    const params: Record<string, string | number> = {
-      pagina,
-      tamanho: 20,
-    };
+    const params: Record<string, string | number> = { pagina, tamanho: 20 };
 
     if (situacao) {
       params['situacao'] = situacao;
@@ -52,14 +49,11 @@ export class ProfessoresService {
   }
 
   convidar(nome: string, email: string) {
-    return this.http.post<ConviteProfessor>(`${this.url}/convites`, {
-      nome,
-      email,
-    });
+    return this.http.post<ConviteProfessor>(`${this.url}/convites`, { nome, email });
   }
 
-  decidir(professor: Professor, acao: 'aprovar' | 'rejeitar' | 'inativar') {
-    return this.http.post<Professor>(`${this.url}/${professor.id}/${acao}`, {
+  inativar(professor: Professor) {
+    return this.http.post<Professor>(`${this.url}/${professor.id}/inativar`, {
       versao: professor.versao,
     });
   }

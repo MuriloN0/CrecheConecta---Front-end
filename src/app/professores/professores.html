@@ -1,9 +1,7 @@
 <section class="space-y-5" aria-labelledby="titulo-professores">
   <header class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h1 id="titulo-professores" class="text-3xl font-bold text-creche-texto">
-        Professores
-      </h1>
+      <h1 id="titulo-professores" class="text-3xl font-bold text-creche-texto">Professores</h1>
       <p class="mt-1 text-sm text-stone-600">Gerencie convites e cadastros de professores.</p>
     </div>
 
@@ -30,28 +28,14 @@
 
       <label class="block max-w-lg space-y-1 text-sm font-semibold">
         <span>Nome</span>
-        <input
-          name="nome"
-          [class]="campo"
-          [(ngModel)]="nome"
-          required
-          maxlength="150"
-          [disabled]="ocupada()"
-        />
+        <input name="nome" [class]="campo" [(ngModel)]="nome"
+          required maxlength="150" [disabled]="ocupada()" />
       </label>
 
       <label class="block max-w-lg space-y-1 text-sm font-semibold">
         <span>E-mail</span>
-        <input
-          name="email"
-          type="email"
-          [class]="campo"
-          [(ngModel)]="email"
-          required
-          email
-          maxlength="254"
-          [disabled]="ocupada()"
-        />
+        <input name="email" type="email" [class]="campo" [(ngModel)]="email"
+          required email maxlength="254" [disabled]="ocupada()" />
       </label>
 
       <div class="flex flex-wrap gap-2">
@@ -71,26 +55,17 @@
     <div class="flex flex-wrap items-end gap-3">
       <label class="grid gap-1 text-sm font-semibold">
         Situação
-        <select
-          [class]="campo"
-          [ngModel]="filtro"
-          [disabled]="ocupada()"
-          (ngModelChange)="mudarFiltro($event)"
-        >
+        <select [class]="campo" [ngModel]="filtro" [disabled]="ocupada()"
+          (ngModelChange)="mudarFiltro($event)">
           <option value="">Todas</option>
-          <option value="PENDENTE_APROVACAO">Pendentes de aprovação</option>
-          <option value="APROVADO">Aprovados</option>
+          <option value="APROVADO">Ativos</option>
           <option value="REJEITADO">Rejeitados</option>
           <option value="INATIVO">Inativos</option>
         </select>
       </label>
 
-      <button
-        type="button"
-        [class]="botao"
-        [disabled]="ocupada()"
-        (click)="carregarProfessores(paginaProfessores())"
-      >
+      <button type="button" [class]="botao" [disabled]="ocupada()"
+        (click)="carregarProfessores(paginaProfessores())">
         Atualizar lista
       </button>
     </div>
@@ -105,44 +80,17 @@
           <div class="min-w-0 wrap-break-word">
             <p class="font-semibold">{{ professor.nome }}</p>
             <p class="text-sm text-stone-600">{{ professor.email }}</p>
-            <span
-              class="mt-1 inline-block rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-900"
-            >
+            <span class="mt-1 inline-block rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-900">
               {{ situacoes[professor.situacaoCadastro] }}
             </span>
           </div>
 
-          <div class="flex flex-wrap gap-2">
-            @if (professor.situacaoCadastro === 'PENDENTE_APROVACAO') {
-              <button
-                type="button"
-                [class]="botao"
-                [disabled]="ocupada()"
-                (click)="decidir(professor, 'aprovar')"
-              >
-                Aprovar
-              </button>
-              <button
-                type="button"
-                [class]="botao"
-                [disabled]="ocupada()"
-                (click)="decidir(professor, 'rejeitar')"
-              >
-                Rejeitar
-              </button>
-            }
-
-            @if (podeInativar(professor)) {
-              <button
-                type="button"
-                [class]="botao"
-                [disabled]="ocupada()"
-                (click)="decidir(professor, 'inativar')"
-              >
-                Inativar
-              </button>
-            }
-          </div>
+          @if (podeInativar(professor)) {
+            <button type="button" [class]="botao" [disabled]="ocupada()"
+              (click)="inativar(professor)">
+              Inativar
+            </button>
+          }
         </li>
       } @empty {
         @if (!ocupada() && !erro()) {
@@ -153,21 +101,14 @@
 
     @if (professores().totalPages > 1) {
       <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de professores">
-        <button
-          type="button"
-          [class]="botao"
-          [disabled]="ocupada() || paginaProfessores() === 0"
-          (click)="carregarProfessores(paginaProfessores() - 1)"
-        >
+        <button type="button" [class]="botao" [disabled]="ocupada() || paginaProfessores() === 0"
+          (click)="carregarProfessores(paginaProfessores() - 1)">
           Anterior
         </button>
         <span class="text-sm">{{ paginaProfessores() + 1 }} de {{ professores().totalPages }}</span>
-        <button
-          type="button"
-          [class]="botao"
+        <button type="button" [class]="botao"
           [disabled]="ocupada() || paginaProfessores() + 1 >= professores().totalPages"
-          (click)="carregarProfessores(paginaProfessores() + 1)"
-        >
+          (click)="carregarProfessores(paginaProfessores() + 1)">
           Próxima
         </button>
       </nav>
@@ -189,21 +130,14 @@
 
     @if (turmas().totalPages > 1) {
       <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de turmas ativas">
-        <button
-          type="button"
-          [class]="botao"
-          [disabled]="ocupada() || paginaTurmas() === 0"
-          (click)="carregarTurmas(paginaTurmas() - 1)"
-        >
+        <button type="button" [class]="botao" [disabled]="ocupada() || paginaTurmas() === 0"
+          (click)="carregarTurmas(paginaTurmas() - 1)">
           Turmas anteriores
         </button>
         <span class="text-sm">{{ paginaTurmas() + 1 }} de {{ turmas().totalPages }}</span>
-        <button
-          type="button"
-          [class]="botao"
+        <button type="button" [class]="botao"
           [disabled]="ocupada() || paginaTurmas() + 1 >= turmas().totalPages"
-          (click)="carregarTurmas(paginaTurmas() + 1)"
-        >
+          (click)="carregarTurmas(paginaTurmas() + 1)">
           Próximas turmas
         </button>
       </nav>

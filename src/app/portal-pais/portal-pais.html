@@ -1,47 +1,76 @@
-<section class="space-y-5" aria-labelledby="titulo-aceite">
-  <header>
-    <h1 id="titulo-aceite" class="text-3xl font-bold text-creche-texto">
-      Termos de uso e política de privacidade
-    </h1>
-    <p class="mt-1 text-sm text-stone-600">
-      Leia cada documento até o fim para poder aceitar e continuar.
-    </p>
-  </header>
+<dialog
+  #dialogo
+  (cancel)="$event.preventDefault()"
+  aria-labelledby="titulo-aceite"
+  class="m-auto max-h-[90dvh] w-[min(44rem,calc(100%-2rem))] overflow-y-auto
+         rounded-2xl border border-stone-200 bg-white p-4 text-creche-texto shadow-xl
+         backdrop:bg-stone-950/55 sm:p-6"
+>
+  <h1 id="titulo-aceite" class="text-2xl font-bold">Termos de uso e política de privacidade</h1>
+  <p class="mt-2 text-sm text-stone-600">Leia os documentos vigentes antes de continuar.</p>
 
   @if (ocupada()) {
-    <p role="status" class="text-sm text-stone-600">Processando…</p>
+    <p role="status" class="mt-3 text-sm text-stone-600">Processando…</p>
   }
+
   @if (erro()) {
-    <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">{{ erro() }}</p>
+    <p role="alert" class="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-800">
+      {{ erro() }}
+    </p>
   }
 
-  @if (termo(); as t) {
-    <section [class]="cartao" aria-label="Documentos para aceite">
-      <h2 class="text-lg font-bold">1. Termo de uso</h2>
-      <div id="documento-termo" [class]="documento" tabindex="0" role="region"
-        aria-label="Texto do termo de uso" (scroll)="aoRolar($event, 'termo')">{{ t.termoUso }}</div>
+  @if (termo(); as dados) {
+    <p class="mt-4 text-xs text-stone-600">Versão {{ dados.versao }}</p>
 
-      @if (leuTermo()) {
-        <h2 class="text-lg font-bold">2. Política de privacidade</h2>
-        <div id="documento-privacidade" [class]="documento" tabindex="0" role="region"
-          aria-label="Texto da política de privacidade"
-          (scroll)="aoRolar($event, 'privacidade')">{{ t.politicaPrivacidade }}</div>
-      }
+    <details class="mt-2 rounded-xl border border-stone-200 p-3">
+      <summary class="cursor-pointer text-sm font-semibold">Termos de Uso</summary>
+      <p class="mt-2 wrap-anywhere whitespace-pre-wrap text-sm">{{ dados.termoUso }}</p>
+    </details>
 
-      @if (leuTermo() && leuPrivacidade()) {
-        <p class="text-xs text-stone-600">Versão dos documentos: {{ t.versao }}</p>
-        <label class="flex items-start gap-2 text-sm font-semibold">
-          <input type="checkbox" (change)="alternarAceite($event)" [disabled]="ocupada()"
-            class="mt-1 h-4 w-4 accent-creche-verde focus-visible:ring-2 focus-visible:ring-creche-verde" />
-          <span>Li e aceito os Termos de Uso e a Política de Privacidade.</span>
-        </label>
-        <div>
-          <button type="button" [class]="primario" [disabled]="!aceito() || ocupada()"
-            (click)="confirmar()">
-            Confirmar e continuar
-          </button>
-        </div>
-      }
-    </section>
+    <details class="mt-2 rounded-xl border border-stone-200 p-3">
+      <summary class="cursor-pointer text-sm font-semibold">Política de Privacidade</summary>
+      <p class="mt-2 wrap-anywhere whitespace-pre-wrap text-sm">{{ dados.politicaPrivacidade }}</p>
+    </details>
+
+    <label class="mt-4 flex items-start gap-2 text-sm font-semibold">
+      <input
+        type="checkbox"
+        [checked]="aceito()"
+        (change)="alternarAceite($event)"
+        [disabled]="ocupada()"
+        class="mt-0.5 size-4 shrink-0 accent-creche-verde"
+      />
+      <span>Li e aceito os Termos de Uso e a Política de Privacidade.</span>
+    </label>
   }
-</section>
+
+  <div class="mt-5 flex flex-wrap items-center justify-end gap-2">
+    <button
+      type="button"
+      (click)="sair()"
+      [disabled]="ocupada()"
+      class="min-h-11 rounded-xl border border-stone-300 px-4 text-sm font-semibold disabled:opacity-50"
+    >
+      Sair da conta
+    </button>
+
+    @if (termo()) {
+      <button
+        type="button"
+        (click)="confirmar()"
+        [disabled]="!aceito() || ocupada()"
+        class="min-h-11 rounded-xl bg-creche-verde px-4 text-sm font-semibold text-white disabled:opacity-50"
+      >
+        Aceitar e continuar
+      </button>
+    } @else if (!ocupada()) {
+      <button
+        type="button"
+        (click)="carregar()"
+        class="min-h-11 rounded-xl bg-creche-verde px-4 text-sm font-semibold text-white"
+      >
+        Tentar novamente
+      </button>
+    }
+  </div>
+</dialog>

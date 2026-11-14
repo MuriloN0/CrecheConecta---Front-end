@@ -5,8 +5,6 @@ import { firstValueFrom } from 'rxjs';
 import { Pagina, Turma, TurmasService } from '../turmas/turmas.service';
 import { Professor, ProfessoresService, SituacaoProfessor } from './professores.service';
 
-type AcaoProfessor = 'aprovar' | 'rejeitar' | 'inativar';
-
 function paginaVazia<T>(): Pagina<T> {
   return { content: [], totalPages: 0 };
 }
@@ -31,7 +29,7 @@ export class Professores implements OnInit {
 
   readonly situacoes: Record<SituacaoProfessor, string> = {
     PENDENTE_APROVACAO: 'Pendente de aprovação',
-    APROVADO: 'Aprovado',
+    APROVADO: 'Ativo',
     REJEITADO: 'Rejeitado',
     INATIVO: 'Inativo',
   };
@@ -90,21 +88,17 @@ export class Professores implements OnInit {
     });
   }
 
-  decidir(professor: Professor, acao: AcaoProfessor): Promise<void> {
-    const mensagens: Record<AcaoProfessor, string> = {
-      aprovar: 'Cadastro aprovado.',
-      rejeitar: 'Cadastro rejeitado.',
-      inativar: 'Professor inativado.',
-    };
+  inativar(professor: Professor): Promise<void> {
+    if (!this.podeInativar(professor)) return Promise.resolve();
 
-    if (!window.confirm(`Deseja ${acao} o cadastro de ${professor.nome}?`)) {
+    if (!window.confirm(`Deseja inativar o cadastro de ${professor.nome}?`)) {
       return Promise.resolve();
     }
 
     return this.executar(async () => {
-      await firstValueFrom(this.servico.decidir(professor, acao));
+      await firstValueFrom(this.servico.inativar(professor));
       this.formulario = null;
-      this.sucesso.set(mensagens[acao]);
+      this.sucesso.set('Professor inativado.');
       await this.buscarProfessores(this.paginaProfessores());
     });
   }
