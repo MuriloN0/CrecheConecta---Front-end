@@ -5,6 +5,16 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+interface ConviteResponsavel {
+  nome: string;
+  email: string;
+  documentos: {
+    versao: string;
+    termoUso: string;
+    politicaPrivacidade: string;
+  };
+}
+
 @Component({
   selector: 'app-cadastro-responsavel',
   standalone: true,
@@ -18,7 +28,7 @@ export class CadastroResponsavel implements OnInit {
   private readonly api = '/api/cadastro/responsavel';
   private token = '';
 
-  readonly convite = signal<{ nome: string; email: string } | null>(null);
+  readonly convite = signal<ConviteResponsavel | null>(null);
   readonly ocupada = signal(false);
   readonly podeConsultar = signal(false);
   readonly erro = signal('');
@@ -34,6 +44,7 @@ export class CadastroResponsavel implements OnInit {
     timeZone: 'America/Sao_Paulo',
   }).format(new Date());
 
+  aceitouDocumentos = false;
   nome = '';
   nomeAluno = '';
   dataNascimento = '';
@@ -60,18 +71,22 @@ export class CadastroResponsavel implements OnInit {
 
     return this.executar(async () => {
       const dados = await firstValueFrom(
-        this.http.post<{ nome: string; email: string }>(`${this.api}/consultar-convite`, {
+        this.http.post<ConviteResponsavel>(`${this.api}/consultar-convite`, {
           token: this.token,
         }),
       );
 
+      if (!this.convite()) this.nome = dados.nome;
+      this.aceitouDocumentos = false;
       this.convite.set(dados);
-      this.nome = dados.nome;
     });
   }
 
   concluir(formulario: NgForm): Promise<void> {
-    if (!this.convite() || formulario.invalid) return Promise.resolve();
+    const convite = this.convite();
+    if (!convite || formulario.invalid || !this.aceitouDocumentos) {
+      return Promise.resolve();
+    }
 
     return this.executar(async () => {
       const telefone = this.telefone.trim();
@@ -121,6 +136,8 @@ export class CadastroResponsavel implements OnInit {
           senha: this.senha,
           nomeAluno,
           dataNascimento,
+          aceitouDocumentos: this.aceitouDocumentos,
+          versaoTermos: convite.documentos.versao,
         }),
       );
 

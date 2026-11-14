@@ -113,9 +113,53 @@
         </label>
       </fieldset>
 
+      <fieldset class="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
+        <legend class="px-2 text-sm font-bold text-creche-verde">Termos e privacidade</legend>
+
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs text-stone-600">Versão {{ dados.documentos.versao }}</p>
+          <button
+            type="button"
+            (click)="consultar()"
+            [disabled]="ocupada()"
+            class="text-sm font-semibold text-creche-verde underline disabled:opacity-50"
+          >
+            Atualizar documentos
+          </button>
+        </div>
+
+        <details class="rounded-lg border border-stone-200 p-3">
+          <summary class="cursor-pointer text-sm font-semibold">Termos de Uso</summary>
+          <p class="mt-2 whitespace-pre-wrap wrap-anywhere text-sm">
+            {{ dados.documentos.termoUso }}
+          </p>
+        </details>
+
+        <details class="rounded-lg border border-stone-200 p-3">
+          <summary class="cursor-pointer text-sm font-semibold">Política de Privacidade</summary>
+          <p class="mt-2 whitespace-pre-wrap wrap-anywhere text-sm">
+            {{ dados.documentos.politicaPrivacidade }}
+          </p>
+        </details>
+
+        <label class="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="aceitouDocumentos"
+            [(ngModel)]="aceitouDocumentos"
+            required
+            [disabled]="ocupada()"
+            class="mt-0.5 size-4 shrink-0 accent-creche-verde"
+          />
+          <span>
+            Li e aceito os Termos de Uso e a Política de Privacidade para este cadastro de responsável e aluno.
+          </span>
+        </label>
+      </fieldset>
+
       <button
         type="submit"
-        [disabled]="ocupada() || form.invalid"
+        [disabled]="ocupada() || form.invalid || !aceitouDocumentos"
         class="w-full rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
       >
         Concluir cadastro
