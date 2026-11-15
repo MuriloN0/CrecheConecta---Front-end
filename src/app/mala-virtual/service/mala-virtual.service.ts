@@ -9,6 +9,11 @@ import {
   ProgressoAluno,
 } from '../model/mala-virtual.model';
 
+interface PaginaMalas<T> {
+  content: T[];
+  totalPages: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MalaVirtualService {
   private readonly http = inject(HttpClient);
@@ -23,6 +28,12 @@ export class MalaVirtualService {
 
   listar(turmaId: string) {
     return this.http.get<MalaTurma[]>(this.urlTurma(turmaId));
+  }
+
+  listarPaginadas(turmaId: string, pagina: number) {
+    return this.http.get<PaginaMalas<MalaTurma>>(`${this.urlTurma(turmaId)}/paginadas`, {
+      params: { pagina },
+    });
   }
 
   visualizar(turmaId: string, malaId: string) {
@@ -56,6 +67,12 @@ export class MalaVirtualService {
 
   listarDoFilho(alunoId: string) {
     return this.http.get<MalaFilho[]>(this.urlFilho(alunoId));
+  }
+
+  listarDoFilhoPaginado(alunoId: string, pagina: number) {
+    return this.http.get<PaginaMalas<MalaFilho>>(this.urlFilho(alunoId), {
+      params: { pagina },
+    });
   }
 
   marcarItem(

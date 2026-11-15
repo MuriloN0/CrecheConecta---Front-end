@@ -38,6 +38,8 @@ export class MalaVirtualFilhoComponent implements OnInit {
   readonly filhos = signal<Filho[]>([]);
   readonly alunoId = signal('');
   readonly malas = signal<MalaFilho[]>([]);
+  readonly pagina = signal(0);
+  readonly totalPaginas = signal(0);
 
   readonly carregandoFilhos = signal(false);
   readonly carregandoMalas = signal(false);
@@ -89,6 +91,7 @@ export class MalaVirtualFilhoComponent implements OnInit {
       this.carregandoFilhos.set(false);
     }
 
+    this.limparRascunhos();
     await this.carregarMalas(!aposAcessoAlterado);
   }
 
@@ -96,17 +99,28 @@ export class MalaVirtualFilhoComponent implements OnInit {
     if (this.carregando() || !this.filhos().some((filho) => filho.id === alunoId)) return;
 
     this.alunoId.set(alunoId);
+    this.limparRascunhos();
     this.aviso.set('');
     void this.carregarMalas();
   }
 
-  async carregarMalas(recarregarFilhosSe404 = true): Promise<void> {
+  private limparRascunhos(): void {
+    this.rascunhos.set({});
+    this.observacoesAbertas.set(new Set());
+  }
+
+  mudarPagina(pagina: number): void {
+    if (this.carregando() || this.itensSalvando().size || pagina < 0 || pagina >= this.totalPaginas()) return;
+    void this.carregarMalas(true, pagina);
+  }
+
+  async carregarMalas(recarregarFilhosSe404 = true, pagina = 0): Promise<void> {
     const consulta = ++this.numeroConsulta;
     const filho = this.filhoSelecionado();
 
     this.malas.set([]);
-    this.rascunhos.set({});
-    this.observacoesAbertas.set(new Set());
+    this.pagina.set(0);
+    this.totalPaginas.set(0);
     this.erroPorMala.set({});
     this.confirmacaoPorMala.set({});
 
@@ -116,10 +130,19 @@ export class MalaVirtualFilhoComponent implements OnInit {
     this.erro.set('');
 
     try {
-      const malas = await firstValueFrom(this.api.listarDoFilho(filho.id));
+      let resultado = await firstValueFrom(this.api.listarDoFilhoPaginado(filho.id, pagina));
+      if (consulta !== this.numeroConsulta) return;
+
+      const ultimaPagina = Math.max(0, resultado.totalPages - 1);
+      if (pagina > ultimaPagina) {
+        pagina = ultimaPagina;
+        resultado = await firstValueFrom(this.api.listarDoFilhoPaginado(filho.id, pagina));
+      }
 
       if (consulta === this.numeroConsulta) {
-        this.malas.set(this.ordenarPorUrgencia(malas));
+        this.malas.set(resultado.content);
+        this.pagina.set(pagina);
+        this.totalPaginas.set(resultado.totalPages);
       }
     } catch (erro: unknown) {
       if (consulta !== this.numeroConsulta) return;
@@ -249,18 +272,6 @@ export class MalaVirtualFilhoComponent implements OnInit {
     }
   }
 
-  private ordenarPorUrgencia(malas: MalaFilho[]): MalaFilho[] {
-    const grupo = (mala: MalaFilho) =>
-      mala.data === this.hoje ? 0 : mala.data > this.hoje ? 1 : 2;
-
-    return [...malas].sort((a, b) => {
-      const diferenca = grupo(a) - grupo(b);
-      if (diferenca !== 0) return diferenca;
-
-      return grupo(a) === 1 ? a.data.localeCompare(b.data) : b.data.localeCompare(a.data);
-    });
-  }
-
   private alterarItemLocal(malaId: string, itemId: string, enviado: boolean): void {
     this.malas.update((malas) =>
       malas.map((mala) => {
@@ -269,6 +280,7 @@ export class MalaVirtualFilhoComponent implements OnInit {
         const itens = mala.itens.map((item) =>
           item.id === itemId ? { ...item, enviado } : item,
         );
+
         return { ...mala, itens, itensPendentes: itens.filter((item) => !item.enviado).length };
       }),
     );
