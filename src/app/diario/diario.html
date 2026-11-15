@@ -8,6 +8,7 @@
         Registre como foi o dia de cada criança. Os responsáveis veem este diário no portal.
       </p>
     </div>
+
     <button type="button" [class]="botao" [disabled]="ocupada()" (click)="atualizarTurmas()">
       Atualizar diário
     </button>
@@ -28,18 +29,30 @@
       <div class="flex flex-wrap items-end gap-4">
         <label class="grid min-w-56 gap-1 text-sm font-semibold">
           Turma
-          <select [class]="campo" [ngModel]="turmaId()" name="turma"
-            (ngModelChange)="selecionarTurma($event)" [disabled]="ocupada()">
+          <select
+            [class]="campo"
+            [ngModel]="turmaId()"
+            name="turma"
+            (ngModelChange)="selecionarTurma($event)"
+            [disabled]="ocupada()"
+          >
             @for (turma of turmas(); track turma.id) {
               <option [value]="turma.id">{{ turma.nome }} · Sala {{ turma.numeroSala }}</option>
             }
           </select>
         </label>
+
         <label class="grid gap-1 text-sm font-semibold">
           Data
-          <input type="date" name="data" [class]="campo" [max]="hoje"
-            [ngModel]="data()" (ngModelChange)="mudarData($event)"
-            [disabled]="ocupada()" />
+          <input
+            type="date"
+            name="data"
+            [class]="campo"
+            [max]="hoje"
+            [ngModel]="data()"
+            (ngModelChange)="mudarData($event)"
+            [disabled]="ocupada()"
+          />
         </label>
       </div>
     } @else if (!ocupada() && !erro()) {
@@ -48,22 +61,28 @@
 
     @if (carregada()) {
       @if (paraExcluir(); as aluno) {
-        <section class="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4"
-          aria-labelledby="titulo-exclusao">
+        <section
+          class="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4"
+          aria-labelledby="titulo-exclusao"
+        >
           <h2 id="titulo-exclusao" class="text-lg font-bold">Excluir diário</h2>
           <p class="wrap-break-word text-sm">
             O diário de {{ aluno.nome }} do dia {{ data() | date: 'dd/MM/yyyy' : 'UTC' }}
             será excluído e deixará de aparecer para os responsáveis.
           </p>
+
           <div class="flex flex-wrap gap-2">
-            <button type="button" [disabled]="ocupada()" (click)="confirmarExclusao()"
+            <button
+              type="button"
+              [disabled]="ocupada()"
+              (click)="confirmarExclusao()"
               class="cursor-pointer rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold
                      text-white hover:bg-red-800 focus-visible:ring-2 focus-visible:ring-red-700
-                     focus-visible:ring-offset-2 disabled:opacity-50">
+                     focus-visible:ring-offset-2 disabled:opacity-50"
+            >
               Confirmar exclusão
             </button>
-            <button type="button" [class]="botao" [disabled]="ocupada()"
-              (click)="fecharPaineis()">
+            <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
               Cancelar
             </button>
           </div>
@@ -80,22 +99,35 @@
                   {{ aluno.diario ? 'Diário preenchido' : 'Diário pendente' }}
                 </p>
               </div>
+
               <div class="flex flex-wrap gap-2">
                 @if (!aluno.diario) {
-                  <button type="button" [class]="primario" [disabled]="ocupada()"
+                  <button
+                    type="button"
+                    [class]="primario"
+                    [disabled]="ocupada()"
                     [attr.aria-label]="'Registrar diário de ' + aluno.nome"
-                    (click)="abrirFormulario(aluno)">
+                    (click)="abrirFormulario(aluno)"
+                  >
                     Registrar
                   </button>
                 } @else if (aluno.diario.editavel) {
-                  <button type="button" [class]="botao" [disabled]="ocupada()"
+                  <button
+                    type="button"
+                    [class]="botao"
+                    [disabled]="ocupada()"
                     [attr.aria-label]="'Editar diário de ' + aluno.nome"
-                    (click)="abrirFormulario(aluno)">
+                    (click)="abrirFormulario(aluno)"
+                  >
                     Editar
                   </button>
-                  <button type="button" [class]="botao" [disabled]="ocupada()"
+                  <button
+                    type="button"
+                    [class]="botao"
+                    [disabled]="ocupada()"
                     [attr.aria-label]="'Excluir diário de ' + aluno.nome"
-                    (click)="pedirExclusao(aluno)">
+                    (click)="pedirExclusao(aluno)"
+                  >
                     Excluir
                   </button>
                 } @else {
@@ -127,6 +159,7 @@
                   <dd>{{ registro.evacuacao ? 'Sim' : 'Não' }}</dd>
                 </div>
               </dl>
+
               @if (registro.observacaoProfessor) {
                 <p class="whitespace-pre-wrap wrap-break-word text-sm">
                   {{ registro.observacaoProfessor }}
@@ -135,9 +168,12 @@
             }
 
             @if (alunoAberto()?.alunoId === aluno.alunoId) {
-              <form class="space-y-4 rounded-xl border border-stone-200 bg-stone-50 p-4"
-                #form="ngForm" (ngSubmit)="salvar()"
-                [attr.aria-label]="'Diário de ' + aluno.nome">
+              <form
+                class="space-y-4 rounded-xl border border-stone-200 bg-stone-50 p-4"
+                #form="ngForm"
+                (ngSubmit)="salvar()"
+                [attr.aria-label]="'Diário de ' + aluno.nome"
+              >
                 <div class="grid gap-4 sm:grid-cols-2">
                   <label class="grid gap-1 text-sm font-semibold">
                     Alimentação
@@ -149,6 +185,7 @@
                       }
                     </select>
                   </label>
+
                   <label class="grid gap-1 text-sm font-semibold">
                     Sono
                     <select name="sono" [class]="campo" [(ngModel)]="sono"
@@ -159,6 +196,7 @@
                       }
                     </select>
                   </label>
+
                   <label class="grid gap-1 text-sm font-semibold">
                     Humor
                     <select name="humor" [class]="campo" [(ngModel)]="humor"
@@ -169,6 +207,7 @@
                       }
                     </select>
                   </label>
+
                   <label class="grid gap-1 text-sm font-semibold">
                     Higiene
                     <select name="higiene" [class]="campo" [(ngModel)]="higiene"
@@ -180,24 +219,36 @@
                     </select>
                   </label>
                 </div>
+
                 <label class="flex items-center gap-2 text-sm font-semibold">
-                  <input type="checkbox" name="evacuacao" [(ngModel)]="evacuacao"
+                  <input
+                    type="checkbox"
+                    name="evacuacao"
+                    [(ngModel)]="evacuacao"
                     [disabled]="ocupada()"
-                    class="h-4 w-4 accent-creche-verde focus-visible:ring-2 focus-visible:ring-creche-verde" />
+                    class="h-4 w-4 accent-creche-verde focus-visible:ring-2 focus-visible:ring-creche-verde"
+                  />
                   Houve evacuação
                 </label>
+
                 <label class="block space-y-1 text-sm font-semibold">
                   <span>Observação para a família (opcional)</span>
-                  <textarea name="observacao" rows="3" [class]="campo" [(ngModel)]="observacao"
-                    maxlength="1000" [disabled]="ocupada()"></textarea>
+                  <textarea
+                    name="observacao"
+                    rows="3"
+                    [class]="campo"
+                    [(ngModel)]="observacao"
+                    maxlength="1000"
+                    [disabled]="ocupada()"
+                  ></textarea>
                   <span class="text-xs font-normal text-stone-600">Até 1.000 caracteres.</span>
                 </label>
+
                 <div class="flex flex-wrap gap-2">
                   <button type="submit" [class]="primario" [disabled]="ocupada()">
                     {{ aluno.diario ? 'Salvar alterações' : 'Salvar diário' }}
                   </button>
-                  <button type="button" [class]="botao" [disabled]="ocupada()"
-                    (click)="fecharPaineis()">
+                  <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
                     Cancelar
                   </button>
                 </div>
@@ -208,6 +259,30 @@
           <li class="py-3 text-sm text-stone-600">Nenhum aluno ativo matriculado nesta turma.</li>
         }
       </ul>
+
+      @if (totalPaginas() > 1) {
+        <nav class="flex flex-wrap items-center gap-3 text-sm" aria-label="Páginas do diário">
+          <button
+            type="button"
+            [class]="botao"
+            [disabled]="ocupada() || pagina() === 0"
+            (click)="mudarPagina(pagina() - 1)"
+          >
+            Anterior
+          </button>
+
+          <span aria-live="polite">Página {{ pagina() + 1 }} de {{ totalPaginas() }}</span>
+
+          <button
+            type="button"
+            [class]="botao"
+            [disabled]="ocupada() || pagina() + 1 >= totalPaginas()"
+            (click)="mudarPagina(pagina() + 1)"
+          >
+            Próxima
+          </button>
+        </nav>
+      }
     }
   </section>
 </section>

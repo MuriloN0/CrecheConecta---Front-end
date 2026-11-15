@@ -1,9 +1,13 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ROTULOS_DIARIO } from '../../diario/diario.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { ROTULOS_DIARIO } from '../../../diario/diario.model';
+import { ObservacoesApi } from '../../../observacoes/observacoes.api';
+import { Observacao } from '../../../observacoes/observacoes.model';
 import {
   DiarioFilho,
   Filho,
@@ -15,12 +19,21 @@ import {
 @Component({
   selector: 'app-painel-familia',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './painel-familia.html',
 })
 export class PainelFamilia implements OnInit {
-  private readonly servico = inject(PainelFamiliaService);
+  // Quantas observações recentes aparecem no painel (as demais ficam em /familia/observacoes).
+  private static readonly OBSERVACOES_NO_PAINEL = 3;
 
+  private readonly servico = inject(PainelFamiliaService);
+  private readonly observacoesApi = inject(ObservacoesApi);
+  private readonly documento = inject(DOCUMENT);
+
+  readonly baixandoDados = signal(false);
+  readonly erroExportacao = signal('');
+
+  readonly responsavel = inject(AuthService).usuario;
   readonly filhos = signal<Filho[]>([]);
   readonly alunoId = signal('');
   readonly carregando = signal(false);
@@ -31,14 +44,18 @@ export class PainelFamilia implements OnInit {
   readonly erroDiario = signal(false);
   readonly dataDiario = signal('');
   readonly carregandoDiario = signal(false);
+  readonly erroFrequencia = signal(false);
+  readonly erroMalas = signal(false);
+
   readonly hoje = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }).format(new Date());
-  readonly erroFrequencia = signal(false);
-  readonly erroMalas = signal(false);
+  readonly observacoes = signal<Observacao[]>([]);
+  readonly totalObservacoes = signal(0);
+  readonly erroObservacoes = signal(false);
 
   readonly filhoSelecionado = computed(
     () => this.filhos().find((filho) => filho.id === this.alunoId()),
@@ -49,7 +66,6 @@ export class PainelFamilia implements OnInit {
     if (!frequencia) return [];
 
     const total = frequencia.presencas + frequencia.faltas;
-
     return [
       { titulo: 'Presenças', valor: frequencia.presencas, cor: 'bg-creche-verde' },
       { titulo: 'Faltas', valor: frequencia.faltas, cor: 'bg-amber-500' },
@@ -74,9 +90,31 @@ export class PainelFamilia implements OnInit {
     void this.atualizar();
   }
 
+  /** LGPD: baixa um arquivo JSON com os dados do responsável e das crianças vinculadas. */
+  async baixarMeusDados(): Promise<void> {
+    if (this.baixandoDados()) return;
+
+    this.baixandoDados.set(true);
+    this.erroExportacao.set('');
+
+    try {
+      const dados = await firstValueFrom(this.servico.exportarMeusDados());
+      const arquivo = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(arquivo);
+      const link = this.documento.createElement('a');
+      link.href = url;
+      link.download = `meus-dados-crecheconecta-${this.hoje}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      this.erroExportacao.set('Não foi possível gerar o arquivo com os seus dados. Tente novamente.');
+    } finally {
+      this.baixandoDados.set(false);
+    }
+  }
+
   async atualizar(): Promise<void> {
     if (this.carregando()) return;
-
     this.carregando.set(true);
     this.erro.set('');
     this.limparDetalhes();
@@ -89,9 +127,7 @@ export class PainelFamilia implements OnInit {
       const filho = anterior ?? filhos[0];
       this.alunoId.set(filho?.id ?? '');
 
-      if (filho) {
-        await this.carregarDetalhes(filho.id);
-      }
+      if (filho) await this.carregarDetalhes(filho.id);
     } catch {
       this.filhos.set([]);
       this.alunoId.set('');
@@ -102,9 +138,7 @@ export class PainelFamilia implements OnInit {
   }
 
   async selecionar(alunoId: string): Promise<void> {
-    if (this.carregando() || !this.filhos().some((filho) => filho.id === alunoId)) {
-      return;
-    }
+    if (this.carregando() || !this.filhos().some((filho) => filho.id === alunoId)) return;
 
     this.carregando.set(true);
     this.alunoId.set(alunoId);
@@ -117,17 +151,16 @@ export class PainelFamilia implements OnInit {
     }
   }
 
-  // data = 'AAAA-MM-DD' para um dia específico; null para o diário mais recente.
   async buscarDiario(data: string | null): Promise<void> {
     const alunoId = this.alunoId();
     if (!alunoId || this.carregandoDiario() || this.carregando()) return;
     if (data !== null && (!/^\d{4}-\d{2}-\d{2}$/.test(data) || data > this.hoje)) return;
+
     this.carregandoDiario.set(true);
     this.erroDiario.set(false);
+
     try {
-      const registro = await firstValueFrom(
-        this.servico.consultarDiario(alunoId, data ?? undefined),
-      );
+      const registro = await firstValueFrom(this.servico.consultarDiario(alunoId, data ?? undefined));
       if (alunoId !== this.alunoId()) return;
       this.diario.set(registro);
       this.dataDiario.set(registro.data);
@@ -149,14 +182,26 @@ export class PainelFamilia implements OnInit {
     this.erroDiario.set(false);
     this.erroFrequencia.set(false);
     this.erroMalas.set(false);
+    this.observacoes.set([]);
+    this.totalObservacoes.set(0);
+    this.erroObservacoes.set(false);
   }
 
   private async carregarDetalhes(alunoId: string): Promise<void> {
-    const [diario, frequencia, malas] = await Promise.allSettled([
+    const [diario, frequencia, malas, observacoes] = await Promise.allSettled([
       firstValueFrom(this.servico.consultarDiario(alunoId)),
       firstValueFrom(this.servico.consultarFrequencia(alunoId)),
       firstValueFrom(this.servico.listarMalas(alunoId)),
+      firstValueFrom(this.observacoesApi.listar(alunoId)),
     ]);
+
+    // O back já devolve da mais recente para a mais antiga.
+    if (observacoes.status === 'fulfilled') {
+      this.totalObservacoes.set(observacoes.value.length);
+      this.observacoes.set(observacoes.value.slice(0, PainelFamilia.OBSERVACOES_NO_PAINEL));
+    } else {
+      this.erroObservacoes.set(true);
+    }
 
     if (diario.status === 'fulfilled') {
       this.diario.set(diario.value);

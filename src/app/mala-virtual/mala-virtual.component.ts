@@ -46,6 +46,11 @@ export class MalaVirtualComponent implements OnInit {
 
   readonly turmas = signal<AtividadeTurma[]>([]);
   readonly malas = signal<MalaTurma[]>([]);
+  readonly pagina = signal(0);
+  readonly totalPaginas = signal(0);
+
+  readonly botao =
+    'min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60';
 
   readonly iniciando = signal(true);
   readonly carregando = signal(false);
@@ -99,6 +104,9 @@ export class MalaVirtualComponent implements OnInit {
 
     this.numeroConsulta++;
     this.malas.set([]);
+    this.pagina.set(0);
+    this.totalPaginas.set(0);
+    this.carregando.set(false);
 
     try {
       const turmas = await firstValueFrom(this.atividades.listarTurmas());
@@ -120,7 +128,7 @@ export class MalaVirtualComponent implements OnInit {
     }
   }
 
-  async carregarMalas(): Promise<void> {
+  async carregarMalas(pagina = this.pagina()): Promise<void> {
     const consulta = ++this.numeroConsulta;
 
     this.carregando.set(true);
@@ -129,13 +137,25 @@ export class MalaVirtualComponent implements OnInit {
     try {
       if (!this.turmaId) {
         this.malas.set([]);
+        this.pagina.set(0);
+        this.totalPaginas.set(0);
         return;
       }
 
-      const malas = await firstValueFrom(this.api.listar(this.turmaId));
+      const turmaId = this.turmaId;
+      let resultado = await firstValueFrom(this.api.listarPaginadas(turmaId, pagina));
+      if (consulta !== this.numeroConsulta) return;
+
+      const ultimaPagina = Math.max(0, resultado.totalPages - 1);
+      if (pagina > ultimaPagina) {
+        pagina = ultimaPagina;
+        resultado = await firstValueFrom(this.api.listarPaginadas(turmaId, pagina));
+      }
 
       if (consulta === this.numeroConsulta) {
-        this.malas.set(malas);
+        this.malas.set(resultado.content);
+        this.pagina.set(pagina);
+        this.totalPaginas.set(resultado.totalPages);
       }
     } catch (erro: unknown) {
       if (consulta === this.numeroConsulta) {
@@ -149,11 +169,21 @@ export class MalaVirtualComponent implements OnInit {
     }
   }
 
+  mudarPagina(pagina: number): void {
+    if (this.ocupada() || pagina < 0 || pagina >= this.totalPaginas()) return;
+
+    this.fecharPaineis();
+    this.sucesso.set('');
+    void this.carregarMalas(pagina);
+  }
+
   mudarTurma(): void {
     this.fecharPaineis();
     this.sucesso.set('');
     this.malas.set([]);
-    void this.carregarMalas();
+    this.pagina.set(0);
+    this.totalPaginas.set(0);
+    void this.carregarMalas(0);
   }
 
   abrirCadastro(): void {
@@ -222,7 +252,6 @@ export class MalaVirtualComponent implements OnInit {
     if (!mala) return;
 
     const consulta = ++this.numeroProgresso;
-
     this.carregandoProgresso.set(true);
     this.erroProgresso.set('');
 
@@ -283,7 +312,7 @@ export class MalaVirtualComponent implements OnInit {
     this.fecharPaineis();
     this.sucesso.set(mala ? 'Mala atualizada com sucesso.' : 'Mala criada com sucesso.');
 
-    await this.carregarMalas();
+    await this.carregarMalas(mala ? this.pagina() : 0);
   }
 
   async confirmarExclusao(): Promise<void> {
@@ -316,8 +345,8 @@ export class MalaVirtualComponent implements OnInit {
 
     this.salvando.set(false);
     this.fecharPaineis();
-    this.malas.update((malas) => malas.filter((item) => item.id !== mala.id));
     this.sucesso.set('Mala excluída com sucesso.');
+    await this.carregarMalas();
   }
 
   private async tratarErroAoSalvar(erro: unknown, mala: MalaTurma | null): Promise<void> {

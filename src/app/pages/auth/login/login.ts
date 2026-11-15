@@ -40,7 +40,6 @@ export class Login {
     this.erro.set('');
 
     const segundos = Math.ceil((this.proximoEnvioEm - Date.now()) / 1000);
-
     if (segundos > 0) {
       this.erro.set(`Aguarde ${segundos} segundos antes de solicitar outro código.`);
       return;
@@ -69,7 +68,6 @@ export class Login {
     this.erro.set('');
 
     const acao = this.acao();
-
     if (!acao || Date.parse(acao.expiraEm) <= Date.now()) {
       this.erro.set('O código expirou. Volte e solicite um novo.');
       return;
@@ -118,6 +116,8 @@ export class Login {
         return 'Confira os dados. O código pode estar incorreto, expirado ou já utilizado.';
       case 401:
         return 'E-mail ou senha inválidos, ou acesso temporariamente bloqueado.';
+      case 409:
+        return 'Já existe uma sessão ativa nesta conta. Saia do outro acesso ou aguarde a sessão expirar.';
       case 429:
         return 'Limite de tentativas atingido. Aguarde antes de tentar novamente.';
       case 503:

@@ -8,8 +8,12 @@
     </div>
 
     @if (podeGerenciar()) {
-      <button type="button" [class]="primario" [disabled]="ocupada()"
-        (click)="abrirFormulario()">
+      <button
+        type="button"
+        [class]="primario"
+        [disabled]="ocupada()"
+        (click)="abrirFormulario()"
+      >
         Novo comunicado
       </button>
     }
@@ -37,15 +41,19 @@
 
       <label class="block space-y-1 text-sm font-semibold">
         <span>Título</span>
-        <input name="titulo" type="text" [class]="campo" [(ngModel)]="titulo"
-          required maxlength="150" [disabled]="ocupada()" />
+        <input
+          name="titulo" type="text" [class]="campo" [(ngModel)]="titulo"
+          required maxlength="150" [disabled]="ocupada()"
+        />
         <span class="text-xs font-normal text-stone-600">Até 150 caracteres.</span>
       </label>
 
       <label class="block space-y-1 text-sm font-semibold">
         <span>Texto do comunicado</span>
-        <textarea name="conteudo" rows="6" [class]="campo" [(ngModel)]="conteudo"
-          required maxlength="5000" [disabled]="ocupada()"></textarea>
+        <textarea
+          name="conteudo" rows="6" [class]="campo" [(ngModel)]="conteudo"
+          required maxlength="5000" [disabled]="ocupada()"
+        ></textarea>
         <span class="text-xs font-normal text-stone-600">Até 5.000 caracteres.</span>
       </label>
 
@@ -53,8 +61,7 @@
         <button type="submit" [class]="primario" [disabled]="ocupada()">
           {{ editando() ? 'Salvar alterações' : 'Publicar' }}
         </button>
-        <button type="button" [class]="botao" [disabled]="ocupada()"
-          (click)="fecharPaineis()">
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
           Cancelar
         </button>
       </div>
@@ -69,26 +76,51 @@
       </p>
 
       <div class="flex flex-wrap gap-2">
-        <button type="button" [disabled]="ocupada()" (click)="confirmarInativacao()"
+        <button
+          type="button"
+          [disabled]="ocupada()"
+          (click)="confirmarInativacao()"
           class="cursor-pointer rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold
                  text-white hover:bg-red-800 focus-visible:ring-2 focus-visible:ring-red-700
-                 focus-visible:ring-offset-2 disabled:opacity-50">
+                 focus-visible:ring-offset-2 disabled:opacity-50"
+        >
           Confirmar retirada
         </button>
-        <button type="button" [class]="botao" [disabled]="ocupada()"
-          (click)="fecharPaineis()">
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
           Cancelar
         </button>
       </div>
     </section>
   }
 
-  <section class="space-y-4" aria-label="Mural de comunicados"
-    [attr.aria-busy]="ocupada()">
-    <button type="button" [class]="botao" [disabled]="ocupada()"
-      (click)="carregar(pagina())">
-      Atualizar mural
-    </button>
+  <section class="space-y-4" aria-label="Mural de comunicados" [attr.aria-busy]="ocupada()">
+    <form [class]="cartao" (ngSubmit)="aplicarBusca()" aria-label="Buscar comunicados">
+      <div class="flex flex-wrap items-end gap-3">
+        <label class="grid w-full gap-1 text-sm font-semibold sm:max-w-sm">
+          Buscar por título
+          <input
+            type="search"
+            name="busca"
+            [class]="campo"
+            [(ngModel)]="busca"
+            maxlength="150"
+            [disabled]="ocupada()"
+          />
+        </label>
+
+        <button type="submit" [class]="primario" [disabled]="ocupada()">Buscar</button>
+
+        @if (buscaAplicada() || busca) {
+          <button type="button" [class]="botao" [disabled]="ocupada()" (click)="limparBusca()">
+            Limpar busca
+          </button>
+        }
+
+        <button type="button" [class]="botao" [disabled]="ocupada()" (click)="carregar(pagina())">
+          Atualizar mural
+        </button>
+      </div>
+    </form>
 
     @for (comunicado of comunicados(); track comunicado.id) {
       <article [class]="cartao">
@@ -102,14 +134,22 @@
 
           @if (podeGerenciar()) {
             <div class="flex flex-wrap gap-2">
-              <button type="button" [class]="botao" [disabled]="ocupada()"
+              <button
+                type="button"
+                [class]="botao"
+                [disabled]="ocupada()"
                 [attr.aria-label]="'Editar ' + comunicado.titulo"
-                (click)="abrirFormulario(comunicado)">
+                (click)="abrirFormulario(comunicado)"
+              >
                 Editar
               </button>
-              <button type="button" [class]="botao" [disabled]="ocupada()"
+              <button
+                type="button"
+                [class]="botao"
+                [disabled]="ocupada()"
                 [attr.aria-label]="'Retirar do mural: ' + comunicado.titulo"
-                (click)="pedirInativacao(comunicado)">
+                (click)="pedirInativacao(comunicado)"
+              >
                 Retirar do mural
               </button>
             </div>
@@ -123,21 +163,28 @@
     } @empty {
       @if (!ocupada() && !falhaListagem()) {
         <p class="rounded-2xl border border-stone-200 bg-white p-5 text-sm text-stone-600">
-          Nenhum comunicado publicado.
+          {{ buscaAplicada() ? 'Nenhum comunicado encontrado para esse título.' : 'Nenhum comunicado publicado.' }}
         </p>
       }
     }
 
     @if (totalPaginas() > 1 && !falhaListagem()) {
       <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de comunicados">
-        <button type="button" [class]="botao" [disabled]="ocupada() || pagina() === 0"
-          (click)="carregar(pagina() - 1)">
+        <button
+          type="button"
+          [class]="botao"
+          [disabled]="ocupada() || pagina() === 0"
+          (click)="carregar(pagina() - 1)"
+        >
           Anterior
         </button>
         <span class="text-sm">Página {{ pagina() + 1 }} de {{ totalPaginas() }}</span>
-        <button type="button" [class]="botao"
+        <button
+          type="button"
+          [class]="botao"
           [disabled]="ocupada() || pagina() + 1 >= totalPaginas()"
-          (click)="carregar(pagina() + 1)">
+          (click)="carregar(pagina() + 1)"
+        >
           Próxima
         </button>
       </nav>

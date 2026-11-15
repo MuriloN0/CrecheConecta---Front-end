@@ -20,6 +20,7 @@ export class Comunicados implements OnInit {
   readonly comunicados = signal<Comunicado[]>([]);
   readonly pagina = signal(0);
   readonly totalPaginas = signal(0);
+  readonly buscaAplicada = signal('');
   readonly ocupada = signal(false);
   readonly falhaListagem = signal(false);
   readonly erro = signal('');
@@ -33,6 +34,7 @@ export class Comunicados implements OnInit {
   readonly botao = 'cursor-pointer rounded-xl border border-stone-300 px-4 py-2 text-sm font-semibold hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:cursor-not-allowed disabled:opacity-50';
   readonly primario = 'cursor-pointer rounded-xl bg-creche-verde px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
+  busca = '';
   titulo = '';
   conteudo = '';
 
@@ -45,6 +47,21 @@ export class Comunicados implements OnInit {
 
     this.fecharPaineis();
     return this.executar(() => this.buscarComunicados(pagina));
+  }
+
+  aplicarBusca(): Promise<void> {
+    if (this.ocupada()) return Promise.resolve();
+
+    this.buscaAplicada.set(this.busca.trim());
+    this.pagina.set(0);
+    return this.carregar(0);
+  }
+
+  limparBusca(): Promise<void> {
+    if (this.ocupada()) return Promise.resolve();
+
+    this.busca = '';
+    return this.aplicarBusca();
   }
 
   abrirFormulario(comunicado: Comunicado | null = null): void {
@@ -120,12 +137,12 @@ export class Comunicados implements OnInit {
 
   private async buscarComunicados(pagina: number): Promise<void> {
     try {
-      let resposta = await firstValueFrom(this.servico.listar(pagina));
+      let resposta = await firstValueFrom(this.servico.listar(pagina, this.buscaAplicada()));
       const ultimaPagina = Math.max(0, resposta.totalPages - 1);
 
       if (pagina > ultimaPagina) {
         pagina = ultimaPagina;
-        resposta = await firstValueFrom(this.servico.listar(pagina));
+        resposta = await firstValueFrom(this.servico.listar(pagina, this.buscaAplicada()));
       }
 
       this.comunicados.set(resposta.content);
@@ -165,7 +182,9 @@ export class Comunicados implements OnInit {
         case 0:
           return 'Não foi possível conectar à API.';
         case 400:
-          return 'Confira o título e o texto do comunicado.';
+          return typeof erro.error?.mensagem === 'string'
+            ? erro.error.mensagem
+            : 'Confira os dados enviados.';
         case 401:
           return 'Sua sessão expirou. Entre novamente.';
         case 403:

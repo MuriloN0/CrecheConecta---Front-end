@@ -137,6 +137,12 @@ export const routes: Routes = [
         loadComponent: () => import('./direcao/direcao').then((m) => m.Direcao),
       },
       {
+        path: 'auditoria',
+        title: 'Auditoria | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO')],
+        loadComponent: () => import('./auditoria/auditoria').then((m) => m.Auditoria),
+      },
+      {
         path: 'termos',
         title: 'Termos e LGPD | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO')],
@@ -166,6 +172,18 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'conversas',
+        title: 'Conversas | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],
+        loadComponent: () => import('./conversas/conversas').then((m) => m.Conversas),
+      },
+      {
+        path: 'notificacoes',
+        title: 'Notificações | CrecheConecta',
+        canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],
+        loadComponent: () => import('./notificacoes/notificacoes').then((m) => m.Notificacoes),
+      },
+      {
         path: 'comunicados',
         title: 'Comunicados | CrecheConecta',
         canActivate: [permitirPerfis('DIRECAO', 'PROFESSOR', 'RESPONSAVEL')],
@@ -184,15 +202,29 @@ export const routes: Routes = [
       {
         path: 'observacoes',
         title: 'Observações | CrecheConecta',
-        canActivate: [permitirPerfis('RESPONSAVEL')],
+        canActivate: [permitirPerfis('PROFESSOR')],
         loadComponent: () =>
-          import('./observacoes/observacoes').then((m) => m.Observacoes),
+          import('./observacoes/observacoes-professor').then((m) => m.ObservacoesProfessor),
+      },
+      {
+        path: 'familia/observacoes',
+        canActivate: [permitirPerfis('RESPONSAVEL')],
+        canActivateChild: [termoAceitoGuard],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Observações | CrecheConecta',
+            loadComponent: () =>
+              import('./observacoes/observacoes').then((m) => m.Observacoes),
+          },
+        ],
       },
       {
         path: 'informacoes',
         title: 'Informações relevantes | CrecheConecta',
         canActivate: [permitirPerfis('RESPONSAVEL')],
-        loadComponent: () => import('./saude/saude').then((m) => m.Saude),
+        loadComponent: () => import('./informacoes-relevantes/informacoes-relevantes').then((m) => m.InformacoesRelevantes),
       },
     ],
   },

@@ -1,5 +1,5 @@
-import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
 import { TermoStatus } from './portal-pais.model';
 
 @Injectable({ providedIn: 'root' })
@@ -10,7 +10,7 @@ export class PortalPaisApi {
     return this.http.get<TermoStatus>('/api/termo/status');
   }
 
-  aceitarTermo() {
-    return this.http.post<void>('/api/termo/aceite', {});
+  aceitarTermo(versao: string) {
+    return this.http.post<void>('/api/termo/aceite', { versao });
   }
 }

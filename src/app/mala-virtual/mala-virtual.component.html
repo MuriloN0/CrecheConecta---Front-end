@@ -1,10 +1,7 @@
 <section aria-labelledby="titulo-mala-virtual" class="space-y-5">
   <div class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <h1
-        id="titulo-mala-virtual"
-        class="text-2xl font-bold text-creche-texto md:text-3xl"
-      >
+      <h1 id="titulo-mala-virtual" class="text-2xl font-bold text-creche-texto md:text-3xl">
         Mala Virtual
       </h1>
 
@@ -15,7 +12,9 @@
 
     <button
       type="button"
-      class="min-h-11 w-full cursor-pointer rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white enabled:hover:bg-creche-verde/90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+      class="min-h-11 w-full cursor-pointer rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold
+             text-white enabled:hover:bg-creche-verde/90 focus-visible:outline-3 focus-visible:outline-offset-2
+             focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       [disabled]="ocupada() || !turmaId"
       (click)="abrirCadastro()"
     >
@@ -49,7 +48,10 @@
 
       <button
         type="button"
-        class="min-h-11 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        class="min-h-11 w-full cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5
+               text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3
+               focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed
+               disabled:opacity-60 sm:w-auto"
         [disabled]="ocupada()"
         (click)="carregarTurmas()"
       >
@@ -59,19 +61,13 @@
   </div>
 
   @if (sucesso()) {
-    <p
-      role="status"
-      class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900"
-    >
+    <p role="status" class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900">
       {{ sucesso() }}
     </p>
   }
 
   @if (erro()) {
-    <p
-      role="alert"
-      class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
-    >
+    <p role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
       {{ erro() }}
     </p>
   }
@@ -134,7 +130,10 @@
             <div class="mt-auto flex flex-wrap gap-2">
               <button
                 type="button"
-                class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+                class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5
+                       text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50
+                       focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde
+                       disabled:cursor-not-allowed disabled:opacity-60"
                 [disabled]="ocupada()"
                 [attr.aria-label]="'Ver progresso de ' + mala.titulo"
                 (click)="abrirDetalhe(mala)"
@@ -145,7 +144,10 @@
               @if (podeAlterar(mala)) {
                 <button
                   type="button"
-                  class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+                  class="min-h-11 cursor-pointer rounded-xl border border-stone-300 bg-white px-4 py-2.5
+                         text-sm font-semibold text-creche-verde enabled:hover:bg-stone-50
+                         focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde
+                         disabled:cursor-not-allowed disabled:opacity-60"
                   [disabled]="ocupada()"
                   [attr.aria-label]="'Editar ' + mala.titulo"
                   (click)="abrirEdicao(mala)"
@@ -155,7 +157,10 @@
 
                 <button
                   type="button"
-                  class="min-h-11 cursor-pointer rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 enabled:hover:bg-red-100 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde disabled:cursor-not-allowed disabled:opacity-60"
+                  class="min-h-11 cursor-pointer rounded-xl border border-red-200 bg-red-50 px-4 py-2.5
+                         text-sm font-semibold text-red-800 enabled:hover:bg-red-100
+                         focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-creche-verde
+                         disabled:cursor-not-allowed disabled:opacity-60"
                   [disabled]="ocupada()"
                   [attr.aria-label]="'Excluir ' + mala.titulo"
                   (click)="solicitarExclusao(mala)"
@@ -167,6 +172,30 @@
           </li>
         }
       </ul>
+    }
+
+    @if (totalPaginas() > 1 && !erro()) {
+      <nav class="mt-4 flex flex-wrap items-center gap-3 text-sm" aria-label="Páginas da Mala Virtual">
+        <button
+          type="button"
+          [class]="botao"
+          [disabled]="ocupada() || pagina() === 0"
+          (click)="mudarPagina(pagina() - 1)"
+        >
+          Anterior
+        </button>
+
+        <span aria-live="polite">Página {{ pagina() + 1 }} de {{ totalPaginas() }}</span>
+
+        <button
+          type="button"
+          [class]="botao"
+          [disabled]="ocupada() || pagina() + 1 >= totalPaginas()"
+          (click)="mudarPagina(pagina() + 1)"
+        >
+          Próxima
+        </button>
+      </nav>
     }
   </section>
 </section>

@@ -1,14 +1,23 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { DadosTermo, TermoVersao } from './termos.model';
+import { DadosTermo, StatusTermo, TermoVersao } from './termos.model';
+
+interface PaginaTermos {
+  content: TermoVersao[];
+  totalPages: number;
+  vigente: TermoVersao | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TermosService {
   private readonly http = inject(HttpClient);
   private readonly url = '/api/termos';
 
-  listar() {
-    return this.http.get<TermoVersao[]>(this.url);
+  listar(pagina: number, status: StatusTermo | '') {
+    const params: Record<string, string | number> = { pagina };
+    if (status) params['status'] = status;
+
+    return this.http.get<PaginaTermos>(`${this.url}/paginados`, { params });
   }
 
   criar(dados: DadosTermo) {

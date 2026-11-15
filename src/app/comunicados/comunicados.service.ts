@@ -26,9 +26,9 @@ export class ComunicadosService {
   private readonly http = inject(HttpClient);
   private readonly url = '/api/comunicados';
 
-  listar(pagina: number) {
+  listar(pagina: number, busca = '') {
     return this.http.get<PaginaComunicados>(this.url, {
-      params: { pagina, tamanho: 20 },
+      params: { pagina, tamanho: 20, ...(busca ? { busca } : {}) },
     });
   }
 

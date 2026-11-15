@@ -5,6 +5,20 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+interface ConviteResponsavel {
+  nome: string;
+  email: string;
+  faixaNascimento: {
+    dataMinima: string;
+    dataMaxima: string;
+  };
+  documentos: {
+    versao: string;
+    termoUso: string;
+    politicaPrivacidade: string;
+  };
+}
+
 @Component({
   selector: 'app-cadastro-responsavel',
   standalone: true,
@@ -18,7 +32,7 @@ export class CadastroResponsavel implements OnInit {
   private readonly api = '/api/cadastro/responsavel';
   private token = '';
 
-  readonly convite = signal<{ nome: string; email: string } | null>(null);
+  readonly convite = signal<ConviteResponsavel | null>(null);
   readonly ocupada = signal(false);
   readonly podeConsultar = signal(false);
   readonly erro = signal('');
@@ -26,14 +40,7 @@ export class CadastroResponsavel implements OnInit {
   readonly campo =
     'w-full rounded-xl border border-stone-300 px-3 py-2 focus-visible:ring-2 focus-visible:ring-creche-verde';
 
-  readonly dataMinima = '1900-01-01';
-  readonly hoje = new Intl.DateTimeFormat('sv-SE', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'America/Sao_Paulo',
-  }).format(new Date());
-
+  aceitouDocumentos = false;
   nome = '';
   nomeAluno = '';
   dataNascimento = '';
@@ -60,18 +67,52 @@ export class CadastroResponsavel implements OnInit {
 
     return this.executar(async () => {
       const dados = await firstValueFrom(
-        this.http.post<{ nome: string; email: string }>(`${this.api}/consultar-convite`, {
+        this.http.post<ConviteResponsavel>(`${this.api}/consultar-convite`, {
           token: this.token,
         }),
       );
 
+      if (!this.convite()) this.nome = dados.nome;
+
+      this.aceitouDocumentos = false;
       this.convite.set(dados);
-      this.nome = dados.nome;
     });
   }
 
+  erroDataNascimento(): string {
+    const faixa = this.convite()?.faixaNascimento;
+    const data = this.dataNascimento;
+
+    if (!faixa || !data) return '';
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+      return 'Informe uma data de nascimento válida.';
+    }
+
+    const calendario = new Date(data + 'T00:00:00Z');
+    if (
+      Number.isNaN(calendario.getTime()) ||
+      calendario.toISOString().slice(0, 10) !== data
+    ) {
+      return 'Informe uma data de nascimento válida.';
+    }
+
+    if (data < faixa.dataMinima) {
+      return 'O aluno deve ter no máximo 4 anos pelo ano de nascimento.';
+    }
+
+    if (data > faixa.dataMaxima) {
+      return 'O aluno deve ter pelo menos 6 meses completos.';
+    }
+
+    return '';
+  }
+
   concluir(formulario: NgForm): Promise<void> {
-    if (!this.convite() || formulario.invalid) return Promise.resolve();
+    const convite = this.convite();
+    if (!convite || formulario.invalid || !this.aceitouDocumentos) {
+      return Promise.resolve();
+    }
 
     return this.executar(async () => {
       const telefone = this.telefone.trim();
@@ -104,12 +145,9 @@ export class CadastroResponsavel implements OnInit {
         return;
       }
 
-      if (
-        !/^\d{4}-\d{2}-\d{2}$/.test(dataNascimento) ||
-        dataNascimento < this.dataMinima ||
-        dataNascimento > this.hoje
-      ) {
-        this.erro.set('Informe uma data de nascimento válida até hoje.');
+      const erroNascimento = this.erroDataNascimento();
+      if (erroNascimento) {
+        this.erro.set(erroNascimento);
         return;
       }
 
@@ -121,6 +159,8 @@ export class CadastroResponsavel implements OnInit {
           senha: this.senha,
           nomeAluno,
           dataNascimento,
+          aceitouDocumentos: this.aceitouDocumentos,
+          versaoTermos: convite.documentos.versao,
         }),
       );
 
