@@ -1,10 +1,10 @@
 // Item da listagem: o back devolve só o essencial.
-export interface FichaSaudeResumo {
+export interface InformacaoRelevanteResumo {
   id: string;
   nome: string;
 }
 
-export interface FichaSaude {
+export interface InformacaoRelevante {
   id: string;
   alunoId: string;
   nome: string;
@@ -15,7 +15,7 @@ export interface FichaSaude {
 }
 
 // "versao" só vai na edição (controle de edição simultânea).
-export interface SalvarFichaSaude {
+export interface SalvarInformacaoRelevante {
   nome: string;
   observacoes: string;
   versao?: number;

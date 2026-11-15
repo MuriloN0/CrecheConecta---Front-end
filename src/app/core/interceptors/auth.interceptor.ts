@@ -41,6 +41,15 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         ) {
           void router.navigateByUrl('/portal-pais');
         }
+        // LGPD: o back recusa as rotas dos pais enquanto o termo vigente não for aceito.
+        if (
+          erro instanceof HttpErrorResponse &&
+          erro.status === 403 &&
+          erro.error?.codigo === 'TERMO_PENDENTE' &&
+          router.url.split(/[?#]/)[0] !== '/portal-pais'
+        ) {
+          void router.navigateByUrl('/portal-pais');
+        }
       },
     }),
   );

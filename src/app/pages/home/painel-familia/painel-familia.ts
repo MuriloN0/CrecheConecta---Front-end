@@ -1,10 +1,13 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ROTULOS_DIARIO } from '../../../diario/diario.model';
+import { ObservacoesApi } from '../../../observacoes/observacoes.api';
+import { Observacao } from '../../../observacoes/observacoes.model';
 import {
   DiarioFilho,
   Filho,
@@ -16,11 +19,19 @@ import {
 @Component({
   selector: 'app-painel-familia',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './painel-familia.html',
 })
 export class PainelFamilia implements OnInit {
+  // Quantas observações recentes aparecem no painel (as demais ficam em /familia/observacoes).
+  private static readonly OBSERVACOES_NO_PAINEL = 3;
+
   private readonly servico = inject(PainelFamiliaService);
+  private readonly observacoesApi = inject(ObservacoesApi);
+  private readonly documento = inject(DOCUMENT);
+
+  readonly baixandoDados = signal(false);
+  readonly erroExportacao = signal('');
 
   readonly responsavel = inject(AuthService).usuario;
   readonly filhos = signal<Filho[]>([]);
@@ -42,6 +53,9 @@ export class PainelFamilia implements OnInit {
     month: '2-digit',
     day: '2-digit',
   }).format(new Date());
+  readonly observacoes = signal<Observacao[]>([]);
+  readonly totalObservacoes = signal(0);
+  readonly erroObservacoes = signal(false);
 
   readonly filhoSelecionado = computed(
     () => this.filhos().find((filho) => filho.id === this.alunoId()),
@@ -74,6 +88,29 @@ export class PainelFamilia implements OnInit {
 
   ngOnInit(): void {
     void this.atualizar();
+  }
+
+  /** LGPD: baixa um arquivo JSON com os dados do responsável e das crianças vinculadas. */
+  async baixarMeusDados(): Promise<void> {
+    if (this.baixandoDados()) return;
+
+    this.baixandoDados.set(true);
+    this.erroExportacao.set('');
+
+    try {
+      const dados = await firstValueFrom(this.servico.exportarMeusDados());
+      const arquivo = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(arquivo);
+      const link = this.documento.createElement('a');
+      link.href = url;
+      link.download = `meus-dados-crecheconecta-${this.hoje}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      this.erroExportacao.set('Não foi possível gerar o arquivo com os seus dados. Tente novamente.');
+    } finally {
+      this.baixandoDados.set(false);
+    }
   }
 
   async atualizar(): Promise<void> {
@@ -145,14 +182,26 @@ export class PainelFamilia implements OnInit {
     this.erroDiario.set(false);
     this.erroFrequencia.set(false);
     this.erroMalas.set(false);
+    this.observacoes.set([]);
+    this.totalObservacoes.set(0);
+    this.erroObservacoes.set(false);
   }
 
   private async carregarDetalhes(alunoId: string): Promise<void> {
-    const [diario, frequencia, malas] = await Promise.allSettled([
+    const [diario, frequencia, malas, observacoes] = await Promise.allSettled([
       firstValueFrom(this.servico.consultarDiario(alunoId)),
       firstValueFrom(this.servico.consultarFrequencia(alunoId)),
       firstValueFrom(this.servico.listarMalas(alunoId)),
+      firstValueFrom(this.observacoesApi.listar(alunoId)),
     ]);
+
+    // O back já devolve da mais recente para a mais antiga.
+    if (observacoes.status === 'fulfilled') {
+      this.totalObservacoes.set(observacoes.value.length);
+      this.observacoes.set(observacoes.value.slice(0, PainelFamilia.OBSERVACOES_NO_PAINEL));
+    } else {
+      this.erroObservacoes.set(true);
+    }
 
     if (diario.status === 'fulfilled') {
       this.diario.set(diario.value);

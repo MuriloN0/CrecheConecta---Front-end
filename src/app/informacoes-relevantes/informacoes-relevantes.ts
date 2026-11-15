@@ -4,28 +4,28 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { FilhoSelecionadoService } from '../core/services/filho-selecionado.service';
-import { SaudeApi } from './saude.api';
-import { FichaSaude, FichaSaudeResumo } from './saude.model';
+import { InformacoesRelevantesApi } from './informacoes-relevantes.api';
+import { InformacaoRelevante, InformacaoRelevanteResumo } from './informacoes-relevantes.model';
 
 @Component({
-  selector: 'app-saude',
+  selector: 'app-informacoes-relevantes',
   standalone: true,
   imports: [DatePipe, FormsModule],
-  templateUrl: './saude.html',
+  templateUrl: './informacoes-relevantes.html',
 })
-export class Saude implements OnInit {
-  private readonly api = inject(SaudeApi);
+export class InformacoesRelevantes implements OnInit {
+  private readonly api = inject(InformacoesRelevantesApi);
   readonly familia = inject(FilhoSelecionadoService);
 
-  readonly fichas = signal<FichaSaudeResumo[]>([]);
+  readonly informacoes = signal<InformacaoRelevanteResumo[]>([]);
   readonly ocupada = signal(false);
   readonly falhaListagem = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
   readonly formularioAberto = signal(false);
-  readonly editando = signal<FichaSaude | null>(null);
-  readonly detalhe = signal<FichaSaude | null>(null);
-  readonly paraExcluir = signal<FichaSaudeResumo | null>(null);
+  readonly editando = signal<InformacaoRelevante | null>(null);
+  readonly detalhe = signal<InformacaoRelevante | null>(null);
+  readonly paraExcluir = signal<InformacaoRelevanteResumo | null>(null);
 
   readonly cartao = 'space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6';
   readonly campo = 'w-full rounded-xl border border-stone-300 bg-white px-3 py-2 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:bg-stone-100';
@@ -43,7 +43,7 @@ export class Saude implements OnInit {
     return this.executar(async () => {
       this.fecharPaineis();
       await this.familia.carregar();
-      await this.buscarFichas();
+      await this.buscarInformacoes();
     });
   }
 
@@ -51,7 +51,7 @@ export class Saude implements OnInit {
     return this.executar(async () => {
       this.fecharPaineis();
       this.familia.selecionar(alunoId);
-      await this.buscarFichas();
+      await this.buscarInformacoes();
     });
   }
 
@@ -64,17 +64,17 @@ export class Saude implements OnInit {
     this.formularioAberto.set(true);
   }
 
-  ver(ficha: FichaSaudeResumo): Promise<void> {
+  ver(informacao: InformacaoRelevanteResumo): Promise<void> {
     return this.executar(async () => {
       this.fecharPaineis();
-      this.detalhe.set(await firstValueFrom(this.api.visualizar(this.familia.alunoId(), ficha.id)));
+      this.detalhe.set(await firstValueFrom(this.api.visualizar(this.familia.alunoId(), informacao.id)));
     });
   }
 
-  editar(ficha: FichaSaudeResumo | FichaSaude): Promise<void> {
+  editar(informacao: InformacaoRelevanteResumo | InformacaoRelevante): Promise<void> {
     return this.executar(async () => {
       this.fecharPaineis();
-      const completa = await firstValueFrom(this.api.visualizar(this.familia.alunoId(), ficha.id));
+      const completa = await firstValueFrom(this.api.visualizar(this.familia.alunoId(), informacao.id));
       this.editando.set(completa);
       this.nome = completa.nome;
       this.observacoes = completa.observacoes ?? '';
@@ -82,11 +82,11 @@ export class Saude implements OnInit {
     });
   }
 
-  pedirExclusao(ficha: FichaSaudeResumo): void {
+  pedirExclusao(informacao: InformacaoRelevanteResumo): void {
     if (this.ocupada()) return;
     this.fecharPaineis();
     this.limparMensagens();
-    this.paraExcluir.set(ficha);
+    this.paraExcluir.set(informacao);
   }
 
   fecharPaineis(): void {
@@ -110,43 +110,43 @@ export class Saude implements OnInit {
         return;
       }
       const alunoId = this.familia.alunoId();
-      const ficha = this.editando();
-      if (ficha) {
+      const informacao = this.editando();
+      if (informacao) {
         await firstValueFrom(
-          this.api.editar(alunoId, ficha.id, { nome, observacoes, versao: ficha.versao }),
+          this.api.editar(alunoId, informacao.id, { nome, observacoes, versao: informacao.versao }),
         );
       } else {
         await firstValueFrom(this.api.cadastrar(alunoId, { nome, observacoes }));
       }
       this.fecharPaineis();
-      this.sucesso.set(ficha ? 'Informação atualizada.' : 'Informação cadastrada.');
-      await this.buscarFichas();
+      this.sucesso.set(informacao ? 'Informação atualizada.' : 'Informação cadastrada.');
+      await this.buscarInformacoes();
     });
   }
 
   confirmarExclusao(): Promise<void> {
-    const ficha = this.paraExcluir();
-    if (!ficha || this.ocupada()) return Promise.resolve();
+    const informacao = this.paraExcluir();
+    if (!informacao || this.ocupada()) return Promise.resolve();
     return this.executar(async () => {
-      await firstValueFrom(this.api.excluir(this.familia.alunoId(), ficha.id));
+      await firstValueFrom(this.api.excluir(this.familia.alunoId(), informacao.id));
       this.fecharPaineis();
       this.sucesso.set('Informação excluída.');
-      await this.buscarFichas();
+      await this.buscarInformacoes();
     });
   }
 
-  private async buscarFichas(): Promise<void> {
+  private async buscarInformacoes(): Promise<void> {
     const alunoId = this.familia.alunoId();
     if (!alunoId) {
-      this.fichas.set([]);
+      this.informacoes.set([]);
       this.falhaListagem.set(false);
       return;
     }
     try {
-      this.fichas.set(await firstValueFrom(this.api.listar(alunoId)));
+      this.informacoes.set(await firstValueFrom(this.api.listar(alunoId)));
       this.falhaListagem.set(false);
     } catch (erro: unknown) {
-      this.fichas.set([]);
+      this.informacoes.set([]);
       this.falhaListagem.set(true);
       throw erro;
     }
