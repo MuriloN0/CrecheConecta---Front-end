@@ -1,0 +1,123 @@
+<section class="space-y-4 rounded-2xl border border-stone-200 bg-white p-5 md:p-6"
+  aria-labelledby="titulo-frequencia-direcao" [attr.aria-busy]="carregando()">
+  <h2 id="titulo-frequencia-direcao" class="text-xl font-bold text-creche-texto">Frequência</h2>
+
+  <form class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_1fr_1fr_auto]"
+    (ngSubmit)="aplicar()">
+    <label class="grid gap-1 text-sm font-semibold">
+      Turma
+      <select name="turma" [ngModel]="turmaSelecionada()?.id ?? ''"
+        (ngModelChange)="escolherTurma($event)" [disabled]="carregando()"
+        class="w-full rounded-xl border border-stone-300 px-3 py-2">
+        <option value="">Todas as turmas</option>
+        @for (turma of turmasExibidas(); track turma.id) {
+          <option [value]="turma.id">
+            {{ turma.nome }} · Sala {{ turma.numeroSala }}{{ turma.ativo ? '' : ' (Inativa)' }}
+          </option>
+        }
+      </select>
+    </label>
+
+    <label class="grid gap-1 text-sm font-semibold">
+      Início
+      <input type="date" name="inicio" [(ngModel)]="inicio" [max]="hoje" required
+        [disabled]="carregando()" class="w-full rounded-xl border border-stone-300 px-3 py-2" />
+    </label>
+
+    <label class="grid gap-1 text-sm font-semibold">
+      Fim
+      <input type="date" name="fim" [(ngModel)]="fim" [min]="inicio" [max]="hoje" required
+        [disabled]="carregando()" class="w-full rounded-xl border border-stone-300 px-3 py-2" />
+    </label>
+
+    <button type="submit" [disabled]="carregando() || exportando()"
+      class="self-end rounded-xl bg-creche-verde px-4 py-2 font-semibold text-white disabled:opacity-50">
+      Aplicar filtros
+    </button>
+  </form>
+
+  @if (totalPaginas() > 1) {
+    <nav aria-label="Páginas de opções de turma" class="flex flex-wrap items-center gap-2 text-sm">
+      <button type="button" [disabled]="carregandoTurmas() || paginaTurmas() === 0"
+        (click)="carregarTurmas(paginaTurmas() - 1)"
+        class="rounded-lg border border-stone-300 px-2 py-1 disabled:opacity-50">
+        Turmas anteriores
+      </button>
+      <span>{{ paginaTurmas() + 1 }} de {{ totalPaginas() }}</span>
+      <button type="button" [disabled]="carregandoTurmas() || paginaTurmas() + 1 >= totalPaginas()"
+        (click)="carregarTurmas(paginaTurmas() + 1)"
+        class="rounded-lg border border-stone-300 px-2 py-1 disabled:opacity-50">
+        Próximas turmas
+      </button>
+    </nav>
+  }
+
+  @if (carregandoTurmas()) {
+    <p role="status" class="text-sm text-stone-600">Carregando turmas…</p>
+  }
+
+  @if (erroTurmas()) {
+    <p role="alert" class="text-sm text-red-800">{{ erroTurmas() }}</p>
+    <button type="button" (click)="carregarTurmas(paginaTurmas())"
+      class="text-sm font-semibold text-creche-verde underline">
+      Recarregar turmas
+    </button>
+  }
+
+  @if (erro()) {
+    <p role="alert" class="rounded-lg bg-red-50 p-3 text-sm text-red-800">{{ erro() }}</p>
+  }
+
+  @if (carregando()) {
+    <p role="status" class="text-sm text-stone-600">Consultando frequência…</p>
+  }
+
+  @if (resumo(); as dados) {
+    <div class="flex flex-wrap items-start justify-between gap-3 border-t border-stone-200 pt-4">
+      <div class="min-w-0">
+        <p class="wrap-anywhere font-semibold">{{ dados.nomeTurma }}</p>
+        <p class="text-sm text-stone-600">
+          {{ dados.inicio | date: 'dd/MM/yyyy' : 'UTC' }}
+          a
+          {{ dados.fim | date: 'dd/MM/yyyy' : 'UTC' }}
+        </p>
+      </div>
+      <button type="button" (click)="baixarPdf()" [disabled]="exportando()"
+        class="rounded-xl border border-creche-verde px-4 py-2 text-sm font-semibold text-creche-verde disabled:opacity-50">
+        {{ exportando() ? 'Gerando PDF…' : 'Baixar PDF' }}
+      </button>
+    </div>
+
+    @if (erroPdf()) {
+      <p role="alert" class="text-sm text-red-800">{{ erroPdf() }}</p>
+    }
+
+    <p class="rounded-xl bg-creche-creme p-3 text-sm">
+      <strong class="text-lg">{{ dados.chamadas | number }}</strong> chamadas registradas
+    </p>
+
+    @if (!dados.chamadas) {
+      <p class="text-sm text-stone-600">Nenhuma chamada registrada neste período.</p>
+    }
+
+    <figure class="space-y-3">
+      <figcaption class="font-semibold">Distribuição das marcações</figcaption>
+      @for (barra of barras(); track barra.titulo) {
+        <div class="space-y-1">
+          <div class="flex justify-between gap-2 text-sm">
+            <span>{{ barra.titulo }}</span>
+            <strong>{{ barra.valor | number }}</strong>
+          </div>
+          <div aria-hidden="true" class="h-2.5 overflow-hidden rounded-full bg-stone-100">
+            <div class="h-full" [class]="barra.cor" [style.width.%]="barra.percentual"></div>
+          </div>
+        </div>
+      }
+    </figure>
+
+    <p class="text-xs text-stone-600">
+      Uma chamada corresponde a uma turma em um dia com registro.
+      Marcações limpas são registros cuja presença ou falta foi desmarcada.
+    </p>
+  }
+</section>

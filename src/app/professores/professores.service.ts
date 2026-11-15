@@ -34,12 +34,11 @@ export class ProfessoresService {
   private readonly http = inject(HttpClient);
   private readonly url = '/api/professores';
 
-  listar(pagina: number, situacao: SituacaoProfessor | '') {
+  listar(pagina: number, situacao: SituacaoProfessor | '', busca = '') {
     const params: Record<string, string | number> = { pagina, tamanho: 20 };
 
-    if (situacao) {
-      params['situacao'] = situacao;
-    }
+    if (situacao) params['situacao'] = situacao;
+    if (busca) params['busca'] = busca;
 
     return this.http.get<Pagina<Professor>>(this.url, { params });
   }

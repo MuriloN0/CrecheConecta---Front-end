@@ -52,10 +52,16 @@
   <section [class]="cartao" aria-labelledby="lista-professores">
     <h2 id="lista-professores" class="text-xl font-bold">Cadastros</h2>
 
-    <div class="flex flex-wrap items-end gap-3">
+    <form class="flex flex-wrap items-end gap-3" (ngSubmit)="aplicarBusca()">
+      <label class="grid w-full gap-1 text-sm font-semibold sm:w-64">
+        Nome ou e-mail
+        <input type="search" name="busca" maxlength="254" [class]="campo"
+          [(ngModel)]="busca" [disabled]="ocupada()" />
+      </label>
+
       <label class="grid gap-1 text-sm font-semibold">
         Situação
-        <select [class]="campo" [ngModel]="filtro" [disabled]="ocupada()"
+        <select name="situacao" [class]="campo" [ngModel]="filtro" [disabled]="ocupada()"
           (ngModelChange)="mudarFiltro($event)">
           <option value="">Todas</option>
           <option value="APROVADO">Ativos</option>
@@ -64,11 +70,13 @@
         </select>
       </label>
 
+      <button type="submit" [class]="primario" [disabled]="ocupada()">Buscar</button>
+
       <button type="button" [class]="botao" [disabled]="ocupada()"
         (click)="carregarProfessores(paginaProfessores())">
         Atualizar lista
       </button>
-    </div>
+    </form>
 
     <div class="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-stone-700">
       Professores cadastrados
@@ -94,7 +102,9 @@
         </li>
       } @empty {
         @if (!ocupada() && !erro()) {
-          <li class="py-3 text-sm text-stone-600">Nenhum professor neste filtro.</li>
+          <li class="py-3 text-sm text-stone-600">
+            Nenhum professor encontrado para os filtros aplicados.
+          </li>
         }
       }
     </ul>

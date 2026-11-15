@@ -3,8 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { AuthService } from '../../core/services/auth.service';
-import { ROTULOS_DIARIO } from '../../diario/diario.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { ROTULOS_DIARIO } from '../../../diario/diario.model';
 import {
   DiarioFilho,
   Filho,

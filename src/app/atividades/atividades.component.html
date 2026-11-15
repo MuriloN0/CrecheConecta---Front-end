@@ -1,10 +1,7 @@
 <section aria-labelledby="titulo-atividades" class="space-y-5">
   <div class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <h1
-        id="titulo-atividades"
-        class="text-2xl font-bold text-creche-texto md:text-3xl"
-      >
+      <h1 id="titulo-atividades" class="text-2xl font-bold text-creche-texto md:text-3xl">
         {{ tituloPagina() }}
       </h1>
 
@@ -32,11 +29,7 @@
     }
   </div>
 
-  <div
-    class="flex flex-wrap gap-2"
-    role="group"
-    aria-label="Tipo de atividade"
-  >
+  <div class="flex flex-wrap gap-2" role="group" aria-label="Tipo de atividade">
     <button
       type="button"
       class="min-h-11 cursor-pointer rounded-xl border border-[#cfc8bc] bg-[#fffdfa] px-4 py-2.5
@@ -114,9 +107,7 @@
             <option value="">Selecione uma turma</option>
 
             @for (turma of turmas(); track turma.id) {
-              <option [value]="turma.id">
-                {{ turma.nome }} — Sala {{ turma.numeroSala }}
-              </option>
+              <option [value]="turma.id">{{ turma.nome }} — Sala {{ turma.numeroSala }}</option>
             }
           </select>
         </div>
@@ -137,21 +128,13 @@
   </div>
 
   @if (sucesso()) {
-    <p
-      role="status"
-      class="rounded-xl border border-green-200 bg-green-50
-             p-4 text-sm text-green-900"
-    >
+    <p role="status" class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900">
       {{ sucesso() }}
     </p>
   }
 
   @if (erro()) {
-    <p
-      role="alert"
-      class="rounded-xl border border-red-200 bg-red-50
-             p-4 text-sm text-red-800"
-    >
+    <p role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
       {{ erro() }}
     </p>
   }
@@ -170,11 +153,7 @@
         {{ nomeTurma() }} · {{ tituloPagina() }}
       </p>
 
-      <form
-        #formulario="ngForm"
-        class="mt-5 space-y-4"
-        (ngSubmit)="salvar(formulario)"
-      >
+      <form #formulario="ngForm" class="mt-5 space-y-4" (ngSubmit)="salvar(formulario)">
         <div>
           <label for="titulo-atividade" class="mb-2 block text-sm font-semibold">
             Título *
@@ -192,9 +171,7 @@
             [(ngModel)]="titulo"
             [disabled]="salvando()"
             #tituloCampo="ngModel"
-            [attr.aria-invalid]="
-              tituloCampo.touched && !titulo.trim() ? 'true' : null
-            "
+            [attr.aria-invalid]="tituloCampo.touched && !titulo.trim() ? 'true' : null"
             aria-describedby="ajuda-titulo"
           />
 
@@ -203,9 +180,7 @@
           </p>
 
           @if (tituloCampo.touched && !titulo.trim()) {
-            <p class="mt-1 text-sm text-red-700">
-              Informe o título da atividade.
-            </p>
+            <p class="mt-1 text-sm text-red-700">Informe o título da atividade.</p>
           }
         </div>
 
@@ -243,17 +218,11 @@
               [(ngModel)]="prazoConclusao"
               [disabled]="salvando()"
               #prazoCampo="ngModel"
-              [attr.aria-invalid]="
-                prazoCampo.touched && prazoCampo.invalid
-                  ? 'true'
-                  : null
-              "
+              [attr.aria-invalid]="prazoCampo.touched && prazoCampo.invalid ? 'true' : null"
             />
 
             @if (prazoCampo.touched && prazoCampo.invalid) {
-              <p class="mt-1 text-sm text-red-700">
-                Informe uma data válida.
-              </p>
+              <p class="mt-1 text-sm text-red-700">Informe uma data válida.</p>
             }
           </div>
         }
@@ -293,9 +262,7 @@
       aria-labelledby="titulo-detalhes"
     >
       <div class="flex flex-wrap items-start justify-between gap-3">
-        <h2 id="titulo-detalhes" class="text-xl font-bold">
-          {{ atividade.titulo }}
-        </h2>
+        <h2 id="titulo-detalhes" class="text-xl font-bold">{{ atividade.titulo }}</h2>
 
         <button
           type="button"
@@ -310,19 +277,16 @@
       </div>
 
       <p class="mt-2 text-sm text-stone-600">
-        {{ nomeTurma() }} ·
-        {{ atividade.tipo === 'CASA' ? 'Para casa' : 'Do dia' }}
+        {{ nomeTurma() }} · {{ atividade.tipo === 'CASA' ? 'Para casa' : 'Do dia' }}
       </p>
 
       <p class="mt-2 text-sm text-stone-600">
-        Criada em
-        {{ atividade.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}
+        Criada em {{ atividade.dataCriacao | date: 'dd/MM/yyyy HH:mm' }}
       </p>
 
       @if (atividade.prazoConclusao) {
         <p class="mt-2 text-sm text-stone-600">
-          Prazo:
-          {{ atividade.prazoConclusao | date: 'dd/MM/yyyy' : 'UTC' }}
+          Prazo: {{ atividade.prazoConclusao | date: 'dd/MM/yyyy' : 'UTC' }}
         </p>
 
         @switch (avisoPrazo(atividade)) {
@@ -334,6 +298,7 @@
               Esta atividade deve ser entregue hoje.
             </p>
           }
+
           @case ('amanha') {
             <p
               role="status"
@@ -357,13 +322,10 @@
              shadow-[0_3px_10px_rgb(37_56_49/5%)] sm:p-6"
       aria-labelledby="titulo-exclusao"
     >
-      <h2 id="titulo-exclusao" class="text-lg font-bold">
-        Excluir atividade
-      </h2>
+      <h2 id="titulo-exclusao" class="text-lg font-bold">Excluir atividade</h2>
 
       <p class="mt-3 wrap-break-word">
-        Deseja excluir “{{ atividade.titulo }}”?
-        Essa ação remove a atividade.
+        Deseja excluir “{{ atividade.titulo }}”? Essa ação remove a atividade.
       </p>
 
       <div class="mt-5 flex flex-wrap gap-3">
@@ -401,9 +363,7 @@
     [attr.aria-busy]="iniciando() || carregando()"
   >
     @if (iniciando() || carregando()) {
-      <p role="status" class="text-sm text-stone-600">
-        Carregando atividades…
-      </p>
+      <p role="status" class="text-sm text-stone-600">Carregando atividades…</p>
     } @else if (ehResponsavel() && filhos().length === 0) {
       @if (!erro()) {
         <p class="text-sm text-stone-600">
@@ -428,9 +388,7 @@
     } @else if (atividades().length > 0) {
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
-          <caption class="sr-only">
-            Atividades de {{ nomeTurma() }}
-          </caption>
+          <caption class="sr-only">Atividades de {{ nomeTurma() }}</caption>
 
           <thead>
             <tr class="border-b border-stone-200 text-stone-600">
@@ -444,10 +402,7 @@
           <tbody>
             @for (atividade of atividades(); track atividade.id) {
               <tr class="border-b border-stone-100">
-                <th
-                  scope="row"
-                  class="min-w-48 p-3 font-semibold wrap-break-word"
-                >
+                <th scope="row" class="min-w-48 p-3 font-semibold wrap-break-word">
                   {{ atividade.titulo }}
                 </th>
 
@@ -457,10 +412,7 @@
 
                 <td class="whitespace-nowrap p-3">
                   @if (atividade.prazoConclusao) {
-                    {{
-                      atividade.prazoConclusao
-                        | date: 'dd/MM/yyyy' : 'UTC'
-                    }}
+                    {{ atividade.prazoConclusao | date: 'dd/MM/yyyy' : 'UTC' }}
 
                     @switch (avisoPrazo(atividade)) {
                       @case ('hoje') {
@@ -471,6 +423,7 @@
                           Entrega hoje
                         </span>
                       }
+
                       @case ('amanha') {
                         <span
                           class="ml-2 inline-block rounded-full border border-amber-200 bg-amber-100
@@ -534,6 +487,30 @@
           </tbody>
         </table>
       </div>
+    }
+
+    @if (totalPaginas() > 1 && !erro()) {
+      <nav class="flex flex-wrap items-center gap-3 pt-4 text-sm" aria-label="Páginas de atividades">
+        <button
+          type="button"
+          class="min-h-11 rounded-xl border border-stone-300 px-4 disabled:opacity-50"
+          [disabled]="ocupada() || pagina() === 0"
+          (click)="mudarPagina(pagina() - 1)"
+        >
+          Anterior
+        </button>
+
+        <span aria-live="polite">Página {{ pagina() + 1 }} de {{ totalPaginas() }}</span>
+
+        <button
+          type="button"
+          class="min-h-11 rounded-xl border border-stone-300 px-4 disabled:opacity-50"
+          [disabled]="ocupada() || pagina() + 1 >= totalPaginas()"
+          (click)="mudarPagina(pagina() + 1)"
+        >
+          Próxima
+        </button>
+      </nav>
     }
   </section>
 </section>

@@ -4,6 +4,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
+import { ConfirmacaoService } from '../shared/components/confirmacao-dialogo/confirmacao-dialogo';
 import { ContaDirecao, DirecaoService } from './direcao.service';
 
 @Component({
@@ -13,6 +14,7 @@ import { ContaDirecao, DirecaoService } from './direcao.service';
   templateUrl: './direcao.html',
 })
 export class Direcao implements OnInit {
+  private readonly confirmacao = inject(ConfirmacaoService);
   private readonly servico = inject(DirecaoService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -93,13 +95,16 @@ export class Direcao implements OnInit {
     });
   }
 
-  inativarConta(): Promise<void> {
+  async inativarConta(): Promise<void> {
     const conta = this.minhaConta();
-    if (!conta || this.ocupada()) return Promise.resolve();
+    if (!conta || this.ocupada()) return;
 
-    if (!window.confirm('Deseja inativar sua conta? Você será desconectado.')) {
-      return Promise.resolve();
-    }
+    const confirmado = await this.confirmacao.perguntar({
+      titulo: 'Inativar sua conta?',
+      mensagem: 'Você será desconectado.',
+      acao: 'Inativar conta',
+    });
+    if (!confirmado) return;
 
     return this.executar(async () => {
       await firstValueFrom(this.servico.inativarMinhaConta(conta.versao));

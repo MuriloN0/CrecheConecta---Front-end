@@ -9,6 +9,7 @@ import {
   ProfessoresService,
   VinculoProfessor,
 } from '../professores/professores.service';
+import { ConfirmacaoService } from '../shared/components/confirmacao-dialogo/confirmacao-dialogo';
 import { Matricula, Pagina, Turma, TurmasService } from './turmas.service';
 
 type Filtro = 'ativas' | 'inativas' | 'todas';
@@ -31,10 +32,12 @@ function listaVazia<T>(): Lista<T> {
   templateUrl: './turmas.html',
 })
 export class Turmas implements OnInit {
+  private readonly confirmacao = inject(ConfirmacaoService);
   private readonly api = inject(TurmasService);
   private readonly professoresApi = inject(ProfessoresService);
   private readonly alunosApi = inject(AlunosApi);
   private readonly http = inject(HttpClient);
+  private nomeAplicado = '';
 
   readonly turmas = signal(listaVazia<Turma>());
   readonly matriculas = signal(listaVazia<MatriculaExibida>());
@@ -56,6 +59,7 @@ export class Turmas implements OnInit {
     'cursor-pointer rounded-lg bg-creche-verde px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
   filtro: Filtro = 'ativas';
+  nomeBusca = '';
   formularioAberto = false;
   editando: Turma | null = null;
   nome = '';
@@ -74,13 +78,23 @@ export class Turmas implements OnInit {
     });
   }
 
-  mudarFiltro(filtro: Filtro): void {
-    this.filtro = filtro;
+  aplicarBusca(): void {
+    if (this.ocupada()) return;
+
+    this.nomeAplicado = this.nomeBusca.trim();
     void this.listarTurmas(0);
+  }
+
+  mudarFiltro(filtro: Filtro): void {
+    if (this.ocupada()) return;
+
+    this.filtro = filtro;
+    this.aplicarBusca();
   }
 
   abrirFormulario(turma: Turma | null = null): void {
     if (turma && !turma.ativo) return;
+
     this.erro.set('');
     this.sucesso.set('');
     this.editando = turma;
@@ -118,21 +132,25 @@ export class Turmas implements OnInit {
         this.turmaSelecionada.set(turma);
       }
 
-      if (!anterior) this.filtro = 'ativas';
+      if (!anterior) {
+        this.filtro = 'ativas';
+        this.nomeBusca = '';
+        this.nomeAplicado = '';
+      }
 
       await this.buscarTurmas(anterior ? this.turmas().pagina : 0);
     });
   }
 
-  inativar(turma: Turma): Promise<void> {
-    if (
-      !turma.ativo ||
-      !window.confirm(
-        `Inativar ${turma.nome}? As matrículas e os vínculos atuais da turma serão encerrados.`,
-      )
-    ) {
-      return Promise.resolve();
-    }
+  async inativar(turma: Turma): Promise<void> {
+    if (this.ocupada() || !turma.ativo) return;
+
+    const confirmado = await this.confirmacao.perguntar({
+      titulo: 'Inativar turma?',
+      mensagem: `As matrículas e os vínculos atuais da turma ${turma.nome} serão encerrados.`,
+      acao: 'Inativar turma',
+    });
+    if (!confirmado) return;
 
     return this.executar(async () => {
       await firstValueFrom(this.api.inativar(turma));
@@ -151,6 +169,7 @@ export class Turmas implements OnInit {
 
   selecionarTurma(turma: Turma): Promise<void> {
     if (!turma.ativo) return Promise.resolve();
+
     return this.executar(async () => {
       this.turmaSelecionada.set(turma);
       this.professorId = '';
@@ -160,15 +179,15 @@ export class Turmas implements OnInit {
       this.alunos.set(listaVazia());
       this.alunoId = '';
 
-      await Promise.allSettled([
+      const resultados = await Promise.allSettled([
         this.buscarMatriculas(turma.id, 0),
         this.buscarAlunos(0),
         this.buscarProfessores(0),
         this.buscarVinculos(turma.id, 0),
-      ]).then((resultados) => {
-        const falha = resultados.find((resultado) => resultado.status === 'rejected');
-        if (falha?.status === 'rejected') throw falha.reason;
-      });
+      ]);
+      const falha = resultados.find((resultado) => resultado.status === 'rejected');
+
+      if (falha?.status === 'rejected') throw falha.reason;
     });
   }
 
@@ -202,6 +221,7 @@ export class Turmas implements OnInit {
       await firstValueFrom(this.api.matricular(turma.id, alunoId));
       this.alunoId = '';
       this.sucesso.set('Aluno matriculado.');
+
       await Promise.all([
         this.buscarMatriculas(turma.id, 0),
         this.buscarAlunos(this.alunos().pagina),
@@ -209,17 +229,20 @@ export class Turmas implements OnInit {
     });
   }
 
-  encerrar(matricula: MatriculaExibida): Promise<void> {
-    if (
-      matricula.encerradoEm ||
-      !window.confirm(`Encerrar a matrícula de ${matricula.nomeAluno} nesta turma?`)
-    ) {
-      return Promise.resolve();
-    }
+  async encerrar(matricula: MatriculaExibida): Promise<void> {
+    if (this.ocupada() || matricula.encerradoEm) return;
+
+    const confirmado = await this.confirmacao.perguntar({
+      titulo: 'Encerrar matrícula?',
+      mensagem: `A matrícula de ${matricula.nomeAluno} nesta turma será encerrada.`,
+      acao: 'Encerrar matrícula',
+    });
+    if (!confirmado) return;
 
     return this.executar(async () => {
       await firstValueFrom(this.api.encerrar(matricula));
       this.sucesso.set('Matrícula encerrada.');
+
       await Promise.all([
         this.buscarMatriculas(matricula.turmaId, this.matriculas().pagina),
         this.buscarAlunos(this.alunos().pagina),
@@ -237,15 +260,18 @@ export class Turmas implements OnInit {
   listarVinculos(pagina: number): Promise<void> {
     const turma = this.turmaSelecionada();
     if (!turma?.ativo) return Promise.resolve();
+
     return this.executar(() => this.buscarVinculos(turma.id, pagina));
   }
 
   atribuirProfessor(): Promise<void> {
     const turma = this.turmaSelecionada();
     const professorId = this.professorId;
+
     if (!turma?.ativo || !this.professores().itens.some((p) => p.id === professorId)) {
       return Promise.resolve();
     }
+
     return this.executar(async () => {
       await firstValueFrom(this.professoresApi.vincular(turma.id, professorId));
       this.professorId = '';
@@ -254,12 +280,16 @@ export class Turmas implements OnInit {
     });
   }
 
-  retirarProfessor(vinculo: VinculoProfessor): Promise<void> {
-    if (
-      this.turmaSelecionada()?.id !== vinculo.turmaId ||
-      !window.confirm('Retirar este professor da turma?')
-    )
-      return Promise.resolve();
+  async retirarProfessor(vinculo: VinculoProfessor): Promise<void> {
+    if (this.ocupada() || this.turmaSelecionada()?.id !== vinculo.turmaId) return;
+
+    const confirmado = await this.confirmacao.perguntar({
+      titulo: 'Retirar professor?',
+      mensagem: 'O vínculo deste professor com a turma será encerrado.',
+      acao: 'Retirar professor',
+    });
+    if (!confirmado) return;
+
     return this.executar(async () => {
       await firstValueFrom(this.professoresApi.encerrar(vinculo));
       this.sucesso.set('Professor retirado da turma.');
@@ -279,19 +309,24 @@ export class Turmas implements OnInit {
     const lista = await this.buscarPagina(pagina, (numero) =>
       firstValueFrom(this.professoresApi.listarVinculos(turmaId, numero, false)),
     );
+
     const itens = await Promise.all(
       lista.itens.map(async (vinculo) => {
         const professor = await firstValueFrom(this.professoresApi.consultar(vinculo.professorId));
         return { ...vinculo, nome: professor.nome };
       }),
     );
+
     this.vinculos.set({ ...lista, itens });
   }
 
   private async buscarTurmas(pagina: number): Promise<void> {
     const ativo = this.filtro === 'todas' ? null : this.filtro === 'ativas';
+    const nome = this.nomeAplicado;
     this.turmas.set(
-      await this.buscarPagina(pagina, (numero) => firstValueFrom(this.api.listar(numero, ativo))),
+      await this.buscarPagina(pagina, (numero) =>
+        firstValueFrom(this.api.listar(numero, ativo, nome)),
+      ),
     );
   }
 
@@ -318,7 +353,7 @@ export class Turmas implements OnInit {
           );
           nomeAluno = aluno.nome;
         } catch {
-          // O identificador mantém a matrícula reconhecível se o nome falhar.
+         
         }
 
         return { ...matricula, nomeAluno };
@@ -334,7 +369,6 @@ export class Turmas implements OnInit {
   ): Promise<Lista<T>> {
     let resposta = await buscar(pagina);
     const ultima = Math.max(0, resposta.totalPages - 1);
-
     if (pagina > ultima) {
       pagina = ultima;
       resposta = await buscar(pagina);

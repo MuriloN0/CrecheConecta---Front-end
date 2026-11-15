@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Filho, PainelFamiliaService } from '../pages/home/painel-familia.service';
+import { Filho, PainelFamiliaService } from '../pages/home/painel-familia/painel-familia.service';
 import { ItemMalaFilho, MalaFilho } from './model/mala-virtual.model';
 import {
   codigoErro,

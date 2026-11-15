@@ -7,13 +7,16 @@ import { catchError, EMPTY, exhaustMap, timer } from 'rxjs';
 import { Perfil } from '../../core/models/auth.models';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificacoesService } from '../../notificacoes/notificacoes.service';
+import { ConfirmacaoDialogo } from '../../shared/components/confirmacao-dialogo/confirmacao-dialogo';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 
 @Component({
   selector: 'app-portal-layout',
   standalone: true,
-  imports: [DatePipe, RouterLink, RouterOutlet, Sidebar],
+  imports: [DatePipe, RouterLink, RouterOutlet, Sidebar, ConfirmacaoDialogo],
   template: `
+    <app-confirmacao-dialogo />
+
     <div class="min-h-dvh bg-creche-creme md:grid md:grid-cols-[264px_minmax(0,1fr)]">
       <app-sidebar
         [usuario]="auth.usuario()"
@@ -22,15 +25,18 @@ import { Sidebar } from '../../shared/components/sidebar/sidebar';
       />
 
       <div class="min-w-0">
-        <header class="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 px-5 py-4 md:px-8">
-          <div>
-            <p class="text-xs uppercase tracking-wide text-creche-verde">
-              {{ tituloPortal() }}
-            </p>
-            <p class="mt-1 text-sm font-semibold">CrecheConecta</p>
-          </div>
+        <header
+          class="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200
+                 px-4 py-3 md:gap-4 md:px-8 md:py-4"
+        >
+          <p class="text-xs font-semibold uppercase tracking-wide text-creche-verde">
+            {{ tituloPortal() }}
+          </p>
 
-          <a routerLink="/notificacoes" class="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm">
+          <a
+            routerLink="/notificacoes"
+            class="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm"
+          >
             Notificações
             @if ((notificacoes.pendentes() ?? 0) > 0) {
               <span class="ml-1 rounded-full bg-creche-verde px-2 py-1 text-xs text-white">
@@ -39,14 +45,20 @@ import { Sidebar } from '../../shared/components/sidebar/sidebar';
             }
           </a>
 
-          <time [attr.datetime]="hoje | date: 'yyyy-MM-dd'" class="text-sm text-stone-600">
+          <time
+            [attr.datetime]="hoje | date: 'yyyy-MM-dd'"
+            class="hidden text-sm text-stone-600 sm:block"
+          >
             {{ hoje | date: 'dd/MM/yyyy' }}
           </time>
         </header>
 
-        <main class="mx-auto w-full max-w-7xl p-5 md:p-8">
+        <main class="mx-auto w-full max-w-7xl p-4 md:p-8">
           @if (erro()) {
-            <p role="alert" class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <p
+              role="alert"
+              class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            >
               {{ erro() }}
             </p>
           }
@@ -72,10 +84,13 @@ export class PortalLayout implements OnInit {
   ngOnInit(): void {
     timer(0, 15000).pipe(
       exhaustMap(() => {
-        if (this.doc.visibilityState === 'hidden' ||
-            this.router.url.split(/[?#]/)[0] === '/portal-pais') {
+        if (
+          this.doc.visibilityState === 'hidden' ||
+          this.router.url.split(/[?#]/)[0] === '/portal-pais'
+        ) {
           return EMPTY;
         }
+
         return this.notificacoes.atualizarTotal().pipe(catchError(() => EMPTY));
       }),
       takeUntilDestroyed(this.destroy),

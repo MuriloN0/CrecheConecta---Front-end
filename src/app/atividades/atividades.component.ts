@@ -5,8 +5,14 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { hojeEmSaoPaulo } from '../mala-virtual/service/mala-virtual-erros';
-import { Filho, PainelFamiliaService } from '../pages/home/painel-familia.service';
-import {  AtividadeResponseDTO,  AtividadeTurma,  AtualizarAtividadeRequestDTO,  NovaAtividadeRequestDTO,  TipoAtividade,} from './model/atividades.model';
+import { Filho, PainelFamiliaService } from '../pages/home/painel-familia/painel-familia.service';
+import {
+  AtividadeResponseDTO,
+  AtividadeTurma,
+  AtualizarAtividadeRequestDTO,
+  NovaAtividadeRequestDTO,
+  TipoAtividade,
+} from './model/atividades.model';
 import { AtividadesService } from './service/atividades.service';
 
 @Component({
@@ -29,6 +35,8 @@ export class AtividadesComponent implements OnInit {
   readonly turmas = signal<AtividadeTurma[]>([]);
   readonly filhos = signal<Filho[]>([]);
   readonly atividades = signal<AtividadeResponseDTO[]>([]);
+  readonly pagina = signal(0);
+  readonly totalPaginas = signal(0);
 
   readonly iniciando = signal(true);
   readonly carregando = signal(false);
@@ -52,7 +60,6 @@ export class AtividadesComponent implements OnInit {
 
   private readonly hoje = hojeEmSaoPaulo();
   private readonly amanha = hojeEmSaoPaulo(new Date(Date.now() + 864e5));
-
   private numeroConsulta = 0;
 
   ngOnInit(): void {
@@ -64,9 +71,7 @@ export class AtividadesComponent implements OnInit {
   }
 
   tituloPagina(): string {
-    return this.tipo === 'CASA'
-      ? 'Atividades para casa'
-      : 'Atividades do dia';
+    return this.tipo === 'CASA' ? 'Atividades para casa' : 'Atividades do dia';
   }
 
   nomeTurma(): string {
@@ -74,8 +79,7 @@ export class AtividadesComponent implements OnInit {
       return this.filhoSelecionado()?.turma?.nome ?? '';
     }
 
-    return this.turmas().find((turma) => turma.id === this.turmaId)
-      ?.nome ?? '';
+    return this.turmas().find((turma) => turma.id === this.turmaId)?.nome ?? '';
   }
 
   avisoPrazo(atividade: AtividadeResponseDTO): 'hoje' | 'amanha' | null {
@@ -90,9 +94,7 @@ export class AtividadesComponent implements OnInit {
 
   podeAlterar(atividade: AtividadeResponseDTO): boolean {
     const usuario = this.auth.usuario();
-
-    return usuario?.perfil === 'PROFESSOR'
-      && usuario.id === atividade.professorId;
+    return usuario?.perfil === 'PROFESSOR' && usuario.id === atividade.professorId;
   }
 
   async carregarTurmas(): Promise<void> {
@@ -103,7 +105,10 @@ export class AtividadesComponent implements OnInit {
     this.fecharPaineis();
 
     this.numeroConsulta++;
+    this.pagina.set(0);
+    this.totalPaginas.set(0);
     this.atividades.set([]);
+    this.carregando.set(false);
 
     if (this.ehResponsavel()) {
       await this.carregarFilhos();
@@ -112,14 +117,9 @@ export class AtividadesComponent implements OnInit {
 
     try {
       const turmas = await firstValueFrom(this.api.listarTurmas());
-
       this.turmas.set(turmas);
 
-      const turmaAnteriorExiste = turmas.some(
-        (turma) => turma.id === this.turmaId,
-      );
-
-      if (!turmaAnteriorExiste) {
+      if (!turmas.some((turma) => turma.id === this.turmaId)) {
         this.turmaId = turmas[0]?.id ?? '';
       }
 
@@ -138,7 +138,6 @@ export class AtividadesComponent implements OnInit {
   private async carregarFilhos(): Promise<void> {
     try {
       const filhos = await firstValueFrom(this.familia.listarFilhos());
-
       this.filhos.set(filhos);
 
       if (!filhos.some((filho) => filho.id === this.alunoId)) {
@@ -160,7 +159,7 @@ export class AtividadesComponent implements OnInit {
     }
   }
 
-  async carregarAtividades(): Promise<void> {
+  async carregarAtividades(pagina = 0): Promise<void> {
     const consulta = ++this.numeroConsulta;
 
     this.carregando.set(true);
@@ -170,12 +169,21 @@ export class AtividadesComponent implements OnInit {
     try {
       if (!this.turmaId) return;
 
-      const dados = await firstValueFrom(
-        this.api.listarTodas(this.turmaId, this.tipo),
-      );
+      const turmaId = this.turmaId;
+      const tipo = this.tipo;
+      let dados = await firstValueFrom(this.api.listarPaginadas(turmaId, tipo, pagina));
+      if (consulta !== this.numeroConsulta) return;
+
+      const ultimaPagina = Math.max(0, dados.totalPages - 1);
+      if (pagina > ultimaPagina) {
+        pagina = ultimaPagina;
+        dados = await firstValueFrom(this.api.listarPaginadas(turmaId, tipo, pagina));
+      }
 
       if (consulta === this.numeroConsulta) {
-        this.atividades.set(dados);
+        this.atividades.set(dados.content);
+        this.pagina.set(pagina);
+        this.totalPaginas.set(dados.totalPages);
       }
     } catch (erro: unknown) {
       if (consulta === this.numeroConsulta) {
@@ -186,6 +194,14 @@ export class AtividadesComponent implements OnInit {
         this.carregando.set(false);
       }
     }
+  }
+
+  mudarPagina(pagina: number): void {
+    if (this.ocupada() || pagina < 0 || pagina >= this.totalPaginas()) return;
+
+    this.fecharPaineis();
+    this.sucesso.set('');
+    void this.carregarAtividades(pagina);
   }
 
   mudarTurma(): void {
@@ -199,7 +215,10 @@ export class AtividadesComponent implements OnInit {
     this.fecharPaineis();
     this.sucesso.set('');
     this.erro.set('');
+
     this.numeroConsulta++;
+    this.pagina.set(0);
+    this.totalPaginas.set(0);
     this.atividades.set([]);
     this.carregando.set(false);
 
@@ -237,7 +256,6 @@ export class AtividadesComponent implements OnInit {
     this.titulo = atividade.titulo;
     this.descricao = atividade.descricao ?? '';
     this.prazoConclusao = atividade.prazoConclusao ?? '';
-
     this.formularioAberto.set(true);
   }
 
@@ -315,30 +333,20 @@ export class AtividadesComponent implements OnInit {
           tipo: this.tipo,
           titulo,
           descricao: this.descricao.trim(),
-          prazoConclusao:
-            this.tipo === 'CASA'
-              ? this.prazoConclusao
-              : undefined,
+          prazoConclusao: this.tipo === 'CASA' ? this.prazoConclusao : undefined,
         };
 
-        await firstValueFrom(
-          this.api.atualizarParcial(atividade.id, dados),
-        );
+        await firstValueFrom(this.api.atualizarParcial(atividade.id, dados));
       } else {
         const dados: NovaAtividadeRequestDTO = {
           professorId: usuario.id,
           tipo: this.tipo,
           titulo,
           descricao: this.descricao.trim(),
-          prazoConclusao:
-            this.tipo === 'CASA'
-              ? this.prazoConclusao
-              : undefined,
+          prazoConclusao: this.tipo === 'CASA' ? this.prazoConclusao : undefined,
         };
 
-        await firstValueFrom(
-          this.api.criar(dados, this.turmaId),
-        );
+        await firstValueFrom(this.api.criar(dados, this.turmaId));
       }
     } catch (erro: unknown) {
       this.erro.set(this.mensagemErro(erro));
@@ -348,19 +356,14 @@ export class AtividadesComponent implements OnInit {
     }
 
     this.fecharPaineis();
-
     this.sucesso.set(
-      atividade
-        ? 'Atividade atualizada com sucesso.'
-        : 'Atividade cadastrada com sucesso.',
+      atividade ? 'Atividade atualizada com sucesso.' : 'Atividade cadastrada com sucesso.',
     );
-
-    await this.carregarAtividades();
+    await this.carregarAtividades(atividade ? this.pagina() : 0);
   }
 
   async confirmarExclusao(): Promise<void> {
     const atividade = this.exclusao();
-
     if (this.ocupada() || !atividade) return;
 
     if (!this.podeAlterar(atividade)) {
@@ -383,8 +386,7 @@ export class AtividadesComponent implements OnInit {
 
     this.fecharPaineis();
     this.sucesso.set('Atividade excluída com sucesso.');
-
-    await this.carregarAtividades();
+    await this.carregarAtividades(this.pagina());
   }
 
   private mensagemErro(erro: unknown): string {

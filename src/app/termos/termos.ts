@@ -1,9 +1,9 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { ROTULOS_STATUS_TERMO, TermoVersao } from './termos.model';
+import { ROTULOS_STATUS_TERMO, StatusTermo, TermoVersao } from './termos.model';
 import { TermosService } from './termos.service';
 
 const LIMITE_TEXTO = 20000;
@@ -23,6 +23,10 @@ export class Termos implements OnInit {
   }).format(new Date());
 
   readonly versoes = signal<TermoVersao[]>([]);
+  readonly vigente = signal<TermoVersao | null>(null);
+  readonly pagina = signal(0);
+  readonly totalPaginas = signal(0);
+  readonly status = signal<StatusTermo | ''>('');
   readonly ocupada = signal(false);
   readonly falhaListagem = signal(false);
   readonly erro = signal('');
@@ -33,9 +37,6 @@ export class Termos implements OnInit {
   readonly paraPublicar = signal<TermoVersao | null>(null);
   readonly paraExcluir = signal<TermoVersao | null>(null);
 
-  readonly vigente = computed(
-    () => this.versoes().find((versao) => versao.status === 'VIGENTE') ?? null,
-  );
   readonly rotulos = ROTULOS_STATUS_TERMO;
 
   readonly cartao = 'space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6';
@@ -51,20 +52,32 @@ export class Termos implements OnInit {
     void this.carregar();
   }
 
-  carregar(): Promise<void> {
+  carregar(pagina = this.pagina()): Promise<void> {
+    if (pagina < 0) return Promise.resolve();
+
     return this.executar(async () => {
       this.fecharPaineis();
-      await this.buscar();
+      await this.buscar(pagina);
     });
   }
 
-  // Uma nova versão começa com o texto da vigente, para a direção só ajustar o que mudou.
+  filtrar(status: StatusTermo | ''): Promise<void> {
+    return this.executar(async () => {
+      this.fecharPaineis();
+      this.status.set(status);
+      this.pagina.set(0);
+      await this.buscar(0);
+    });
+  }
+
   abrirFormulario(termo: TermoVersao | null = null): void {
     if (this.ocupada()) return;
     if (termo && termo.status !== 'RASCUNHO') return;
+
     this.fecharPaineis();
     this.limparMensagens();
     this.editando.set(termo);
+
     const base = termo ?? this.vigente();
     this.identificador = termo?.identificador ?? `${this.hoje}-v`;
     this.termoUso = base?.termoUso ?? '';
@@ -103,22 +116,27 @@ export class Termos implements OnInit {
 
   salvar(): Promise<void> {
     if (!this.formularioAberto() || this.ocupada()) return Promise.resolve();
+
     return this.executar(async () => {
       const identificador = this.identificador.trim();
       const termoUso = this.termoUso.trim();
       const politicaPrivacidade = this.politicaPrivacidade.trim();
+
       if (!PADRAO_IDENTIFICADOR.test(identificador)) {
         this.erro.set('Informe um identificador com até 40 caracteres, só letras, números, ponto, hífen e sublinhado.');
         return;
       }
+
       if (!termoUso || !politicaPrivacidade) {
         this.erro.set('Preencha o termo de uso e a política de privacidade.');
         return;
       }
+
       if (termoUso.length > LIMITE_TEXTO || politicaPrivacidade.length > LIMITE_TEXTO) {
         this.erro.set('Cada texto pode ter no máximo 20.000 caracteres.');
         return;
       }
+
       const termo = this.editando();
       const dados = { identificador, termoUso, politicaPrivacidade };
       if (termo) {
@@ -126,15 +144,17 @@ export class Termos implements OnInit {
       } else {
         await firstValueFrom(this.servico.criar(dados));
       }
+
       this.fecharPaineis();
       this.sucesso.set(termo ? 'Rascunho atualizado.' : 'Rascunho criado. Revise e publique quando estiver pronto.');
-      await this.buscar();
+      await this.buscar(termo ? this.pagina() : 0);
     });
   }
 
   confirmarPublicacao(): Promise<void> {
     const termo = this.paraPublicar();
     if (!termo || this.ocupada()) return Promise.resolve();
+
     return this.executar(async () => {
       await firstValueFrom(this.servico.publicar(termo));
       this.fecharPaineis();
@@ -146,6 +166,7 @@ export class Termos implements OnInit {
   confirmarExclusao(): Promise<void> {
     const termo = this.paraExcluir();
     if (!termo || this.ocupada()) return Promise.resolve();
+
     return this.executar(async () => {
       await firstValueFrom(this.servico.excluir(termo));
       this.fecharPaineis();
@@ -154,12 +175,26 @@ export class Termos implements OnInit {
     });
   }
 
-  private async buscar(): Promise<void> {
+  private async buscar(pagina = this.pagina()): Promise<void> {
     try {
-      this.versoes.set(await firstValueFrom(this.servico.listar()));
+      const status = this.status();
+      let resposta = await firstValueFrom(this.servico.listar(pagina, status));
+      const ultimaPagina = Math.max(0, resposta.totalPages - 1);
+
+      if (pagina > ultimaPagina) {
+        pagina = ultimaPagina;
+        resposta = await firstValueFrom(this.servico.listar(pagina, status));
+      }
+
+      this.versoes.set(resposta.content);
+      this.vigente.set(resposta.vigente);
+      this.pagina.set(pagina);
+      this.totalPaginas.set(resposta.totalPages);
       this.falhaListagem.set(false);
     } catch (erro: unknown) {
       this.versoes.set([]);
+      this.vigente.set(null);
+      this.totalPaginas.set(0);
       this.falhaListagem.set(true);
       throw erro;
     }
@@ -167,19 +202,19 @@ export class Termos implements OnInit {
 
   private async executar(acao: () => Promise<void>): Promise<void> {
     if (this.ocupada()) return;
-    this.limparMensagens();
     this.ocupada.set(true);
+    this.limparMensagens();
+
     try {
       await acao();
     } catch (erro: unknown) {
       this.erro.set(this.mensagemErro(erro));
       if (erro instanceof HttpErrorResponse && (erro.status === 409 || erro.status === 404)) {
-        // Alguém mexeu na versão: recarrega para pegar o estado atual.
         this.fecharPaineis();
         try {
           await this.buscar();
         } catch {
-          // a mensagem de erro principal já foi mostrada
+          // A mensagem do erro principal já está visível.
         }
       }
     } finally {
@@ -212,6 +247,7 @@ export class Termos implements OnInit {
           return 'A versão foi alterada por outra pessoa. A lista foi atualizada; revise e tente de novo.';
       }
     }
+
     return 'Não foi possível concluir a operação. Tente novamente.';
   }
 }
