@@ -32,12 +32,11 @@ export class TurmasService {
   private readonly http = inject(HttpClient);
   private readonly url = '/api/turmas';
 
-  listar(pagina: number, ativo: boolean | null) {
-    const params: Record<string, number | boolean> = { pagina, tamanho: 20 };
+  listar(pagina: number, ativo: boolean | null, nome = '') {
+    const params: Record<string, string | number | boolean> = { pagina, tamanho: 20 };
 
-    if (ativo !== null) {
-      params['ativo'] = ativo;
-    }
+    if (ativo !== null) params['ativo'] = ativo;
+    if (nome) params['nome'] = nome;
 
     return this.http.get<Pagina<Turma>>(this.url, { params });
   }
@@ -66,9 +65,7 @@ export class TurmasService {
   }
 
   matricular(turmaId: string, alunoId: string) {
-    return this.http.post<Matricula>(`${this.url}/${turmaId}/matriculas`, {
-      alunoId,
-    });
+    return this.http.post<Matricula>(`${this.url}/${turmaId}/matriculas`, { alunoId });
   }
 
   encerrar(matricula: Matricula) {

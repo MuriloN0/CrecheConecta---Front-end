@@ -3,10 +3,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Filho, PainelFamiliaService } from '../pages/home/painel-familia.service';
+import { Filho, PainelFamiliaService } from '../pages/home/painel-familia/painel-familia.service';
 import { MalaVirtualFilhoComponent } from './mala-virtual-filho.component';
 import { MalaFilho } from './model/mala-virtual.model';
-import { hojeEmSaoPaulo } from './service/mala-virtual-erros';
 import { MalaVirtualService } from './service/mala-virtual.service';
 
 describe('MalaVirtualFilhoComponent', () => {
@@ -15,7 +14,7 @@ describe('MalaVirtualFilhoComponent', () => {
 
   let familia: { listarFilhos: ReturnType<typeof vi.fn> };
   let api: {
-    listarDoFilho: ReturnType<typeof vi.fn>;
+    listarDoFilhoPaginado: ReturnType<typeof vi.fn>;
     marcarItem: ReturnType<typeof vi.fn>;
   };
 
@@ -40,7 +39,10 @@ describe('MalaVirtualFilhoComponent', () => {
   beforeEach(async () => {
     familia = { listarFilhos: vi.fn().mockReturnValue(of([filho])) };
     api = {
-      listarDoFilho: vi.fn().mockReturnValue(of([mala('a'), mala('b')])),
+      listarDoFilhoPaginado: vi.fn().mockReturnValue(of({
+        content: [mala('a'), mala('b')],
+        totalPages: 2,
+      })),
       marcarItem: vi.fn(),
     };
 
@@ -57,31 +59,21 @@ describe('MalaVirtualFilhoComponent', () => {
     await fixture.whenStable();
   });
 
-  it('seleciona o único filho e carrega as malas dele', () => {
+  it('seleciona o único filho e carrega a primeira página dele', () => {
     expect(tela.alunoId()).toBe('aluno-1');
-    expect(api.listarDoFilho).toHaveBeenCalledWith('aluno-1');
+    expect(api.listarDoFilhoPaginado).toHaveBeenCalledWith('aluno-1', 0);
     expect(tela.malas()).toHaveLength(2);
   });
 
-  it('mostra a mala de hoje primeiro, depois as próximas e por fim as que já passaram', async () => {
-    const hoje = hojeEmSaoPaulo();
-    api.listarDoFilho.mockReturnValue(of([
-      { ...mala('futura-longe'), data: '2999-01-02' },
-      { ...mala('futura-perto'), data: '2999-01-01' },
-      { ...mala('hoje'), data: hoje },
-      { ...mala('passada-recente'), data: '2000-01-02', podeMarcar: false },
-      { ...mala('passada-antiga'), data: '2000-01-01', podeMarcar: false },
-    ]));
+  it('busca a próxima página da criança selecionada', async () => {
+    api.listarDoFilhoPaginado.mockReturnValue(of({ content: [mala('c')], totalPages: 2 }));
 
-    await tela.carregarMalas();
+    tela.mudarPagina(1);
+    await fixture.whenStable();
 
-    expect(tela.malas().map((item) => item.id)).toEqual([
-      'hoje',
-      'futura-perto',
-      'futura-longe',
-      'passada-recente',
-      'passada-antiga',
-    ]);
+    expect(api.listarDoFilhoPaginado).toHaveBeenLastCalledWith('aluno-1', 1);
+    expect(tela.pagina()).toBe(1);
+    expect(tela.malas().map((item) => item.id)).toEqual(['c']);
   });
 
   it('atualiza só a mala marcada com a resposta do PUT, enviando a observação', async () => {

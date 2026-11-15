@@ -8,6 +8,10 @@ import { firstValueFrom } from 'rxjs';
 interface ConviteResponsavel {
   nome: string;
   email: string;
+  faixaNascimento: {
+    dataMinima: string;
+    dataMaxima: string;
+  };
   documentos: {
     versao: string;
     termoUso: string;
@@ -35,14 +39,6 @@ export class CadastroResponsavel implements OnInit {
   readonly sucesso = signal('');
   readonly campo =
     'w-full rounded-xl border border-stone-300 px-3 py-2 focus-visible:ring-2 focus-visible:ring-creche-verde';
-
-  readonly dataMinima = '1900-01-01';
-  readonly hoje = new Intl.DateTimeFormat('sv-SE', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'America/Sao_Paulo',
-  }).format(new Date());
 
   aceitouDocumentos = false;
   nome = '';
@@ -77,9 +73,39 @@ export class CadastroResponsavel implements OnInit {
       );
 
       if (!this.convite()) this.nome = dados.nome;
+
       this.aceitouDocumentos = false;
       this.convite.set(dados);
     });
+  }
+
+  erroDataNascimento(): string {
+    const faixa = this.convite()?.faixaNascimento;
+    const data = this.dataNascimento;
+
+    if (!faixa || !data) return '';
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+      return 'Informe uma data de nascimento válida.';
+    }
+
+    const calendario = new Date(data + 'T00:00:00Z');
+    if (
+      Number.isNaN(calendario.getTime()) ||
+      calendario.toISOString().slice(0, 10) !== data
+    ) {
+      return 'Informe uma data de nascimento válida.';
+    }
+
+    if (data < faixa.dataMinima) {
+      return 'O aluno deve ter no máximo 4 anos pelo ano de nascimento.';
+    }
+
+    if (data > faixa.dataMaxima) {
+      return 'O aluno deve ter pelo menos 6 meses completos.';
+    }
+
+    return '';
   }
 
   concluir(formulario: NgForm): Promise<void> {
@@ -119,12 +145,9 @@ export class CadastroResponsavel implements OnInit {
         return;
       }
 
-      if (
-        !/^\d{4}-\d{2}-\d{2}$/.test(dataNascimento) ||
-        dataNascimento < this.dataMinima ||
-        dataNascimento > this.hoje
-      ) {
-        this.erro.set('Informe uma data de nascimento válida até hoje.');
+      const erroNascimento = this.erroDataNascimento();
+      if (erroNascimento) {
+        this.erro.set(erroNascimento);
         return;
       }
 

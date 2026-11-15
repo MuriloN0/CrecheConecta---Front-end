@@ -5,13 +5,14 @@ import { firstValueFrom } from 'rxjs';
 import { Comunicado } from '../../comunicados/comunicados.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService, ResumoDirecao } from './dashboard.service';
+import { FrequenciaDirecao } from './frequencia-direcao/frequencia-direcao';
 import { MinhaTurma } from './minha-turma/minha-turma';
-import { PainelFamilia } from './painel-familia';
+import { PainelFamilia } from './painel-familia/painel-familia';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, RouterLink, MinhaTurma, PainelFamilia],
+  imports: [DatePipe, DecimalPipe, RouterLink, FrequenciaDirecao, MinhaTurma, PainelFamilia],
   templateUrl: './home.html',
 })
 export class Home implements OnInit {

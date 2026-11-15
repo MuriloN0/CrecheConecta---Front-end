@@ -19,18 +19,27 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const router = inject(Router);
   const autorizacao = request.headers.get('Authorization');
   const token = autorizacao ? autorizacao.replace(/^Bearer /, '') : auth.obterToken();
+
   if (!token) return next(request);
 
   const autenticada = autorizacao
     ? request
-    : request.clone({
-        setHeaders: { Authorization: `Bearer ${token}` },
-      });
+    : request.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+
   return next(autenticada).pipe(
     tap({
       error: (erro: unknown) => {
-        if (erro instanceof HttpErrorResponse && erro.status === 401) {
+        if (!(erro instanceof HttpErrorResponse)) return;
+
+        if (erro.status === 401) {
           auth.encerrarSessaoExpirada(token);
+        } else if (
+          erro.status === 403 &&
+          erro.error?.codigo === 'ACEITE_OBRIGATORIO' &&
+          token === auth.obterToken() &&
+          router.url.split(/[?#]/)[0] !== '/portal-pais'
+        ) {
+          void router.navigateByUrl('/portal-pais');
         }
         // LGPD: o back recusa as rotas dos pais enquanto o termo vigente não for aceito.
         if (

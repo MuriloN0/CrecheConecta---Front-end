@@ -2,10 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { ConfirmacaoService } from '../shared/components/confirmacao-dialogo/confirmacao-dialogo';
 import { Pagina, Turma, TurmasService } from '../turmas/turmas.service';
 import { Professor, ProfessoresService, SituacaoProfessor } from './professores.service';
-
-type AcaoProfessor = 'aprovar' | 'rejeitar' | 'inativar';
 
 function paginaVazia<T>(): Pagina<T> {
   return { content: [], totalPages: 0 };
@@ -18,8 +17,10 @@ function paginaVazia<T>(): Pagina<T> {
   templateUrl: './professores.html',
 })
 export class Professores implements OnInit {
+  private readonly confirmacao = inject(ConfirmacaoService);
   private readonly servico = inject(ProfessoresService);
   private readonly turmasService = inject(TurmasService);
+  private buscaAplicada = '';
 
   readonly professores = signal(paginaVazia<Professor>());
   readonly turmas = signal(paginaVazia<Turma>());
@@ -31,7 +32,7 @@ export class Professores implements OnInit {
 
   readonly situacoes: Record<SituacaoProfessor, string> = {
     PENDENTE_APROVACAO: 'Pendente de aprovação',
-    APROVADO: 'Aprovado',
+    APROVADO: 'Ativo',
     REJEITADO: 'Rejeitado',
     INATIVO: 'Inativo',
   };
@@ -45,6 +46,7 @@ export class Professores implements OnInit {
     'cursor-pointer rounded-lg bg-creche-verde px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
   filtro: SituacaoProfessor | '' = '';
+  busca = '';
   formulario: 'convite' | null = null;
   nome = '';
   email = '';
@@ -63,6 +65,13 @@ export class Professores implements OnInit {
     if (this.ocupada()) return;
 
     this.filtro = filtro;
+    this.aplicarBusca();
+  }
+
+  aplicarBusca(): void {
+    if (this.ocupada()) return;
+
+    this.buscaAplicada = this.busca.trim();
     this.professores.set(paginaVazia());
     this.paginaProfessores.set(0);
     void this.carregarProfessores(0);
@@ -90,21 +99,20 @@ export class Professores implements OnInit {
     });
   }
 
-  decidir(professor: Professor, acao: AcaoProfessor): Promise<void> {
-    const mensagens: Record<AcaoProfessor, string> = {
-      aprovar: 'Cadastro aprovado.',
-      rejeitar: 'Cadastro rejeitado.',
-      inativar: 'Professor inativado.',
-    };
+  async inativar(professor: Professor): Promise<void> {
+    if (this.ocupada() || !this.podeInativar(professor)) return;
 
-    if (!window.confirm(`Deseja ${acao} o cadastro de ${professor.nome}?`)) {
-      return Promise.resolve();
-    }
+    const confirmado = await this.confirmacao.perguntar({
+      titulo: 'Inativar professor?',
+      mensagem: `O cadastro de ${professor.nome} será inativado.`,
+      acao: 'Inativar professor',
+    });
+    if (!confirmado) return;
 
     return this.executar(async () => {
-      await firstValueFrom(this.servico.decidir(professor, acao));
+      await firstValueFrom(this.servico.inativar(professor));
       this.formulario = null;
-      this.sucesso.set(mensagens[acao]);
+      this.sucesso.set('Professor inativado.');
       await this.buscarProfessores(this.paginaProfessores());
     });
   }
@@ -118,12 +126,16 @@ export class Professores implements OnInit {
   }
 
   private async buscarProfessores(pagina: number): Promise<void> {
-    let resposta = await firstValueFrom(this.servico.listar(pagina, this.filtro));
+    let resposta = await firstValueFrom(
+      this.servico.listar(pagina, this.filtro, this.buscaAplicada),
+    );
     const ultimaPagina = Math.max(0, resposta.totalPages - 1);
 
     if (pagina > ultimaPagina) {
       pagina = ultimaPagina;
-      resposta = await firstValueFrom(this.servico.listar(pagina, this.filtro));
+      resposta = await firstValueFrom(
+        this.servico.listar(pagina, this.filtro, this.buscaAplicada),
+      );
     }
 
     this.professores.set(resposta);
