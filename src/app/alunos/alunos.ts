@@ -30,6 +30,7 @@ export class Alunos implements OnInit {
   readonly formularioAberto = signal(false);
   readonly consultando = signal<{ aluno: Aluno; responsaveis: ResponsavelAluno[] } | null>(null);
   readonly paraInativar = signal<Aluno | null>(null);
+  readonly paraAnonimizar = signal<Aluno | null>(null);
 
   readonly card = 'space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6';
   readonly campo = 'rounded-xl border border-stone-300 bg-white px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:opacity-50';
@@ -107,10 +108,42 @@ export class Alunos implements OnInit {
     this.paraInativar.set(aluno);
   }
 
+  // LGPD: só aluno inativo e ainda não anonimizado.
+  pedirAnonimizacao(aluno: Aluno): void {
+    if (this.ocupado() || aluno.ativo || aluno.anonimizado) return;
+
+    this.fecharPaineis();
+    this.limparMensagens();
+    this.paraAnonimizar.set(aluno);
+  }
+
   fecharPaineis(): void {
     this.formularioAberto.set(false);
     this.consultando.set(null);
     this.paraInativar.set(null);
+    this.paraAnonimizar.set(null);
+  }
+
+  async anonimizar(aluno: Aluno): Promise<void> {
+    if (this.ocupado() || this.paraAnonimizar()?.id !== aluno.id) return;
+
+    this.limparMensagens();
+    this.salvando.set(true);
+
+    try {
+      const resultado = await firstValueFrom(this.api.anonimizar(aluno));
+      this.fecharPaineis();
+      this.sucesso.set(
+        `Dados anonimizados. Responsáveis anonimizados: ${resultado.responsaveisAnonimizados}; `
+        + `informações relevantes removidas: ${resultado.informacoesRelevantesRemovidas}; `
+        + `observações removidas: ${resultado.observacoesRemovidas}.`,
+      );
+      await this.carregar(this.pagina());
+    } catch (erro: unknown) {
+      this.erro.set(this.mensagemErro(erro));
+    } finally {
+      this.salvando.set(false);
+    }
   }
 
   async salvar(): Promise<void> {

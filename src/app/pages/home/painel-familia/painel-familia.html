@@ -189,6 +189,41 @@
         }
       }
     </article>
+
+    <article class="space-y-3 rounded-2xl border border-stone-200 bg-white p-5"
+      aria-labelledby="titulo-observacoes-familia">
+      <header class="flex flex-wrap items-center justify-between gap-2">
+        <h3 id="titulo-observacoes-familia" class="text-lg font-bold">Observações dos professores</h3>
+        @if (totalObservacoes() > 0) {
+          <a routerLink="/familia/observacoes"
+            class="text-sm font-semibold text-creche-verde underline-offset-2 hover:underline
+                   focus-visible:ring-2 focus-visible:ring-creche-verde">
+            Ver todas ({{ totalObservacoes() }})
+          </a>
+        }
+      </header>
+
+      @if (erroObservacoes()) {
+        <p role="status" class="text-sm text-red-800">Observações temporariamente indisponíveis.</p>
+      } @else {
+        @for (observacao of observacoes(); track observacao.id) {
+          <section class="rounded-xl border border-stone-200 p-3">
+            <h4 class="wrap-break-word text-sm font-semibold">{{ observacao.titulo }}</h4>
+            <p class="text-xs text-stone-600">
+              {{ observacao.autorNome || 'Professor(a)' }} ·
+              {{ observacao.dataCriacao | date: 'dd/MM/yyyy' }}
+            </p>
+            @if (observacao.conteudo) {
+              <p class="mt-2 line-clamp-3 whitespace-pre-wrap wrap-break-word text-sm">
+                {{ observacao.conteudo }}
+              </p>
+            }
+          </section>
+        } @empty {
+          <p class="text-sm text-stone-600">Ainda não há observações dos professores.</p>
+        }
+      }
+    </article>
   } @else {
     <p class="text-sm text-stone-600">Nenhuma criança vinculada a esta conta.</p>
   }
@@ -199,16 +234,24 @@
   >
     <h3 id="titulo-privacidade-familia" class="text-lg font-bold">Privacidade dos dados</h3>
     <p class="text-sm text-stone-600">
-      Abra seu aplicativo de e-mail para enviar a solicitação à equipe da creche.
+      Baixe uma cópia dos dados que a creche guarda sobre você e a criança, ou peça a anonimização
+      pelo seu aplicativo de e-mail.
     </p>
-
-    <a
-      [href]="linkAnonimizacao"
-      class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border
-             border-creche-verde px-4 py-2 text-center text-sm font-semibold
-             text-creche-verde hover:bg-stone-50 sm:w-auto"
-    >
-      Solicitar anonimização de dados
-    </a>
+    @if (erroExportacao()) {
+      <p role="alert" class="rounded-xl bg-red-50 p-3 text-sm text-red-800">{{ erroExportacao() }}</p>
+    }
+    <div class="grid gap-2 sm:flex sm:flex-wrap">
+      <button type="button" (click)="baixarMeusDados()" [disabled]="baixandoDados()"
+        class="min-h-11 cursor-pointer rounded-xl bg-creche-verde px-4 py-2 text-sm font-semibold text-white
+               hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde
+               focus-visible:ring-offset-2 disabled:opacity-50">
+        {{ baixandoDados() ? 'Gerando arquivo…' : 'Baixar meus dados' }}
+      </button>
+      <a [href]="linkAnonimizacao"
+        class="inline-flex min-h-11 items-center justify-center rounded-xl border border-creche-verde px-4 py-2
+               text-sm font-semibold text-creche-verde hover:bg-stone-50">
+        Solicitar anonimização de dados
+      </a>
+    </div>
   </section>
 </section>

@@ -160,6 +160,7 @@ export class Sidebar {
       itens.push(
         { titulo: 'Chamada do dia', caminho: '/chamada' },
         { titulo: 'Diário de rotina', caminho: '/diario' },
+        { titulo: 'Observações', caminho: '/observacoes' },
         { titulo: 'Atividades', caminho: '/atividades' },
         { titulo: 'Mala Virtual', caminho: '/mala-virtual' },
         { titulo: 'Solicitação de materiais', caminho: '/solicitacoes-materiais' },
@@ -171,7 +172,7 @@ export class Sidebar {
         { titulo: 'Atividades', caminho: '/familia/atividades' },
         { titulo: 'Mala Virtual', caminho: '/familia/mala-virtual' },
         { titulo: 'Informações relevantes', caminho: '/informacoes' },
-        { titulo: 'Observações', caminho: '/observacoes' },
+        { titulo: 'Observações', caminho: '/familia/observacoes' },
       );
     }
 

@@ -8,6 +8,16 @@ export interface Aluno {
   anoNascimento: number | null;
   ativo: boolean;
   versao: number;
+  // LGPD: os dados pessoais já foram anonimizados (nome genérico e só o ano de nascimento).
+  anonimizado: boolean;
+}
+
+// Resumo devolvido pela anonimização.
+export interface ResultadoAnonimizacao {
+  alunoId: string;
+  responsaveisAnonimizados: number;
+  informacoesRelevantesRemovidas: number;
+  observacoesRemovidas: number;
 }
 
 export interface ResponsavelAluno {
@@ -59,5 +69,9 @@ export class AlunosApi {
     return this.http.post<Aluno>(`${this.url}/${aluno.id}/inativar`, {
       versao: aluno.versao,
     });
+  }
+
+  anonimizar(aluno: Aluno) {
+    return this.http.post<ResultadoAnonimizacao>(`${this.url}/${aluno.id}/anonimizar`, {});
   }
 }

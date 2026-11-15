@@ -59,4 +59,9 @@ export class PainelFamiliaService {
   listarMalas(alunoId: string) {
     return this.http.get<MalaFilho[]>(`${this.base}/${alunoId}/mala`);
   }
+
+  // LGPD: cópia dos dados do responsável e das crianças vinculadas (JSON).
+  exportarMeusDados() {
+    return this.http.get<unknown>('/api/meus-dados');
+  }
 }
