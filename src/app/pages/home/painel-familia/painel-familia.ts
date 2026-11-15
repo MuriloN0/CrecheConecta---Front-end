@@ -4,9 +4,10 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ROTULOS_DIARIO } from '../../diario/diario.model';
-import { ObservacoesApi } from '../../observacoes/observacoes.api';
-import { Observacao } from '../../observacoes/observacoes.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { ROTULOS_DIARIO } from '../../../diario/diario.model';
+import { ObservacoesApi } from '../../../observacoes/observacoes.api';
+import { Observacao } from '../../../observacoes/observacoes.model';
 import {
   DiarioFilho,
   Filho,
@@ -32,6 +33,7 @@ export class PainelFamilia implements OnInit {
   readonly baixandoDados = signal(false);
   readonly erroExportacao = signal('');
 
+  readonly responsavel = inject(AuthService).usuario;
   readonly filhos = signal<Filho[]>([]);
   readonly alunoId = signal('');
   readonly carregando = signal(false);
@@ -42,14 +44,15 @@ export class PainelFamilia implements OnInit {
   readonly erroDiario = signal(false);
   readonly dataDiario = signal('');
   readonly carregandoDiario = signal(false);
+  readonly erroFrequencia = signal(false);
+  readonly erroMalas = signal(false);
+
   readonly hoje = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }).format(new Date());
-  readonly erroFrequencia = signal(false);
-  readonly erroMalas = signal(false);
   readonly observacoes = signal<Observacao[]>([]);
   readonly totalObservacoes = signal(0);
   readonly erroObservacoes = signal(false);
@@ -63,7 +66,6 @@ export class PainelFamilia implements OnInit {
     if (!frequencia) return [];
 
     const total = frequencia.presencas + frequencia.faltas;
-
     return [
       { titulo: 'Presenças', valor: frequencia.presencas, cor: 'bg-creche-verde' },
       { titulo: 'Faltas', valor: frequencia.faltas, cor: 'bg-amber-500' },
@@ -113,7 +115,6 @@ export class PainelFamilia implements OnInit {
 
   async atualizar(): Promise<void> {
     if (this.carregando()) return;
-
     this.carregando.set(true);
     this.erro.set('');
     this.limparDetalhes();
@@ -126,9 +127,7 @@ export class PainelFamilia implements OnInit {
       const filho = anterior ?? filhos[0];
       this.alunoId.set(filho?.id ?? '');
 
-      if (filho) {
-        await this.carregarDetalhes(filho.id);
-      }
+      if (filho) await this.carregarDetalhes(filho.id);
     } catch {
       this.filhos.set([]);
       this.alunoId.set('');
@@ -139,9 +138,7 @@ export class PainelFamilia implements OnInit {
   }
 
   async selecionar(alunoId: string): Promise<void> {
-    if (this.carregando() || !this.filhos().some((filho) => filho.id === alunoId)) {
-      return;
-    }
+    if (this.carregando() || !this.filhos().some((filho) => filho.id === alunoId)) return;
 
     this.carregando.set(true);
     this.alunoId.set(alunoId);
@@ -154,17 +151,16 @@ export class PainelFamilia implements OnInit {
     }
   }
 
-  // data = 'AAAA-MM-DD' para um dia específico; null para o diário mais recente.
   async buscarDiario(data: string | null): Promise<void> {
     const alunoId = this.alunoId();
     if (!alunoId || this.carregandoDiario() || this.carregando()) return;
     if (data !== null && (!/^\d{4}-\d{2}-\d{2}$/.test(data) || data > this.hoje)) return;
+
     this.carregandoDiario.set(true);
     this.erroDiario.set(false);
+
     try {
-      const registro = await firstValueFrom(
-        this.servico.consultarDiario(alunoId, data ?? undefined),
-      );
+      const registro = await firstValueFrom(this.servico.consultarDiario(alunoId, data ?? undefined));
       if (alunoId !== this.alunoId()) return;
       this.diario.set(registro);
       this.dataDiario.set(registro.data);

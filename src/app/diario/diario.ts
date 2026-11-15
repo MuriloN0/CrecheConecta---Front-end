@@ -43,6 +43,8 @@ export class Diario implements OnInit {
   readonly turmaId = signal('');
   readonly data = signal('');
   readonly ocupada = signal(false);
+  readonly pagina = signal(0);
+  readonly totalPaginas = signal(0);
   readonly carregada = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
@@ -60,7 +62,6 @@ export class Diario implements OnInit {
   readonly botao = 'cursor-pointer rounded-xl border border-stone-300 px-4 py-2 text-sm font-semibold hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:cursor-not-allowed disabled:opacity-50';
   readonly primario = 'cursor-pointer rounded-xl bg-creche-verde px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
-  // Campos do formulário aberto (um aluno por vez).
   alimentacao = '';
   sono = '';
   humor = '';
@@ -77,11 +78,16 @@ export class Diario implements OnInit {
       this.fecharPaineis();
       this.carregada.set(false);
       this.alunos.set([]);
+      this.pagina.set(0);
+      this.totalPaginas.set(0);
+
       const turmas = await firstValueFrom(this.atividadesService.listarTurmas());
       this.turmas.set(turmas);
+
       const atual = turmas.find((turma) => turma.id === this.turmaId());
       const selecionada = atual ?? turmas[0];
       this.turmaId.set(selecionada?.id ?? '');
+
       if (!this.data()) this.data.set(this.hoje);
       if (selecionada) {
         await this.buscar(selecionada.id, this.data());
@@ -90,9 +96,8 @@ export class Diario implements OnInit {
   }
 
   selecionarTurma(turmaId: string): Promise<void> {
-    if (!this.turmas().some((turma) => turma.id === turmaId)) {
-      return Promise.resolve();
-    }
+    if (!this.turmas().some((turma) => turma.id === turmaId)) return Promise.resolve();
+
     return this.executar(async () => {
       this.fecharPaineis();
       this.turmaId.set(turmaId);
@@ -106,6 +111,7 @@ export class Diario implements OnInit {
       this.sucesso.set('');
       return Promise.resolve();
     }
+
     return this.executar(async () => {
       this.fecharPaineis();
       this.data.set(valor);
@@ -113,12 +119,25 @@ export class Diario implements OnInit {
     });
   }
 
+  mudarPagina(pagina: number): Promise<void> {
+    if (!this.carregada() || pagina < 0 || pagina >= this.totalPaginas()) {
+      return Promise.resolve();
+    }
+
+    return this.executar(async () => {
+      this.fecharPaineis();
+      await this.buscar(this.turmaId(), this.data(), pagina);
+    });
+  }
+
   abrirFormulario(aluno: AlunoDiario): void {
     if (this.ocupada() || !this.carregada()) return;
     if (aluno.diario && !aluno.diario.editavel) return;
+
     this.fecharPaineis();
     this.erro.set('');
     this.sucesso.set('');
+
     const diario = aluno.diario;
     this.alimentacao = diario?.alimentacao ?? '';
     this.sono = diario?.sono ?? '';
@@ -131,6 +150,7 @@ export class Diario implements OnInit {
 
   pedirExclusao(aluno: AlunoDiario): void {
     if (this.ocupada() || !aluno.diario?.editavel) return;
+
     this.fecharPaineis();
     this.erro.set('');
     this.sucesso.set('');
@@ -145,25 +165,24 @@ export class Diario implements OnInit {
   salvar(): Promise<void> {
     const aluno = this.alunoAberto();
     if (!aluno || this.ocupada() || !this.carregada()) return Promise.resolve();
+
     return this.executar(async () => {
-      if (
-        !this.alimentacao
-        || !this.sono
-        || !this.humor
-        || !this.higiene
-      ) {
+      if (!this.alimentacao || !this.sono || !this.humor || !this.higiene) {
         this.erro.set('Escolha alimentação, sono, humor e higiene.');
         return;
       }
+
       const observacao = this.observacao.trim();
       if (observacao.length > 1000) {
         this.erro.set('A observação pode ter no máximo 1.000 caracteres.');
         return;
       }
+
       if (this.data() > this.hoje) {
         this.erro.set('A data do diário não pode ser futura.');
         return;
       }
+
       const dados: DadosDiario = {
         alimentacao: this.alimentacao as Alimentacao,
         sono: this.sono as Sono,
@@ -173,9 +192,11 @@ export class Diario implements OnInit {
         ...(observacao ? { observacaoProfessor: observacao } : {}),
         ...(aluno.diario ? { versao: aluno.diario.versao } : {}),
       };
+
       const registro = await firstValueFrom(
         this.servico.registrar(this.turmaId(), this.data(), aluno.alunoId, dados),
       );
+
       this.alunos.update((alunos) => alunos.map((item) =>
         item.alunoId === aluno.alunoId ? { ...item, diario: registro } : item,
       ));
@@ -191,10 +212,10 @@ export class Diario implements OnInit {
   confirmarExclusao(): Promise<void> {
     const aluno = this.paraExcluir();
     if (!aluno || this.ocupada()) return Promise.resolve();
+
     return this.executar(async () => {
-      await firstValueFrom(
-        this.servico.excluir(this.turmaId(), this.data(), aluno.alunoId),
-      );
+      await firstValueFrom(this.servico.excluir(this.turmaId(), this.data(), aluno.alunoId));
+
       this.alunos.update((alunos) => alunos.map((item) =>
         item.alunoId === aluno.alunoId ? { ...item, diario: null } : item,
       ));
@@ -203,27 +224,44 @@ export class Diario implements OnInit {
     });
   }
 
-  private async buscar(turmaId: string, data: string): Promise<void> {
+  private async buscar(turmaId: string, data: string, pagina = 0): Promise<void> {
     this.carregada.set(false);
     this.alunos.set([]);
-    this.alunos.set(await firstValueFrom(this.servico.consultar(turmaId, data)));
+    this.pagina.set(pagina);
+    this.totalPaginas.set(0);
+
+    if (!turmaId) return;
+
+    let resposta = await firstValueFrom(this.servico.consultar(turmaId, data, pagina));
+    const ultimaPagina = Math.max(0, resposta.totalPages - 1);
+
+    if (pagina > ultimaPagina) {
+      pagina = ultimaPagina;
+      resposta = await firstValueFrom(this.servico.consultar(turmaId, data, pagina));
+    }
+
+    this.alunos.set(resposta.content);
+    this.pagina.set(pagina);
+    this.totalPaginas.set(resposta.totalPages);
     this.carregada.set(true);
   }
 
   private async executar(acao: () => Promise<void>): Promise<void> {
     if (this.ocupada()) return;
+
     this.ocupada.set(true);
     this.erro.set('');
     this.sucesso.set('');
+
     try {
       await acao();
     } catch (erro: unknown) {
       this.erro.set(this.mensagemErro(erro));
+
       if (erro instanceof HttpErrorResponse && (erro.status === 409 || erro.status === 404)) {
-        // Outra pessoa mexeu no diário: recarrega a lista para pegar a versão atual.
         this.fecharPaineis();
         try {
-          await this.buscar(this.turmaId(), this.data());
+          await this.buscar(this.turmaId(), this.data(), this.pagina());
         } catch {
           this.carregada.set(false);
         }
@@ -253,6 +291,7 @@ export class Diario implements OnInit {
         }
       }
     }
+
     return 'Não foi possível concluir a operação. Tente novamente.';
   }
 }

@@ -1,0 +1,104 @@
+<section class="space-y-4" aria-labelledby="titulo-auditoria" [attr.aria-busy]="carregando()">
+  <h1 id="titulo-auditoria" class="text-3xl font-bold text-creche-texto">Auditoria</h1>
+
+  <div class="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6">
+    <form (ngSubmit)="aplicar()" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <label class="grid gap-1 text-sm font-semibold">
+        Assunto
+        <select name="assunto" [class]="campo" [(ngModel)]="filtros.assunto"
+          [disabled]="carregando()">
+          <option value="">Todos</option>
+          @for (item of assuntos; track item[0]) {
+            <option [value]="item[0]">{{ item[1] }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="grid gap-1 text-sm font-semibold">
+        Ação
+        <input type="search" name="acao" maxlength="60" placeholder="Ex.: INATIVADO"
+          [class]="campo" [(ngModel)]="filtros.acao" [disabled]="carregando()" />
+      </label>
+
+      <label class="grid gap-1 text-sm font-semibold">
+        Início
+        <input type="date" name="inicio" [class]="campo"
+          [(ngModel)]="filtros.inicio" [disabled]="carregando()" />
+      </label>
+
+      <label class="grid gap-1 text-sm font-semibold">
+        Fim
+        <input type="date" name="fim" [class]="campo"
+          [(ngModel)]="filtros.fim" [disabled]="carregando()" />
+      </label>
+
+      <div class="flex flex-wrap gap-2 sm:col-span-2 xl:col-span-4">
+        <button type="submit" [disabled]="carregando()"
+          class="rounded-lg bg-creche-verde px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+          Aplicar filtros
+        </button>
+        <button type="button" [class]="botao" [disabled]="carregando()" (click)="limpar()">
+          Limpar filtros
+        </button>
+      </div>
+    </form>
+
+    @if (erro()) {
+      <p role="alert" class="rounded-lg bg-red-50 p-3 text-sm text-red-800">{{ erro() }}</p>
+    }
+
+    @if (carregando()) {
+      <p role="status" class="text-sm text-stone-600">Carregando eventos…</p>
+    } @else if (eventos().length) {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <caption class="sr-only">Eventos registrados no sistema</caption>
+          <thead class="bg-creche-creme">
+            <tr>
+              <th scope="col" class="p-3">Data e hora</th>
+              <th scope="col" class="p-3">Assunto</th>
+              <th scope="col" class="p-3">Ação</th>
+              <th scope="col" class="p-3">Usuário associado</th>
+              <th scope="col" class="p-3">ID do recurso</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-100">
+            @for (evento of eventos(); track evento.id) {
+              <tr>
+                <td class="whitespace-nowrap p-3">
+                  <time [attr.datetime]="evento.instante">
+                    {{ evento.instante | date: 'dd/MM/yyyy HH:mm:ss' : '-0300' }}
+                  </time>
+                </td>
+                <td class="whitespace-nowrap p-3">{{ rotulos[evento.assunto] }}</td>
+                <td class="p-3 font-mono text-xs">{{ evento.acao }}</td>
+                <td class="min-w-32 p-3 wrap-anywhere">
+                  {{ evento.usuarioNome || evento.usuarioId || 'Sem usuário registrado' }}
+                </td>
+                <td class="whitespace-nowrap p-3 font-mono text-xs">
+                  {{ evento.recursoId || '—' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!erro()) {
+      <p class="text-sm text-stone-600">Nenhum evento encontrado para os filtros aplicados.</p>
+    }
+
+    @if (pagina() > 0 || temProxima()) {
+      <nav class="flex flex-wrap items-center gap-3" aria-label="Páginas da auditoria">
+        <button type="button" [class]="botao" [disabled]="carregando() || pagina() === 0"
+          (click)="carregar(pagina() - 1)">
+          Anterior
+        </button>
+        <span class="text-sm">Página {{ pagina() + 1 }}</span>
+        <button type="button" [class]="botao" [disabled]="carregando() || !temProxima()"
+          (click)="carregar(pagina() + 1)">
+          Próxima
+        </button>
+      </nav>
+    }
+  </div>
+</section>

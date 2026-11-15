@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Filho, PainelFamiliaService } from '../../pages/home/painel-familia.service';
+import { Filho, PainelFamiliaService } from '../../pages/home/painel-familia/painel-familia.service';
 
 /**
  * Criança selecionada pelo responsável. Compartilhada pelas telas da família

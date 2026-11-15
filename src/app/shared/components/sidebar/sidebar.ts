@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Perfil, UsuarioLogado } from '../../../core/models/auth.models';
 
@@ -12,60 +12,89 @@ interface ItemMenu {
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <aside class="flex h-full flex-col bg-creche-verde p-4 text-white md:min-h-dvh">
-      <a routerLink="/home"
-        class="flex items-center gap-3 rounded-xl px-2 py-3
-               focus-visible:outline-2 focus-visible:outline-offset-4
-               focus-visible:outline-white">
-        <span aria-hidden="true"
-          class="flex h-10 w-10 shrink-0 items-center justify-center
-                 rounded-full bg-[#c96843] text-xl">
-          ♥
-        </span>
-        <span class="min-w-0">
-          <span class="block text-lg font-bold">CrecheConecta</span>
-          <span class="block text-xs text-white/75">{{ nomePerfil() }}</span>
-        </span>
-      </a>
-
-      <p class="mb-3 mt-7 px-3 text-xs font-semibold uppercase tracking-wider text-white/65">
-        Menu
-      </p>
-
-      <nav aria-label="Menu principal" class="space-y-2">
-        @for (item of itensMenu(); track item.caminho) {
-          <a [routerLink]="item.caminho" routerLinkActive="bg-white/15"
-            [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page"
-            class="block rounded-full px-4 py-3 text-sm font-semibold
-                   transition-colors hover:bg-white/10 focus-visible:outline-2
-                   focus-visible:outline-offset-2 focus-visible:outline-white">
-            {{ item.titulo }}
-          </a>
-        }
-      </nav>
-
-      <div class="mt-7 rounded-2xl border border-white/20 p-3 md:mt-auto">
-        <div class="flex items-center gap-3">
-          <span aria-hidden="true"
-            class="flex h-10 w-10 shrink-0 items-center justify-center
-                   rounded-full bg-[#c96843] text-sm font-bold">
-            {{ iniciais() }}
+    <aside class="bg-creche-verde p-3 text-white md:sticky md:top-0 md:flex
+                  md:h-dvh md:flex-col md:overflow-y-auto md:p-4">
+      <div class="flex items-center justify-between gap-2" (keydown.escape)="fecharMenu(botaoMenu)">
+        <a
+          routerLink="/home"
+          (click)="menuAberto.set(false)"
+          class="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1
+                 focus-visible:outline-2 focus-visible:outline-offset-2
+                 focus-visible:outline-white md:gap-3"
+        >
+          <img src="crecheconecta.svg" alt="" width="44" height="44" class="size-11 shrink-0" />
+          <span class="min-w-0">
+            <span class="block wrap-anywhere font-bold md:text-lg">CrecheConecta</span>
+            <span class="block text-xs text-white/80">{{ nomePerfil() }}</span>
           </span>
-          <div class="min-w-0">
-            <p class="wrap-break-word text-sm font-semibold">
-              {{ usuario()?.nome || 'Usuário' }}
-            </p>
-            <p class="mt-1 text-xs text-white/75">{{ nomePerfil() }}</p>
+        </a>
+
+        <button
+          #botaoMenu
+          type="button"
+          (click)="alternarMenu()"
+          [attr.aria-expanded]="menuAberto()"
+          aria-controls="menu-portal"
+          class="min-h-11 shrink-0 rounded-xl border border-white/40 px-3 text-sm font-semibold
+                 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2
+                 focus-visible:outline-white md:hidden"
+        >
+          {{ menuAberto() ? 'Fechar menu' : 'Menu' }}
+        </button>
+      </div>
+
+      <div
+        id="menu-portal"
+        [class.hidden]="!menuAberto()"
+        (keydown.escape)="fecharMenu(botaoMenu)"
+        class="mt-3 max-h-[65dvh] overflow-y-auto overscroll-contain p-1
+               md:mt-6 md:flex md:max-h-none md:flex-1 md:flex-col md:overflow-visible"
+      >
+        <nav aria-label="Menu principal" class="space-y-1">
+          @for (item of itensMenu(); track item.caminho) {
+            <a
+              [routerLink]="item.caminho"
+              (click)="fecharMenu(botaoMenu)"
+              routerLinkActive="bg-white/15"
+              [routerLinkActiveOptions]="{ exact: true }"
+              ariaCurrentWhenActive="page"
+              class="flex min-h-11 items-center rounded-xl px-3 py-2 text-sm font-semibold
+                     hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2
+                     focus-visible:outline-white"
+            >
+              {{ item.titulo }}
+            </a>
+          }
+        </nav>
+
+        <div class="pt-4 md:mt-auto">
+          <div class="rounded-2xl border border-white/25 p-3">
+            <div class="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                class="grid size-10 shrink-0 place-items-center rounded-full
+                       bg-creche-pessego text-sm font-bold text-creche-verde"
+              >
+                {{ iniciais() }}
+              </span>
+              <div class="min-w-0">
+                <p class="wrap-anywhere text-sm font-semibold">{{ usuario()?.nome || 'Usuário' }}</p>
+                <p class="mt-1 text-xs text-white/80">{{ nomePerfil() }}</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              (click)="sair.emit()"
+              [disabled]="saindo()"
+              class="mt-3 min-h-11 w-full rounded-xl border border-white/40 px-3 py-2 text-sm
+                     hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2
+                     focus-visible:outline-white disabled:opacity-60"
+            >
+              {{ saindo() ? 'Saindo…' : 'Sair da conta' }}
+            </button>
           </div>
         </div>
-
-        <button type="button" (click)="sair.emit()" [disabled]="saindo()"
-          class="mt-4 w-full cursor-pointer rounded-xl border border-white/30
-                 px-3 py-2 text-sm hover:bg-white/10 focus-visible:outline-2
-                 focus-visible:outline-offset-2 focus-visible:outline-white
-                 disabled:cursor-wait disabled:opacity-60">
-          {{ saindo() ? 'Saindo…' : 'Sair da conta' }}
-        </button>
       </div>
     </aside>
   `,
@@ -74,6 +103,7 @@ export class Sidebar {
   readonly usuario = input<UsuarioLogado | null>(null);
   readonly saindo = input(false);
   readonly sair = output<void>();
+  readonly menuAberto = signal(false);
 
   readonly nomePerfil = computed(() => {
     const nomes: Record<Perfil, string> = {
@@ -122,6 +152,7 @@ export class Sidebar {
         { titulo: 'Equipe de Direção', caminho: '/direcao' },
         { titulo: 'Termos e LGPD', caminho: '/termos' },
         { titulo: 'Solicitação de materiais', caminho: '/solicitacoes-materiais' },
+        { titulo: 'Auditoria', caminho: '/auditoria' },
       );
     }
 
@@ -148,4 +179,15 @@ export class Sidebar {
     itens.push({ titulo: 'Termos e privacidade', caminho: '/informacoes/termos' });
     return itens;
   });
+
+  alternarMenu(): void {
+    this.menuAberto.update((aberto) => !aberto);
+  }
+
+  fecharMenu(botao: HTMLButtonElement): void {
+    if (!this.menuAberto()) return;
+
+    this.menuAberto.set(false);
+    if (botao.getClientRects().length) botao.focus();
+  }
 }
