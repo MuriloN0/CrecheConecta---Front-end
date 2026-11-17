@@ -48,22 +48,9 @@
         {{ editando() ? 'Editar rascunho' : 'Nova versão (rascunho)' }}
       </h2>
 
-      <label class="block space-y-1 text-sm font-semibold">
-        <span>Identificador da versão</span>
-        <input
-          name="identificador"
-          type="text"
-          [class]="campo"
-          [(ngModel)]="identificador"
-          required
-          maxlength="40"
-          [disabled]="ocupada()"
-        />
-        <span class="text-xs font-normal text-stone-600">
-          É o nome que o responsável aceita, por exemplo 2026-11-09-v3. Letras, números,
-          ponto, hífen e sublinhado.
-        </span>
-      </label>
+      @if (editando(); as termo) {
+        <p class="text-sm text-stone-600">Versão {{ termo.identificador }}</p>
+      }
 
       <label class="block space-y-1 text-sm font-semibold">
         <span>Termo de uso</span>
@@ -141,12 +128,7 @@
         Depois de publicada, a versão não pode mais ser editada.
       </p>
       <div class="flex flex-wrap gap-2">
-        <button
-          type="button"
-          [class]="primario"
-          [disabled]="ocupada()"
-          (click)="confirmarPublicacao()"
-        >
+        <button type="button" [class]="primario" [disabled]="ocupada()" (click)="confirmarPublicacao()">
           Confirmar publicação
         </button>
         <button type="button" [class]="botao" [disabled]="ocupada()" (click)="fecharPaineis()">
@@ -272,7 +254,7 @@
     }
 
     @if (totalPaginas() > 1 && !falhaListagem()) {
-      <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas das versões dos termos">
+      <nav class="flex flex-wrap gap-2 items-center" aria-label="Páginas das versões dos termos">
         <button
           type="button"
           [class]="botao"

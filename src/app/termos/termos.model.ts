@@ -9,13 +9,11 @@ export interface TermoVersao {
   criadoEm: string;
   atualizadoEm: string;
   publicadoEm: string | null;
-  // Quantos usuários diferentes já aceitaram esta versão.
   aceites: number;
   versao: number;
 }
 
 export interface DadosTermo {
-  identificador: string;
   termoUso: string;
   politicaPrivacidade: string;
 }

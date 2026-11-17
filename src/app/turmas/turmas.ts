@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -12,7 +12,10 @@ import {
 import { ConfirmacaoService } from '../shared/components/confirmacao-dialogo/confirmacao-dialogo';
 import { Matricula, Pagina, Turma, TurmasService } from './turmas.service';
 
+const TAMANHO_LISTAS_VINCULOS = 10;
+
 type Filtro = 'ativas' | 'inativas' | 'todas';
+type AbaVinculos = 'alunos' | 'professores';
 type MatriculaExibida = Matricula & { nomeAluno: string };
 
 interface Lista<T> {
@@ -36,8 +39,9 @@ export class Turmas implements OnInit {
   private readonly api = inject(TurmasService);
   private readonly professoresApi = inject(ProfessoresService);
   private readonly alunosApi = inject(AlunosApi);
-  private readonly http = inject(HttpClient);
   private nomeAplicado = '';
+  private nomeAlunoAplicado = '';
+  private buscaProfessorAplicada = '';
 
   readonly turmas = signal(listaVazia<Turma>());
   readonly matriculas = signal(listaVazia<MatriculaExibida>());
@@ -49,17 +53,22 @@ export class Turmas implements OnInit {
   readonly erro = signal('');
   readonly sucesso = signal('');
   readonly turmaSelecionada = signal<Turma | null>(null);
+  readonly abaVinculos = signal<AbaVinculos>('alunos');
 
   readonly cartao = 'space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6';
   readonly campo =
-    'rounded-xl border border-stone-300 bg-white px-3 py-2 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:opacity-50';
+    'min-w-0 rounded-xl border border-stone-300 bg-white px-3 py-2 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:opacity-50';
   readonly botao =
     'cursor-pointer rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:cursor-not-allowed disabled:opacity-50';
   readonly primario =
     'cursor-pointer rounded-lg bg-creche-verde px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  readonly botaoAba =
+    'cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold text-creche-verde aria-pressed:bg-white aria-pressed:shadow-sm focus-visible:ring-2 focus-visible:ring-creche-verde';
 
   filtro: Filtro = 'ativas';
   nomeBusca = '';
+  nomeAlunoBusca = '';
+  professorBusca = '';
   formularioAberto = false;
   editando: Turma | null = null;
   nome = '';
@@ -156,9 +165,6 @@ export class Turmas implements OnInit {
       await firstValueFrom(this.api.inativar(turma));
       this.sucesso.set('Turma inativada.');
 
-      if (this.turmaSelecionada()?.id === turma.id) {
-        this.turmaSelecionada.set(null);
-      }
       if (this.editando?.id === turma.id) {
         this.formularioAberto = false;
       }
@@ -167,11 +173,31 @@ export class Turmas implements OnInit {
     });
   }
 
+  abrirVinculos(turma: Turma, dialogo: HTMLDialogElement): void {
+    if (!turma.ativo || this.ocupada() || dialogo.open) return;
+
+    this.abaVinculos.set('alunos');
+    dialogo.showModal();
+    void this.selecionarTurma(turma);
+  }
+
+  cancelarVinculos(evento: Event): void {
+    if (this.ocupada()) evento.preventDefault();
+  }
+
+  fecharVinculos(): void {
+    this.turmaSelecionada.set(null);
+  }
+
   selecionarTurma(turma: Turma): Promise<void> {
     if (!turma.ativo) return Promise.resolve();
 
     return this.executar(async () => {
       this.turmaSelecionada.set(turma);
+      this.nomeAlunoBusca = '';
+      this.nomeAlunoAplicado = '';
+      this.professorBusca = '';
+      this.buscaProfessorAplicada = '';
       this.professorId = '';
       this.professores.set(listaVazia());
       this.vinculos.set(listaVazia());
@@ -199,6 +225,13 @@ export class Turmas implements OnInit {
       this.matriculas.set(listaVazia());
       await this.buscarMatriculas(turma.id, pagina);
     });
+  }
+
+  aplicarBuscaAlunos(): void {
+    if (this.ocupada()) return;
+
+    this.nomeAlunoAplicado = this.nomeAlunoBusca.trim();
+    void this.listarAlunos(0);
   }
 
   listarAlunos(pagina: number): Promise<void> {
@@ -237,7 +270,7 @@ export class Turmas implements OnInit {
       mensagem: `A matrícula de ${matricula.nomeAluno} nesta turma será encerrada.`,
       acao: 'Encerrar matrícula',
     });
-    if (!confirmado) return;
+    if (!confirmado || this.turmaSelecionada()?.id !== matricula.turmaId) return;
 
     return this.executar(async () => {
       await firstValueFrom(this.api.encerrar(matricula));
@@ -250,9 +283,17 @@ export class Turmas implements OnInit {
     });
   }
 
+  aplicarBuscaProfessores(): void {
+    if (this.ocupada()) return;
+
+    this.buscaProfessorAplicada = this.professorBusca.trim();
+    void this.listarProfessores(0);
+  }
+
   listarProfessores(pagina: number): Promise<void> {
     return this.executar(async () => {
       this.professorId = '';
+      this.professores.set(listaVazia());
       await this.buscarProfessores(pagina);
     });
   }
@@ -288,7 +329,7 @@ export class Turmas implements OnInit {
       mensagem: 'O vínculo deste professor com a turma será encerrado.',
       acao: 'Retirar professor',
     });
-    if (!confirmado) return;
+    if (!confirmado || this.turmaSelecionada()?.id !== vinculo.turmaId) return;
 
     return this.executar(async () => {
       await firstValueFrom(this.professoresApi.encerrar(vinculo));
@@ -300,14 +341,16 @@ export class Turmas implements OnInit {
   private async buscarProfessores(pagina: number): Promise<void> {
     this.professores.set(
       await this.buscarPagina(pagina, (numero) =>
-        firstValueFrom(this.professoresApi.listar(numero, 'APROVADO')),
+        firstValueFrom(
+          this.professoresApi.listar(numero, 'APROVADO', this.buscaProfessorAplicada, TAMANHO_LISTAS_VINCULOS),
+        ),
       ),
     );
   }
 
   private async buscarVinculos(turmaId: string, pagina: number): Promise<void> {
     const lista = await this.buscarPagina(pagina, (numero) =>
-      firstValueFrom(this.professoresApi.listarVinculos(turmaId, numero, false)),
+      firstValueFrom(this.professoresApi.listarVinculos(turmaId, numero, false, TAMANHO_LISTAS_VINCULOS)),
     );
 
     const itens = await Promise.all(
@@ -333,30 +376,26 @@ export class Turmas implements OnInit {
   private async buscarAlunos(pagina: number): Promise<void> {
     this.alunos.set(
       await this.buscarPagina(pagina, (numero) =>
-        firstValueFrom(this.alunosApi.listarDisponiveis(numero)),
+        firstValueFrom(
+          this.alunosApi.listarDisponiveis(numero, TAMANHO_LISTAS_VINCULOS, this.nomeAlunoAplicado),
+        ),
       ),
     );
   }
 
   private async buscarMatriculas(turmaId: string, pagina: number): Promise<void> {
     const lista = await this.buscarPagina(pagina, (numero) =>
-      firstValueFrom(this.api.listarMatriculas(turmaId, numero)),
+      firstValueFrom(this.api.listarMatriculas(turmaId, numero, TAMANHO_LISTAS_VINCULOS)),
     );
 
     const itens = await Promise.all(
       lista.itens.map(async (matricula): Promise<MatriculaExibida> => {
-        let nomeAluno = matricula.alunoId;
-
         try {
-          const aluno = await firstValueFrom(
-            this.http.get<Aluno>(`/api/alunos/${matricula.alunoId}`),
-          );
-          nomeAluno = aluno.nome;
+          const aluno = await firstValueFrom(this.alunosApi.consultar(matricula.alunoId));
+          return { ...matricula, nomeAluno: aluno.nome };
         } catch {
-         
+          return { ...matricula, nomeAluno: matricula.alunoId };
         }
-
-        return { ...matricula, nomeAluno };
       }),
     );
 
