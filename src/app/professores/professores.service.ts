@@ -43,6 +43,12 @@ export class ProfessoresService {
     return this.http.get<Pagina<Professor>>(this.url, { params });
   }
 
+  listarDisponiveis(turmaId: string, pagina: number, tamanho: number, nome: string) {
+    return this.http.get<Pagina<Professor>>(`${this.url}/disponiveis`, {
+      params: { turmaId, pagina, tamanho, nome },
+    });
+  }
+
   consultar(id: string) {
     return this.http.get<Professor>(`${this.url}/${id}`);
   }

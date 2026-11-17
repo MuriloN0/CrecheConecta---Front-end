@@ -131,7 +131,7 @@
          overflow-y-auto rounded-2xl border border-stone-200 bg-white text-creche-texto
          shadow-xl backdrop:bg-stone-900/50"
 >
-  <header class="sticky top-0 z-10 space-y-3 border-b border-stone-200 bg-white p-4 sm:px-6">
+  <header class="sticky top-0 z-30 space-y-3 border-b border-stone-200 bg-white p-4 sm:px-6">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 id="titulo-vinculos" class="min-w-0 wrap-anywhere text-xl font-bold">
         Vínculos da turma
@@ -172,65 +172,20 @@
       @if (abaVinculos() === 'alunos') {
         <section class="space-y-4" aria-labelledby="titulo-matriculas">
           @if (turma.ativo) {
-            <form class="flex flex-wrap items-end gap-2" (ngSubmit)="aplicarBuscaAlunos()">
-              <label class="grid min-w-0 flex-1 gap-1 text-sm font-semibold">
-                Nome do aluno
-                <input name="nomeAlunoBusca" type="search" maxlength="150" [class]="campo"
-                  [(ngModel)]="nomeAlunoBusca" [disabled]="ocupada()" />
-              </label>
-              <button type="submit" [class]="botao" [disabled]="ocupada()">Buscar alunos</button>
-            </form>
-
-            <form class="space-y-3" (ngSubmit)="matricular()">
-              @if (alunos().itens.length) {
-                <fieldset class="min-w-0" [disabled]="ocupada()">
-                  <legend class="mb-2 text-sm font-semibold">Alunos ativos sem matrícula vigente</legend>
-                  <ul class="max-h-52 divide-y divide-stone-200 overflow-y-auto rounded-xl border border-stone-200">
-                    @for (aluno of alunos().itens; track aluno.id) {
-                      <li>
-                        <label class="flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm
-                                      hover:bg-stone-50 has-checked:bg-creche-creme">
-                          <input type="radio" name="alunoId" [value]="aluno.id"
-                            [checked]="alunoId === aluno.id" (change)="alunoId = aluno.id"
-                            class="shrink-0 accent-creche-verde" />
-                          <span class="min-w-0 wrap-anywhere">
-                            <span class="font-semibold">{{ aluno.nome }}</span>
-                            @if (aluno.anoNascimento !== null) {
-                              <span class="text-stone-600"> · {{ aluno.anoNascimento }}</span>
-                            }
-                          </span>
-                        </label>
-                      </li>
-                    }
-                  </ul>
-                </fieldset>
-              }
-
-              <div class="flex flex-wrap gap-2">
-                <button type="submit" [class]="primario" [disabled]="ocupada() || !alunoId">
-                  Matricular
-                </button>
-                <button type="button" [class]="botao" [disabled]="ocupada()"
-                  (click)="listarAlunos(alunos().pagina)">
-                  Atualizar alunos
-                </button>
-              </div>
-            </form>
-
-            @if (!ocupada() && !erro() && alunos().itens.length === 0) {
-              <p role="status" class="text-sm text-stone-600">Nenhum aluno disponível para a busca.</p>
-            }
-
-            @if (alunos().totalPaginas > 1) {
-              <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de alunos disponíveis">
-                <button type="button" [class]="botao" [disabled]="ocupada() || alunos().pagina === 0"
-                  (click)="listarAlunos(alunos().pagina - 1)">Anteriores</button>
-                <span class="text-sm">{{ alunos().pagina + 1 }} de {{ alunos().totalPaginas }}</span>
-                <button type="button" [class]="botao"
-                  [disabled]="ocupada() || alunos().pagina + 1 >= alunos().totalPaginas"
-                  (click)="listarAlunos(alunos().pagina + 1)">Próximos</button>
-              </nav>
-            }
+            <div class="space-y-3">
+              <app-seletor-vinculo
+                idCampo="buscar-aluno-turma"
+                rotulo="Aluno ativo sem matrícula vigente"
+                placeholder="Pesquisar ou selecionar aluno"
+                [carregar]="pesquisarAlunos"
+                [(selecionado)]="alunoSelecionado"
+                [desabilitado]="ocupada()"
+              />
+              <button type="button" [class]="primario" [disabled]="ocupada() || !alunoSelecionado"
+                (click)="matricular()">
+                Matricular
+              </button>
+            </div>
           }
 
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-2">
@@ -277,57 +232,20 @@
         </section>
       } @else {
         <section class="space-y-4" aria-labelledby="titulo-professores-turma">
-          <form class="flex flex-wrap items-end gap-2" (ngSubmit)="aplicarBuscaProfessores()">
-            <label class="grid min-w-0 flex-1 gap-1 text-sm font-semibold">
-              Nome ou e-mail do professor
-              <input name="professorBusca" type="search" maxlength="254" [class]="campo"
-                [(ngModel)]="professorBusca" [disabled]="ocupada()" />
-            </label>
-            <button type="submit" [class]="botao" [disabled]="ocupada()">Buscar professores</button>
-          </form>
-
-          <form class="space-y-3" (ngSubmit)="atribuirProfessor()">
-            @if (professores().itens.length) {
-              <fieldset class="min-w-0" [disabled]="ocupada()">
-                <legend class="mb-2 text-sm font-semibold">Professores disponíveis para seleção</legend>
-                <ul class="max-h-52 divide-y divide-stone-200 overflow-y-auto rounded-xl border border-stone-200">
-                  @for (professor of professores().itens; track professor.id) {
-                    <li>
-                      <label class="flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm
-                                    hover:bg-stone-50 has-checked:bg-creche-creme">
-                        <input type="radio" name="professorId" [value]="professor.id"
-                          [checked]="professorId === professor.id" (change)="professorId = professor.id"
-                          class="shrink-0 accent-creche-verde" />
-                        <span class="min-w-0 wrap-anywhere">
-                          <span class="font-semibold">{{ professor.nome }}</span>
-                          <span class="text-stone-600"> · {{ professor.email }}</span>
-                        </span>
-                      </label>
-                    </li>
-                  }
-                </ul>
-              </fieldset>
-            }
-
-            <button type="submit" [class]="primario" [disabled]="ocupada() || !professorId">
+          <div class="space-y-3">
+            <app-seletor-vinculo
+              idCampo="buscar-professor-turma"
+              rotulo="Professor disponível"
+              placeholder="Pesquisar ou selecionar professor"
+              [carregar]="pesquisarProfessores"
+              [(selecionado)]="professorSelecionado"
+              [desabilitado]="ocupada()"
+            />
+            <button type="button" [class]="primario" [disabled]="ocupada() || !professorSelecionado"
+              (click)="atribuirProfessor()">
               Atribuir professor
             </button>
-          </form>
-
-          @if (!ocupada() && !erro() && professores().itens.length === 0) {
-            <p role="status" class="text-sm text-stone-600">Nenhum professor encontrado para a busca.</p>
-          }
-
-          @if (professores().totalPaginas > 1) {
-            <nav class="flex flex-wrap items-center gap-2" aria-label="Páginas de professores disponíveis">
-              <button type="button" [class]="botao" [disabled]="ocupada() || professores().pagina === 0"
-                (click)="listarProfessores(professores().pagina - 1)">Anteriores</button>
-              <span class="text-sm">{{ professores().pagina + 1 }} de {{ professores().totalPaginas }}</span>
-              <button type="button" [class]="botao"
-                [disabled]="ocupada() || professores().pagina + 1 >= professores().totalPaginas"
-                (click)="listarProfessores(professores().pagina + 1)">Próximos</button>
-            </nav>
-          }
+          </div>
 
           <h3 id="titulo-professores-turma" class="border-b border-stone-200 pb-2 font-bold">
             Professores vinculados
