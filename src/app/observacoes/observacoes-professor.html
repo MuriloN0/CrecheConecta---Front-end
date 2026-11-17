@@ -37,17 +37,16 @@
       </select>
     </label>
 
-    <label class="grid gap-1 text-sm font-semibold">
-      Aluno
-      <select [class]="campo" name="aluno" [ngModel]="alunoId()"
-        (ngModelChange)="selecionarAluno($event)" [disabled]="ocupada() || alunos().length === 0">
-        @for (aluno of alunos(); track aluno.alunoId) {
-          <option [value]="aluno.alunoId">{{ aluno.nome }}</option>
-        } @empty {
-          <option value="">Nenhum aluno matriculado</option>
-        }
-      </select>
-    </label>
+    <app-seletor-vinculo
+      idCampo="buscar-aluno-observacoes"
+      rotulo="Aluno"
+      [placeholder]="alunos().length ? 'Pesquisar ou selecionar aluno' : 'Nenhum aluno matriculado'"
+      [carregar]="pesquisarAlunos"
+      [selecionado]="opcaoAluno()"
+      (selecionadoChange)="selecionarAluno($event)"
+      [preservarSelecaoNaBusca]="true"
+      [desabilitado]="ocupada() || alunos().length === 0"
+    />
   </div>
 
   @if (formularioAberto()) {

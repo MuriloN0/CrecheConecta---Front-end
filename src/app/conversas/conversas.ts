@@ -15,11 +15,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, timer } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { ContatoChat, ConversasService, MensagemChat } from './conversas.service';
+import { ModeracaoChat } from './moderacao-chat';
 
 @Component({
   selector: 'app-conversas',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, ModeracaoChat],
   templateUrl: './conversas.html',
 })
 export class Conversas implements OnInit {
@@ -43,6 +44,8 @@ export class Conversas implements OnInit {
   readonly cursor = signal<string | null>(null);
   readonly carregandoMensagens = signal(false);
   readonly enviando = signal(false);
+  readonly alterandoFavorito = signal(false);
+  readonly erroFavorito = signal('');
   readonly erroMensagem = signal('');
   readonly erroEnvio = signal('');
   readonly texto = signal('');
@@ -63,7 +66,7 @@ export class Conversas implements OnInit {
       if (this.doc.visibilityState === 'hidden') return;
 
       const contato = this.selecionado();
-      if (contato && !this.enviando()) {
+      if (contato && !this.enviando() && !this.alterandoFavorito()) {
         void this.carregarMensagens(contato, false);
       } else if (!contato && !this.carregandoContatos() && !this.erroContatos() && this.pagina() === 0) {
         void this.carregarContatos(0, true);
@@ -132,11 +135,13 @@ export class Conversas implements OnInit {
     this.selecionado.set(null);
     this.carregandoMensagens.set(false);
     this.enviando.set(false);
+    this.alterandoFavorito.set(false);
     this.mensagens.set([]);
     this.cursor.set(null);
     this.texto.set('');
     this.erroMensagem.set('');
     this.erroEnvio.set('');
+    this.erroFavorito.set('');
   }
 
   async carregarMensagens(
@@ -145,20 +150,35 @@ export class Conversas implements OnInit {
     aposEnvio = false,
   ): Promise<void> {
     const cursor = anteriores ? this.cursor() : null;
-    if (this.carregandoMensagens() || (anteriores && !cursor)) return;
+    if (this.carregandoMensagens() || (anteriores && (!cursor || this.alterandoFavorito()))) return;
 
     const geracao = this.geracao;
+    const existentes = this.mensagens();
+    const ordemMaisAntiga = anteriores ? undefined : existentes[0]?.ordem;
     this.carregandoMensagens.set(true);
 
     try {
-      const dados = await firstValueFrom(
-        this.api.mensagens(contato.id, cursor ?? undefined)
-          .pipe(takeUntilDestroyed(this.destroy)),
-        { defaultValue: null },
-      );
-      if (!dados || geracao !== this.geracao) return;
+      const paginas: MensagemChat[][] = [];
+      let proximoCursor = cursor;
 
-      const existentes = this.mensagens();
+      do {
+        const dados = await firstValueFrom(
+          this.api.mensagens(contato.id, proximoCursor ?? undefined)
+            .pipe(takeUntilDestroyed(this.destroy)),
+          { defaultValue: null },
+        );
+        if (!dados || geracao !== this.geracao) return;
+
+        paginas.push(dados.itens);
+        proximoCursor = dados.cursorAnterior;
+
+        const primeira = dados.itens[0];
+        if (!ordemMaisAntiga || !primeira || BigInt(primeira.ordem) <= BigInt(ordemMaisAntiga)) {
+          break;
+        }
+      } while (proximoCursor);
+
+      const itens = paginas.reverse().flat();
       const painel = this.historico()?.nativeElement;
       const alturaAnterior = painel?.scrollHeight ?? 0;
       const posicaoAnterior = painel?.scrollTop ?? 0;
@@ -166,19 +186,11 @@ export class Conversas implements OnInit {
 
       if (anteriores) {
         const jaExibidas = new Set(existentes.map((m) => m.id));
-        this.mensagens.set([...dados.itens.filter((m) => !jaExibidas.has(m.id)), ...existentes]);
-        this.cursor.set(dados.cursorAnterior);
+        this.mensagens.set([...itens.filter((m) => !jaExibidas.has(m.id)), ...existentes]);
       } else {
-        const recentes = new Set(dados.itens.map((m) => m.id));
-        const sobreposicao = existentes.some((m) => recentes.has(m.id));
-
-        if (!sobreposicao) {
-          this.mensagens.set(dados.itens);
-          this.cursor.set(dados.cursorAnterior);
-        } else {
-          this.mensagens.set([...existentes.filter((m) => !recentes.has(m.id)), ...dados.itens]);
-        }
+        this.mensagens.set(itens);
       }
+      this.cursor.set(proximoCursor);
 
       if (anteriores || aposEnvio || existentes.length === 0 || pertoDoFim) {
         afterNextRender(() => {
@@ -206,11 +218,42 @@ export class Conversas implements OnInit {
     }
   }
 
+  async alternarFavorito(mensagem: MensagemChat): Promise<void> {
+    const contato = this.selecionado();
+    if (!contato || this.alterandoFavorito() || this.carregandoMensagens() || this.enviando()) return;
+
+    const geracao = this.geracao;
+    this.alterandoFavorito.set(true);
+    this.erroFavorito.set('');
+
+    try {
+      const resposta = await firstValueFrom(
+        this.api.alterarFavorito(contato.id, mensagem.id, !mensagem.minhaFavorita)
+          .pipe(takeUntilDestroyed(this.destroy)),
+        { defaultValue: undefined },
+      );
+      // O HttpClient entrega null para uma resposta HTTP 204 sem corpo.
+      if (resposta === undefined || geracao !== this.geracao) return;
+      await this.carregarMensagens(contato, false);
+    } catch (erro) {
+      if (geracao !== this.geracao) return;
+
+      if (erro instanceof HttpErrorResponse && erro.status === 404) {
+        this.erroFavorito.set('Esta mensagem já expirou ou está indisponível.');
+        await this.carregarMensagens(contato, false);
+      } else {
+        this.erroFavorito.set(this.detalhe(erro, 'Não foi possível alterar o favorito.'));
+      }
+    } finally {
+      if (geracao === this.geracao) this.alterandoFavorito.set(false);
+    }
+  }
+
   async enviar(evento: Event): Promise<void> {
     evento.preventDefault();
     const contato = this.selecionado();
     const texto = this.texto().trim();
-    if (!contato || !texto || this.enviando() || this.carregandoMensagens()) return;
+    if (!contato || !texto || this.enviando() || this.carregandoMensagens() || this.alterandoFavorito()) return;
 
     const geracao = this.geracao;
     this.enviando.set(true);

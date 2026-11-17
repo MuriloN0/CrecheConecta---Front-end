@@ -58,9 +58,9 @@ export class TurmasService {
     });
   }
 
-  listarMatriculas(turmaId: string, pagina: number) {
+  listarMatriculas(turmaId: string, pagina: number, tamanho = 20) {
     return this.http.get<Pagina<Matricula>>(`${this.url}/${turmaId}/matriculas`, {
-      params: { pagina, tamanho: 20 },
+      params: { pagina, tamanho },
     });
   }
 

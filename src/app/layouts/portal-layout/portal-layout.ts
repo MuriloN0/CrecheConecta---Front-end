@@ -6,19 +6,18 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { catchError, EMPTY, exhaustMap, filter, fromEvent, merge, timer } from 'rxjs';
 import { Perfil } from '../../core/models/auth.models';
 import { AuthService } from '../../core/services/auth.service';
+import { MeuPerfil } from '../../meu-perfil/meu-perfil';
 import { NotificacoesService } from '../../notificacoes/notificacoes.service';
-import { ConfirmacaoDialogo } from '../../shared/components/confirmacao-dialogo/confirmacao-dialogo';
 import { PortalPaisApi } from '../../portal-pais/portal-pais.api';
-
+import { ConfirmacaoDialogo } from '../../shared/components/confirmacao-dialogo/confirmacao-dialogo';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 
-// Telas em que o responsável pode ficar mesmo com termo pendente (a de aceite e a de leitura).
 const TELAS_DO_TERMO = ['/portal-pais', '/informacoes/termos'];
 
 @Component({
   selector: 'app-portal-layout',
   standalone: true,
-  imports: [DatePipe, RouterLink, RouterOutlet, Sidebar, ConfirmacaoDialogo],
+  imports: [DatePipe, RouterLink, RouterOutlet, Sidebar, ConfirmacaoDialogo, MeuPerfil],
   template: `
     <app-confirmacao-dialogo />
 
@@ -38,17 +37,23 @@ const TELAS_DO_TERMO = ['/portal-pais', '/informacoes/termos'];
             {{ tituloPortal() }}
           </p>
 
-          <a
-            routerLink="/notificacoes"
-            class="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm"
-          >
-            Notificações
-            @if ((notificacoes.pendentes() ?? 0) > 0) {
-              <span class="ml-1 rounded-full bg-creche-verde px-2 py-1 text-xs text-white">
-                {{ notificacoes.pendentes() }} <span class="sr-only">não lidas</span>
-              </span>
+          <div class="flex flex-wrap items-center gap-2">
+            @if (auth.usuario()?.perfil === 'PROFESSOR' || auth.usuario()?.perfil === 'RESPONSAVEL') {
+              <app-meu-perfil />
             }
-          </a>
+
+            <a
+              routerLink="/notificacoes"
+              class="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm"
+            >
+              Notificações
+              @if ((notificacoes.pendentes() ?? 0) > 0) {
+                <span class="ml-1 rounded-full bg-creche-verde px-2 py-1 text-xs text-white">
+                  {{ notificacoes.pendentes() }} <span class="sr-only">não lidas</span>
+                </span>
+              }
+            </a>
+          </div>
 
           <time
             [attr.datetime]="hoje | date: 'yyyy-MM-dd'"
@@ -87,6 +92,12 @@ export class PortalLayout implements OnInit {
   readonly saindo = signal(false);
   readonly erro = signal('');
 
+  private temporizadorErro?: ReturnType<typeof setTimeout>;
+
+  constructor() {
+    this.destroy.onDestroy(() => clearTimeout(this.temporizadorErro));
+  }
+
   ngOnInit(): void {
     timer(0, 15000).pipe(
       exhaustMap(() => {
@@ -105,12 +116,6 @@ export class PortalLayout implements OnInit {
     this.vigiarTermo();
   }
 
-  /**
-   * LGPD: se a direção publicar uma nova versão do termo enquanto o responsável está no portal,
-   * ele é levado para a tela de aceite sem precisar trocar de tela.
-   * Verifica a cada 15 s e também quando ele volta para a aba. O aceiteObrigatorioGuard continua
-   * cobrindo a navegação; aqui só se cobre quem está parado numa tela.
-   */
   private vigiarTermo(): void {
     const voltouParaAba = fromEvent(this.doc, 'visibilitychange').pipe(
       filter(() => this.doc.visibilityState === 'visible'),
@@ -120,7 +125,6 @@ export class PortalLayout implements OnInit {
       filter(() => this.auth.usuario()?.perfil === 'RESPONSAVEL'),
       filter(() => this.doc.visibilityState !== 'hidden'),
       filter(() => !TELAS_DO_TERMO.includes(this.router.url.split(/[?#]/)[0])),
-      // Se a consulta falhar (rede, 500), não bloqueia: a próxima rodada tenta de novo.
       exhaustMap(() => this.termos.statusTermo().pipe(catchError(() => EMPTY))),
       filter((status) => status.precisaAceitar),
       takeUntilDestroyed(this.destroy),
@@ -143,6 +147,7 @@ export class PortalLayout implements OnInit {
   async logout(): Promise<void> {
     if (this.saindo()) return;
 
+    clearTimeout(this.temporizadorErro);
     this.saindo.set(true);
     this.erro.set('');
 
@@ -155,6 +160,7 @@ export class PortalLayout implements OnInit {
         await this.router.navigateByUrl('/login');
       } else {
         this.erro.set('Não foi possível encerrar a sessão no servidor. Tente novamente.');
+        this.temporizadorErro = setTimeout(() => this.erro.set(''), 5000);
       }
     } finally {
       this.saindo.set(false);

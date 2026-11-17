@@ -1,18 +1,18 @@
 import { DatePipe } from '@angular/common';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
-import { Aluno, AlunosApi } from '../alunos/alunos.service';
-import {
-  Professor,
-  ProfessoresService,
-  VinculoProfessor,
-} from '../professores/professores.service';
+import { firstValueFrom, map, of } from 'rxjs';
+import { AlunosApi } from '../alunos/alunos.service';
+import { ProfessoresService, VinculoProfessor } from '../professores/professores.service';
 import { ConfirmacaoService } from '../shared/components/confirmacao-dialogo/confirmacao-dialogo';
+import { BuscaVinculo, OpcaoVinculo, SeletorVinculo } from './seletor-vinculo';
 import { Matricula, Pagina, Turma, TurmasService } from './turmas.service';
 
+const TAMANHO_LISTAS_VINCULOS = 10;
+
 type Filtro = 'ativas' | 'inativas' | 'todas';
+type AbaVinculos = 'alunos' | 'professores';
 type MatriculaExibida = Matricula & { nomeAluno: string };
 
 interface Lista<T> {
@@ -28,7 +28,7 @@ function listaVazia<T>(): Lista<T> {
 @Component({
   selector: 'app-turmas',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, SeletorVinculo],
   templateUrl: './turmas.html',
 })
 export class Turmas implements OnInit {
@@ -36,27 +36,27 @@ export class Turmas implements OnInit {
   private readonly api = inject(TurmasService);
   private readonly professoresApi = inject(ProfessoresService);
   private readonly alunosApi = inject(AlunosApi);
-  private readonly http = inject(HttpClient);
   private nomeAplicado = '';
 
   readonly turmas = signal(listaVazia<Turma>());
   readonly matriculas = signal(listaVazia<MatriculaExibida>());
-  readonly alunos = signal(listaVazia<Aluno>());
-  readonly professores = signal(listaVazia<Professor>());
   readonly vinculos = signal(listaVazia<VinculoProfessor & { nome: string }>());
 
   readonly ocupada = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
   readonly turmaSelecionada = signal<Turma | null>(null);
+  readonly abaVinculos = signal<AbaVinculos>('alunos');
 
   readonly cartao = 'space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6';
   readonly campo =
-    'rounded-xl border border-stone-300 bg-white px-3 py-2 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:opacity-50';
+    'min-w-0 rounded-xl border border-stone-300 bg-white px-3 py-2 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:opacity-50';
   readonly botao =
     'cursor-pointer rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold hover:bg-stone-100 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:cursor-not-allowed disabled:opacity-50';
   readonly primario =
     'cursor-pointer rounded-lg bg-creche-verde px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  readonly botaoAba =
+    'cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold text-creche-verde aria-pressed:bg-white aria-pressed:shadow-sm focus-visible:ring-2 focus-visible:ring-creche-verde';
 
   filtro: Filtro = 'ativas';
   nomeBusca = '';
@@ -64,8 +64,36 @@ export class Turmas implements OnInit {
   editando: Turma | null = null;
   nome = '';
   numeroSala = '';
-  alunoId = '';
-  professorId = '';
+  alunoSelecionado: OpcaoVinculo | null = null;
+  professorSelecionado: OpcaoVinculo | null = null;
+
+  readonly pesquisarAlunos: BuscaVinculo = (nome, pagina, tamanho) =>
+    this.alunosApi.listarDisponiveis(pagina, tamanho, nome).pipe(
+      map(({ content, totalPages }) => ({
+        content: content.map((aluno) => ({
+          id: aluno.id,
+          nome: aluno.nome,
+          detalhe: aluno.anoNascimento == null ? undefined : String(aluno.anoNascimento),
+        })),
+        totalPages,
+      })),
+    );
+
+  readonly pesquisarProfessores: BuscaVinculo = (nome, pagina, tamanho) => {
+    const turma = this.turmaSelecionada();
+    if (!turma) return of({ content: [], totalPages: 0 });
+
+    return this.professoresApi.listarDisponiveis(turma.id, pagina, tamanho, nome).pipe(
+      map(({ content, totalPages }) => ({
+        content: content.map((professor) => ({
+          id: professor.id,
+          nome: professor.nome,
+          detalhe: professor.email,
+        })),
+        totalPages,
+      })),
+    );
+  };
 
   ngOnInit(): void {
     void this.listarTurmas(0);
@@ -156,9 +184,6 @@ export class Turmas implements OnInit {
       await firstValueFrom(this.api.inativar(turma));
       this.sucesso.set('Turma inativada.');
 
-      if (this.turmaSelecionada()?.id === turma.id) {
-        this.turmaSelecionada.set(null);
-      }
       if (this.editando?.id === turma.id) {
         this.formularioAberto = false;
       }
@@ -167,22 +192,34 @@ export class Turmas implements OnInit {
     });
   }
 
+  abrirVinculos(turma: Turma, dialogo: HTMLDialogElement): void {
+    if (!turma.ativo || this.ocupada() || dialogo.open) return;
+
+    this.abaVinculos.set('alunos');
+    dialogo.showModal();
+    void this.selecionarTurma(turma);
+  }
+
+  cancelarVinculos(evento: Event): void {
+    if (this.ocupada()) evento.preventDefault();
+  }
+
+  fecharVinculos(): void {
+    this.turmaSelecionada.set(null);
+  }
+
   selecionarTurma(turma: Turma): Promise<void> {
     if (!turma.ativo) return Promise.resolve();
 
     return this.executar(async () => {
       this.turmaSelecionada.set(turma);
-      this.professorId = '';
-      this.professores.set(listaVazia());
+      this.alunoSelecionado = null;
+      this.professorSelecionado = null;
       this.vinculos.set(listaVazia());
       this.matriculas.set(listaVazia());
-      this.alunos.set(listaVazia());
-      this.alunoId = '';
 
       const resultados = await Promise.allSettled([
         this.buscarMatriculas(turma.id, 0),
-        this.buscarAlunos(0),
-        this.buscarProfessores(0),
         this.buscarVinculos(turma.id, 0),
       ]);
       const falha = resultados.find((resultado) => resultado.status === 'rejected');
@@ -201,31 +238,17 @@ export class Turmas implements OnInit {
     });
   }
 
-  listarAlunos(pagina: number): Promise<void> {
-    return this.executar(async () => {
-      this.alunoId = '';
-      this.alunos.set(listaVazia());
-      await this.buscarAlunos(pagina);
-    });
-  }
-
   matricular(): Promise<void> {
     const turma = this.turmaSelecionada();
-    const alunoId = this.alunoId;
+    const alunoId = this.alunoSelecionado?.id;
 
-    if (!turma?.ativo || !this.alunos().itens.some((aluno) => aluno.id === alunoId)) {
-      return Promise.resolve();
-    }
+    if (!turma?.ativo || !alunoId) return Promise.resolve();
 
     return this.executar(async () => {
       await firstValueFrom(this.api.matricular(turma.id, alunoId));
-      this.alunoId = '';
+      this.alunoSelecionado = null;
       this.sucesso.set('Aluno matriculado.');
-
-      await Promise.all([
-        this.buscarMatriculas(turma.id, 0),
-        this.buscarAlunos(this.alunos().pagina),
-      ]);
+      await this.buscarMatriculas(turma.id, 0);
     });
   }
 
@@ -237,23 +260,12 @@ export class Turmas implements OnInit {
       mensagem: `A matrícula de ${matricula.nomeAluno} nesta turma será encerrada.`,
       acao: 'Encerrar matrícula',
     });
-    if (!confirmado) return;
+    if (!confirmado || this.turmaSelecionada()?.id !== matricula.turmaId) return;
 
     return this.executar(async () => {
       await firstValueFrom(this.api.encerrar(matricula));
       this.sucesso.set('Matrícula encerrada.');
-
-      await Promise.all([
-        this.buscarMatriculas(matricula.turmaId, this.matriculas().pagina),
-        this.buscarAlunos(this.alunos().pagina),
-      ]);
-    });
-  }
-
-  listarProfessores(pagina: number): Promise<void> {
-    return this.executar(async () => {
-      this.professorId = '';
-      await this.buscarProfessores(pagina);
+      await this.buscarMatriculas(matricula.turmaId, this.matriculas().pagina);
     });
   }
 
@@ -266,15 +278,13 @@ export class Turmas implements OnInit {
 
   atribuirProfessor(): Promise<void> {
     const turma = this.turmaSelecionada();
-    const professorId = this.professorId;
+    const professorId = this.professorSelecionado?.id;
 
-    if (!turma?.ativo || !this.professores().itens.some((p) => p.id === professorId)) {
-      return Promise.resolve();
-    }
+    if (!turma?.ativo || !professorId) return Promise.resolve();
 
     return this.executar(async () => {
       await firstValueFrom(this.professoresApi.vincular(turma.id, professorId));
-      this.professorId = '';
+      this.professorSelecionado = null;
       this.sucesso.set('Professor atribuído à turma.');
       await this.buscarVinculos(turma.id, 0);
     });
@@ -288,7 +298,7 @@ export class Turmas implements OnInit {
       mensagem: 'O vínculo deste professor com a turma será encerrado.',
       acao: 'Retirar professor',
     });
-    if (!confirmado) return;
+    if (!confirmado || this.turmaSelecionada()?.id !== vinculo.turmaId) return;
 
     return this.executar(async () => {
       await firstValueFrom(this.professoresApi.encerrar(vinculo));
@@ -297,17 +307,9 @@ export class Turmas implements OnInit {
     });
   }
 
-  private async buscarProfessores(pagina: number): Promise<void> {
-    this.professores.set(
-      await this.buscarPagina(pagina, (numero) =>
-        firstValueFrom(this.professoresApi.listar(numero, 'APROVADO')),
-      ),
-    );
-  }
-
   private async buscarVinculos(turmaId: string, pagina: number): Promise<void> {
     const lista = await this.buscarPagina(pagina, (numero) =>
-      firstValueFrom(this.professoresApi.listarVinculos(turmaId, numero, false)),
+      firstValueFrom(this.professoresApi.listarVinculos(turmaId, numero, false, TAMANHO_LISTAS_VINCULOS)),
     );
 
     const itens = await Promise.all(
@@ -330,33 +332,19 @@ export class Turmas implements OnInit {
     );
   }
 
-  private async buscarAlunos(pagina: number): Promise<void> {
-    this.alunos.set(
-      await this.buscarPagina(pagina, (numero) =>
-        firstValueFrom(this.alunosApi.listarDisponiveis(numero)),
-      ),
-    );
-  }
-
   private async buscarMatriculas(turmaId: string, pagina: number): Promise<void> {
     const lista = await this.buscarPagina(pagina, (numero) =>
-      firstValueFrom(this.api.listarMatriculas(turmaId, numero)),
+      firstValueFrom(this.api.listarMatriculas(turmaId, numero, TAMANHO_LISTAS_VINCULOS)),
     );
 
     const itens = await Promise.all(
       lista.itens.map(async (matricula): Promise<MatriculaExibida> => {
-        let nomeAluno = matricula.alunoId;
-
         try {
-          const aluno = await firstValueFrom(
-            this.http.get<Aluno>(`/api/alunos/${matricula.alunoId}`),
-          );
-          nomeAluno = aluno.nome;
+          const aluno = await firstValueFrom(this.alunosApi.consultar(matricula.alunoId));
+          return { ...matricula, nomeAluno: aluno.nome };
         } catch {
-         
+          return { ...matricula, nomeAluno: matricula.alunoId };
         }
-
-        return { ...matricula, nomeAluno };
       }),
     );
 

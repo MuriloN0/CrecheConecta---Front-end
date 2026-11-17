@@ -1,45 +1,37 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { of, Subject, throwError } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SessaoResponse, UsuarioLogado } from '../models/auth.models';
+import { AuthService, AvisoSessao } from './auth.service';
 
-import { SessaoResponse } from '../models/auth.models';
-import { AuthService } from './auth.service';
-
-describe('AuthService: sessão do login', () => {
+describe('AuthService', () => {
   const agora = new Date('2026-10-07T12:00:00Z');
+  const quinzeMinutos = 15 * 60_000;
+  const chaveTrocaSessao = 'crecheconecta.troca-sessao';
+  const usuario: UsuarioLogado = {
+    id: 'usuario-1',
+    nome: 'Direção',
+    email: 'direcao@example.test',
+    perfil: 'DIRECAO',
+  };
 
   let service: AuthService;
+  let http: { post: ReturnType<typeof vi.fn>; get: ReturnType<typeof vi.fn> };
+  let router: { navigateByUrl: ReturnType<typeof vi.fn> };
 
-  let http: {
-    post: ReturnType<typeof vi.fn>;
-    get: ReturnType<typeof vi.fn>;
-  };
-
-  let router: {
-    navigateByUrl: ReturnType<typeof vi.fn>;
-  };
-
-  function criarSessao(
-    expiraEm = new Date(
-      agora.getTime() + 900_000,
-    ).toISOString(),
+  function sessao(
+    accessToken = 'token-teste',
+    expiraEm = new Date(agora.getTime() + quinzeMinutos).toISOString(),
   ): SessaoResponse {
     return {
-      accessToken: 'token-teste',
+      accessToken,
       tokenType: 'Bearer',
       expiraEm,
-      usuarioId: 'usuario-1',
-      nome: 'Direção',
-      perfil: 'DIRECAO',
+      usuarioId: usuario.id,
+      nome: usuario.nome,
+      perfil: usuario.perfil,
     };
   }
 
@@ -47,26 +39,13 @@ describe('AuthService: sessão do login', () => {
     vi.useFakeTimers();
     vi.setSystemTime(agora);
 
-    http = {
-      post: vi.fn(),
-      get: vi.fn(),
-    };
-
-    router = {
-      navigateByUrl: vi.fn().mockResolvedValue(true),
-    };
+    http = { post: vi.fn(), get: vi.fn() };
+    router = { navigateByUrl: vi.fn().mockResolvedValue(true) };
 
     TestBed.configureTestingModule({
       providers: [
-        AuthService,
-        {
-          provide: HttpClient,
-          useValue: http,
-        },
-        {
-          provide: Router,
-          useValue: router,
-        },
+        { provide: HttpClient, useValue: http },
+        { provide: Router, useValue: router },
       ],
     });
 
@@ -74,186 +53,178 @@ describe('AuthService: sessão do login', () => {
   });
 
   afterEach(() => {
-    service.limparSessao();
     TestBed.resetTestingModule();
+    window.localStorage.removeItem(chaveTrocaSessao);
     vi.useRealTimers();
   });
 
-  it('deve solicitar código sem abrir uma sessão', async () => {
-    // Arrange
-    const acao = {
-      acaoId: 'acao-1',
-      expiraEm: new Date(
-        agora.getTime() + 300_000,
-      ).toISOString(),
-      mensagem: 'Código enviado',
-    };
-
+  it('solicita o código sem abrir sessão', async () => {
+    const acao = { acaoId: 'acao-1', mensagem: 'Código enviado' };
     http.post.mockReturnValue(of(acao));
 
-    // Act
-    const resposta = await service.iniciarLogin(
-      'direcao@example.test',
-      'senha',
-    );
-
-    // Assert
-    expect(resposta).toEqual(acao);
-
+    await expect(service.iniciarLogin(usuario.email, 'senha')).resolves.toEqual(acao);
     expect(http.post).toHaveBeenCalledWith(
       '/api/auth/login',
-      {
-        email: 'direcao@example.test',
-        senha: 'senha',
-      },
+      { email: usuario.email, senha: 'senha' },
     );
-
     expect(service.possuiSessao()).toBe(false);
-    expect(service.obterToken()).toBeNull();
   });
 
-  it('deve armazenar sessão quando a confirmação for aceita', async () => {
-    // Arrange
-    http.post.mockReturnValue(of(criarSessao()));
+  it('pede o cookie na confirmação do login', async () => {
+    http.post.mockReturnValue(of(sessao()));
 
-    // Act
-    await service.confirmarLogin(
-      'acao-1',
-      '012345',
-    );
+    await service.confirmarLogin('acao-1', '012345');
 
-    // Assert
     expect(http.post).toHaveBeenCalledWith(
       '/api/auth/confirmar-login',
-      {
-        acaoId: 'acao-1',
-        codigo: '012345',
-      },
+      { acaoId: 'acao-1', codigo: '012345' },
+      { headers: { 'X-CrecheConecta-Refresh': '1' } },
     );
-
-    expect(service.possuiSessao()).toBe(true);
     expect(service.obterToken()).toBe('token-teste');
+    expect(service.possuiSessao()).toBe(true);
   });
 
-  it('deve propagar erro da API sem criar sessão', async () => {
-    // Arrange
+  it('propaga a rejeição da confirmação sem abrir sessão', async () => {
     const erro = new Error('Código incorreto');
+    http.post.mockReturnValue(throwError(() => erro));
 
-    http.post.mockReturnValue(
-      throwError(() => erro),
-    );
-
-    // Act + Assert
-    await expect(
-      service.confirmarLogin('acao-1', '999999'),
-    ).rejects.toBe(erro);
-
+    await expect(service.confirmarLogin('acao-1', '999999')).rejects.toBe(erro);
     expect(service.possuiSessao()).toBe(false);
-    expect(service.obterToken()).toBeNull();
   });
 
-  it.each([
-    {
-      cenario: 'expiração no instante atual',
-      expiraEm: agora.toISOString(),
-    },
-    {
-      cenario: 'data inválida',
-      expiraEm: 'data-invalida',
-    },
-  ])(
-    'deve rejeitar sessão com $cenario',
-    async ({ expiraEm }) => {
-      // Arrange
-      http.post.mockReturnValue(
-        of(criarSessao(expiraEm)),
-      );
+  it('preserva a sessão anterior se o novo código for recusado', async () => {
+    const erro = new Error('Código incorreto');
+    http.post.mockReturnValueOnce(of(sessao())).mockReturnValueOnce(throwError(() => erro));
 
-      // Act + Assert
-      await expect(
-        service.confirmarLogin('acao-1', '012345'),
-      ).rejects.toThrow(
-        'A sessão recebida já expirou.',
-      );
+    await service.confirmarLogin('acao-1', '012345');
+    await expect(service.confirmarLogin('acao-2', '999999')).rejects.toBe(erro);
 
-      expect(service.possuiSessao()).toBe(false);
+    expect(service.obterToken()).toBe('token-teste');
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+  });
+
+  it.each([agora.toISOString(), 'data-invalida'])(
+    'rejeita uma data de expiração imprópria: %s',
+    async (expiraEm) => {
+      http.post.mockReturnValue(of(sessao('token-teste', expiraEm)));
+
+      await expect(service.confirmarLogin('acao-1', '012345'))
+        .rejects.toThrow('A sessão recebida já expirou.');
       expect(service.obterToken()).toBeNull();
     },
   );
 
-  it('deve limpar sessão exatamente no instante de expiração', async () => {
-    // Arrange
-    http.post.mockReturnValue(of(criarSessao()));
+  it('restaura a sessão sem token em memória e compartilha a renovação', async () => {
+    const resposta = new Subject<SessaoResponse>();
+    http.post.mockReturnValue(resposta);
 
-    await service.confirmarLogin(
-      'acao-1',
-      '012345',
+    const primeira = service.restaurarSessao();
+    const segunda = service.restaurarSessao();
+
+    expect(http.post).toHaveBeenCalledTimes(1);
+    expect(http.post).toHaveBeenCalledWith(
+      '/api/auth/refresh',
+      {},
+      { headers: { 'X-CrecheConecta-Refresh': '1' } },
     );
 
-    // Act
-    vi.advanceTimersByTime(899_999);
+    resposta.next(sessao('token-renovado'));
+    resposta.complete();
 
-    // Assert
-    expect(service.possuiSessao()).toBe(true);
-
-    expect(
-      router.navigateByUrl,
-    ).not.toHaveBeenCalled();
-
-    // Act
-    vi.advanceTimersByTime(1);
-
-    // Assert
-    expect(service.possuiSessao()).toBe(false);
-    expect(service.obterToken()).toBeNull();
-
-    expect(router.navigateByUrl).toHaveBeenCalledWith(
-      '/login',
-    );
+    await expect(Promise.all([primeira, segunda])).resolves.toEqual([true, true]);
+    expect(service.obterToken()).toBe('token-renovado');
   });
 
-  it('deve rejeitar consulta do usuário sem sessão e sem chamar a API', async () => {
-    // Act + Assert
-    await expect(
-      service.carregarUsuario(),
-    ).rejects.toThrow('Sessão indisponível.');
+  it('permanece sem sessão quando o cookie é recusado', async () => {
+    http.post.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 401 })));
 
+    await expect(service.restaurarSessao()).resolves.toBe(false);
+    expect(service.obterToken()).toBeNull();
+  });
+
+  it('expira após 50 minutos sem renovar em segundo plano', async () => {
+    http.post.mockReturnValue(of(sessao()));
+    await service.confirmarLogin('acao-1', '012345');
+
+    vi.advanceTimersByTime(quinzeMinutos);
+
+    expect(service.obterToken()).toBeNull();
+    expect(service.possuiSessao()).toBe(true);
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(35 * 60_000 - 1);
+    expect(service.possuiSessao()).toBe(true);
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+
+    expect(service.possuiSessao()).toBe(false);
+    expect(http.post).toHaveBeenCalledTimes(1);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+    expect(TestBed.inject(AvisoSessao).expirou()).toBe(true);
+  });
+
+  it('encerra a aba anterior após a troca sem apresentar aviso de expiração', async () => {
+    http.post.mockReturnValue(of(sessao()));
+    await service.confirmarLogin('acao-1', '012345');
+
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: chaveTrocaSessao,
+      newValue: 'outra-confirmacao',
+    }));
+
+    expect(service.obterToken()).toBeNull();
+    expect(service.possuiSessao()).toBe(false);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+    expect(TestBed.inject(AvisoSessao).expirou()).toBe(false);
+    expect(http.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('recusa trocar de usuário silenciosamente durante uma renovação', async () => {
+    const novoPrazo = new Date(agora.getTime() + 2 * quinzeMinutos).toISOString();
+    http.post.mockReturnValueOnce(of(sessao())).mockReturnValueOnce(of({
+      ...sessao('outro-token', novoPrazo),
+      usuarioId: 'usuario-2',
+      nome: 'Responsável',
+      perfil: 'RESPONSAVEL',
+    }));
+    await service.confirmarLogin('acao-1', '012345');
+
+    vi.advanceTimersByTime(quinzeMinutos);
+
+    await expect(service.restaurarSessao()).resolves.toBe(false);
+    expect(service.obterToken()).toBeNull();
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+  });
+
+  it('rejeita a consulta do usuário sem sessão', async () => {
+    await expect(service.carregarUsuario()).rejects.toThrow('Sessão indisponível.');
     expect(http.get).not.toHaveBeenCalled();
   });
 
-  it('deve carregar usuário com cabeçalho Bearer', async () => {
-    // Arrange
-    http.post.mockReturnValue(of(criarSessao()));
-
-    await service.confirmarLogin(
-      'acao-1',
-      '012345',
-    );
-
-    const usuario = {
-      id: 'usuario-1',
-      nome: 'Direção',
-      email: 'direcao@example.test',
-      perfil: 'DIRECAO',
-    };
-
+  it('carrega o usuário com o token de acesso', async () => {
+    http.post.mockReturnValue(of(sessao()));
     http.get.mockReturnValue(of(usuario));
+    await service.confirmarLogin('acao-1', '012345');
 
-    // Act
-    const resposta = await service.carregarUsuario();
-
-    // Assert
-    expect(resposta).toEqual(usuario);
+    await expect(service.carregarUsuario()).resolves.toEqual(usuario);
     expect(service.usuario()).toEqual(usuario);
 
-    expect(http.get).toHaveBeenCalledTimes(1);
-
     const [url, opcoes] = http.get.mock.calls[0];
-
     expect(url).toBe('/api/auth/me');
+    expect(opcoes.headers.get('Authorization')).toBe('Bearer token-teste');
+  });
 
-    expect(
-      opcoes.headers.get('Authorization'),
-    ).toBe('Bearer token-teste');
+  it('revoga a sessão no logout', async () => {
+    http.post.mockReturnValueOnce(of(sessao())).mockReturnValueOnce(of(undefined));
+    await service.confirmarLogin('acao-1', '012345');
+
+    await service.logout();
+
+    const [url, corpo, opcoes] = http.post.mock.calls[1];
+    expect(url).toBe('/api/auth/logout');
+    expect(corpo).toEqual({});
+    expect(opcoes.headers.get('Authorization')).toBe('Bearer token-teste');
+    expect(service.possuiSessao()).toBe(false);
   });
 });

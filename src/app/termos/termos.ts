@@ -7,7 +7,6 @@ import { ROTULOS_STATUS_TERMO, StatusTermo, TermoVersao } from './termos.model';
 import { TermosService } from './termos.service';
 
 const LIMITE_TEXTO = 20000;
-const PADRAO_IDENTIFICADOR = /^[A-Za-z0-9._-]{1,40}$/;
 
 @Component({
   selector: 'app-termos',
@@ -17,10 +16,6 @@ const PADRAO_IDENTIFICADOR = /^[A-Za-z0-9._-]{1,40}$/;
 })
 export class Termos implements OnInit {
   private readonly servico = inject(TermosService);
-
-  readonly hoje = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'America/Sao_Paulo',
-  }).format(new Date());
 
   readonly versoes = signal<TermoVersao[]>([]);
   readonly vigente = signal<TermoVersao | null>(null);
@@ -44,7 +39,6 @@ export class Termos implements OnInit {
   readonly botao = 'cursor-pointer rounded-xl border border-stone-300 px-4 py-2 text-sm font-semibold hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:cursor-not-allowed disabled:opacity-50';
   readonly primario = 'cursor-pointer rounded-xl bg-creche-verde px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 focus-visible:ring-2 focus-visible:ring-creche-verde focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
-  identificador = '';
   termoUso = '';
   politicaPrivacidade = '';
 
@@ -79,7 +73,6 @@ export class Termos implements OnInit {
     this.editando.set(termo);
 
     const base = termo ?? this.vigente();
-    this.identificador = termo?.identificador ?? `${this.hoje}-v`;
     this.termoUso = base?.termoUso ?? '';
     this.politicaPrivacidade = base?.politicaPrivacidade ?? '';
     this.formularioAberto.set(true);
@@ -118,14 +111,8 @@ export class Termos implements OnInit {
     if (!this.formularioAberto() || this.ocupada()) return Promise.resolve();
 
     return this.executar(async () => {
-      const identificador = this.identificador.trim();
       const termoUso = this.termoUso.trim();
       const politicaPrivacidade = this.politicaPrivacidade.trim();
-
-      if (!PADRAO_IDENTIFICADOR.test(identificador)) {
-        this.erro.set('Informe um identificador com até 40 caracteres, só letras, números, ponto, hífen e sublinhado.');
-        return;
-      }
 
       if (!termoUso || !politicaPrivacidade) {
         this.erro.set('Preencha o termo de uso e a política de privacidade.');
@@ -138,15 +125,17 @@ export class Termos implements OnInit {
       }
 
       const termo = this.editando();
-      const dados = { identificador, termoUso, politicaPrivacidade };
-      if (termo) {
-        await firstValueFrom(this.servico.atualizar(termo, dados));
-      } else {
-        await firstValueFrom(this.servico.criar(dados));
-      }
+      const dados = { termoUso, politicaPrivacidade };
+      const salvo = termo
+        ? await firstValueFrom(this.servico.atualizar(termo, dados))
+        : await firstValueFrom(this.servico.criar(dados));
 
       this.fecharPaineis();
-      this.sucesso.set(termo ? 'Rascunho atualizado.' : 'Rascunho criado. Revise e publique quando estiver pronto.');
+      this.sucesso.set(
+        termo
+          ? 'Rascunho atualizado.'
+          : `Rascunho ${salvo.identificador} criado. Revise e publique quando estiver pronto.`,
+      );
       await this.buscar(termo ? this.pagina() : 0);
     });
   }
@@ -214,7 +203,6 @@ export class Termos implements OnInit {
         try {
           await this.buscar();
         } catch {
-          // A mensagem do erro principal já está visível.
         }
       }
     } finally {
@@ -233,9 +221,9 @@ export class Termos implements OnInit {
         case 0:
           return 'Não foi possível conectar à API.';
         case 400: {
-          const mensagem: unknown = erro.error?.mensagem;
+          const mensagem: unknown = erro.error?.detail ?? erro.error?.mensagem;
           if (typeof mensagem === 'string' && mensagem.trim()) return mensagem;
-          return 'Confira o identificador e os textos.';
+          return 'Confira os textos dos documentos.';
         }
         case 401:
           return 'Sua sessão expirou. Entre novamente.';
