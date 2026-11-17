@@ -115,7 +115,7 @@ export class CadastroResponsavel implements OnInit {
     }
 
     if (data > faixa.dataMaxima) {
-      return 'O aluno deve ter pelo menos 6 meses completos.';
+      return 'O aluno deve ter pelo menos 4 meses completos.';
     }
 
     return '';

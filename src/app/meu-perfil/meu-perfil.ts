@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -97,6 +98,20 @@ interface DadosPerfil {
             }
           </section>
 
+          <section class="mt-6 space-y-3 border-t border-stone-200 pt-5"
+            aria-labelledby="titulo-privacidade-perfil">
+            <h3 id="titulo-privacidade-perfil" class="font-bold">Privacidade dos dados</h3>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" [class]="primario" [disabled]="ocupada()"
+                (click)="baixarMeusDados()">
+                {{ baixandoDados() ? 'Gerando arquivo…' : 'Baixar meus dados' }}
+              </button>
+              <a [href]="linkAnonimizacao" [class]="botao">
+                Solicitar anonimização de dados
+              </a>
+            </div>
+          </section>
+
           <section class="mt-6 space-y-3 border-t border-stone-200 pt-5" aria-labelledby="titulo-inativar-conta">
             <h3 id="titulo-inativar-conta" class="font-bold">Inativar minha conta</h3>
 
@@ -141,14 +156,25 @@ interface DadosPerfil {
 })
 export class MeuPerfil {
   private readonly http = inject(HttpClient);
+  private readonly documento = inject(DOCUMENT);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly destroy = inject(DestroyRef);
   private readonly api = '/api/perfil';
   private temporizador?: ReturnType<typeof setTimeout>;
 
+  readonly linkAnonimizacao =
+    'mailto:crecheconecta@gmail.com'
+    + '?subject=' + encodeURIComponent('Solicitação de anonimização de dados')
+    + '&body=' + encodeURIComponent(
+      'Olá, equipe CrecheConecta.\n\n'
+      + 'Gostaria de solicitar a avaliação da anonimização de dados pessoais. '
+      + 'Por favor, orientem-me sobre como identificar a conta e dar continuidade à solicitação.\n',
+    );
+
   readonly dados = signal<DadosPerfil | null>(null);
   readonly ocupada = signal(false);
+  readonly baixandoDados = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
   readonly codigoEnviado = signal(false);
@@ -188,6 +214,37 @@ export class MeuPerfil {
       this.dados.set(perfil);
       this.telefone = perfil.telefone ?? '';
     });
+  }
+
+  baixarMeusDados(): Promise<void> {
+    if (this.dados()?.perfil !== 'RESPONSAVEL') return Promise.resolve();
+
+    return this.executar(async () => {
+      this.baixandoDados.set(true);
+      try {
+        const dados = await firstValueFrom(this.http.get<unknown>('/api/meus-dados'));
+        const hoje = new Intl.DateTimeFormat('sv-SE', {
+          timeZone: 'America/Sao_Paulo',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(new Date());
+        const arquivo = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+        const link = this.documento.createElement('a');
+        const url = URL.createObjectURL(arquivo);
+        try {
+          link.href = url;
+          link.download = `meus-dados-crecheconecta-${hoje}.json`;
+          this.documento.body.append(link);
+          link.click();
+        } finally {
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 0);
+        }
+      } finally {
+        this.baixandoDados.set(false);
+      }
+    }, 'Não foi possível gerar o arquivo com os seus dados. Tente novamente.');
   }
 
   salvarTelefone(): Promise<void> {
@@ -261,7 +318,10 @@ export class MeuPerfil {
     await this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
-  private async executar(acao: () => Promise<void>): Promise<void> {
+  private async executar(
+    acao: () => Promise<void>,
+    mensagemPadrao = 'Não foi possível concluir a operação. Tente novamente.',
+  ): Promise<void> {
     if (this.ocupada()) return;
 
     this.ocupada.set(true);
@@ -274,9 +334,7 @@ export class MeuPerfil {
         ? (falha.error?.detail ?? falha.error?.mensagem)
         : null;
       this.mostrarMensagem(
-        typeof detalhe === 'string' && detalhe.trim()
-          ? detalhe
-          : 'Não foi possível concluir a operação. Tente novamente.',
+        typeof detalhe === 'string' && detalhe.trim() ? detalhe : mensagemPadrao,
         'erro',
       );
     } finally {

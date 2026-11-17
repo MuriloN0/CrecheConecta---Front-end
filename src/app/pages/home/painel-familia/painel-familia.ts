@@ -1,4 +1,4 @@
-import { DatePipe, DOCUMENT } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -28,10 +28,6 @@ export class PainelFamilia implements OnInit {
 
   private readonly servico = inject(PainelFamiliaService);
   private readonly observacoesApi = inject(ObservacoesApi);
-  private readonly documento = inject(DOCUMENT);
-
-  readonly baixandoDados = signal(false);
-  readonly erroExportacao = signal('');
 
   readonly responsavel = inject(AuthService).usuario;
   readonly filhos = signal<Filho[]>([]);
@@ -77,40 +73,8 @@ export class PainelFamilia implements OnInit {
 
   readonly rotulos = ROTULOS_DIARIO;
 
-  readonly linkAnonimizacao =
-    'mailto:crecheconecta@gmail.com'
-    + '?subject=' + encodeURIComponent('Solicitação de anonimização de dados')
-    + '&body=' + encodeURIComponent(
-      'Olá, equipe CrecheConecta.\n\n'
-      + 'Gostaria de solicitar a avaliação da anonimização de dados pessoais. '
-      + 'Por favor, orientem-me sobre como identificar a conta e dar continuidade à solicitação.\n',
-    );
-
   ngOnInit(): void {
     void this.atualizar();
-  }
-
-  /** LGPD: baixa um arquivo JSON com os dados do responsável e das crianças vinculadas. */
-  async baixarMeusDados(): Promise<void> {
-    if (this.baixandoDados()) return;
-
-    this.baixandoDados.set(true);
-    this.erroExportacao.set('');
-
-    try {
-      const dados = await firstValueFrom(this.servico.exportarMeusDados());
-      const arquivo = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(arquivo);
-      const link = this.documento.createElement('a');
-      link.href = url;
-      link.download = `meus-dados-crecheconecta-${this.hoje}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      this.erroExportacao.set('Não foi possível gerar o arquivo com os seus dados. Tente novamente.');
-    } finally {
-      this.baixandoDados.set(false);
-    }
   }
 
   async atualizar(): Promise<void> {
