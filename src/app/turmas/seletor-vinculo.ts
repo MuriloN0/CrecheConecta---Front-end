@@ -89,6 +89,7 @@ export class SeletorVinculo {
   readonly placeholder = input.required<string>();
   readonly carregar = input.required<BuscaVinculo>();
   readonly desabilitado = input(false);
+  readonly preservarSelecaoNaBusca = input(false);
   readonly selecionado = model<OpcaoVinculo | null>(null);
 
   readonly aberto = signal(false);
@@ -142,7 +143,7 @@ export class SeletorVinculo {
   digitar(valor: string): void {
     if (this.desabilitado()) return;
 
-    this.selecionado.set(null);
+    if (!this.preservarSelecaoNaBusca()) this.selecionado.set(null);
     this.termo.set(valor);
     this.aberto.set(true);
     this.buscar(0, 250);
