@@ -14,6 +14,9 @@ export interface MensagemChat {
   autorId: string;
   texto: string;
   criadaEm: string;
+  ordem: string;
+  minhaFavorita: boolean;
+  preservada: boolean;
 }
 
 export interface PaginaContatosChat {
@@ -44,6 +47,12 @@ export class ConversasService {
 
   enviar(contato: string, texto: string) {
     return this.http.post<MensagemChat>(this.url(contato), { texto });
+  }
+
+  alterarFavorito(contato: string, mensagem: string, favorita: boolean) {
+    return this.http.post<void>(this.url(contato), { favorita }, {
+      params: { favorito: mensagem },
+    });
   }
 
   private url(contato: string): string {

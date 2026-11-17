@@ -47,10 +47,10 @@ export class AlunosApi {
     return this.http.get<PaginaAlunos>(this.url, { params });
   }
 
-  listarDisponiveis(pagina: number) {
-    return this.http.get<PaginaAlunos>(`${this.url}/disponiveis`, {
-      params: { pagina, tamanho: 20 },
-    });
+  listarDisponiveis(pagina: number, tamanho = 20, nome = '') {
+    const params: Record<string, string | number> = { pagina, tamanho };
+    if (nome) params['nome'] = nome;
+    return this.http.get<PaginaAlunos>(`${this.url}/disponiveis`, { params });
   }
 
   convidar(nome: string, email: string) {

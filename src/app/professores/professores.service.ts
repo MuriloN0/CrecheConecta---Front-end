@@ -34,13 +34,19 @@ export class ProfessoresService {
   private readonly http = inject(HttpClient);
   private readonly url = '/api/professores';
 
-  listar(pagina: number, situacao: SituacaoProfessor | '', busca = '') {
-    const params: Record<string, string | number> = { pagina, tamanho: 20 };
+  listar(pagina: number, situacao: SituacaoProfessor | '', busca = '', tamanho = 20) {
+    const params: Record<string, string | number | boolean> = { pagina, tamanho };
 
     if (situacao) params['situacao'] = situacao;
     if (busca) params['busca'] = busca;
 
     return this.http.get<Pagina<Professor>>(this.url, { params });
+  }
+
+  listarDisponiveis(turmaId: string, pagina: number, tamanho: number, nome: string) {
+    return this.http.get<Pagina<Professor>>(`${this.url}/disponiveis`, {
+      params: { turmaId, pagina, tamanho, nome },
+    });
   }
 
   consultar(id: string) {
@@ -57,9 +63,9 @@ export class ProfessoresService {
     });
   }
 
-  listarVinculos(turmaId: string, pagina: number, incluirEncerrados: boolean) {
+  listarVinculos(turmaId: string, pagina: number, incluirEncerrados: boolean, tamanho = 20) {
     return this.http.get<Pagina<VinculoProfessor>>(`/api/turmas/${turmaId}/professores`, {
-      params: { pagina, tamanho: 20, incluirEncerrados },
+      params: { pagina, tamanho, incluirEncerrados },
     });
   }
 

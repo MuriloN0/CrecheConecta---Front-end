@@ -2,22 +2,19 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { AtividadeTurma } from '../atividades/model/atividades.model';
 import { AtividadesService } from '../atividades/service/atividades.service';
 import { AlunoDiario } from '../diario/diario.model';
 import { DiarioService } from '../diario/diario.service';
+import { BuscaVinculo, OpcaoVinculo, SeletorVinculo } from '../turmas/seletor-vinculo';
 import { ObservacoesApi } from './observacoes.api';
 import { Observacao } from './observacoes.model';
 
-/**
- * Professor: escolhe a turma e o aluno, vê as observações registradas pelos professores
- * da turma e cadastra, edita ou exclui as suas. A família e a direção apenas leem.
- */
 @Component({
   selector: 'app-observacoes-professor',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, SeletorVinculo],
   templateUrl: './observacoes-professor.html',
 })
 export class ObservacoesProfessor implements OnInit {
@@ -25,7 +22,6 @@ export class ObservacoesProfessor implements OnInit {
   private readonly atividades = inject(AtividadesService);
   private readonly diario = inject(DiarioService);
 
-  // Mesmo "hoje" do back (fuso da creche): a lista de alunos vem da turma no dia atual.
   private readonly hoje = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric',
@@ -48,6 +44,27 @@ export class ObservacoesProfessor implements OnInit {
   readonly alunoSelecionado = computed(
     () => this.alunos().find((aluno) => aluno.alunoId === this.alunoId()),
   );
+
+  readonly opcaoAluno = computed<OpcaoVinculo | null>(() => {
+    const aluno = this.alunoSelecionado();
+    return aluno ? { id: aluno.alunoId, nome: aluno.nome } : null;
+  });
+
+  readonly pesquisarAlunos: BuscaVinculo = (nome, pagina, tamanho) => {
+    const normalizar = (texto: string) =>
+      texto.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('pt-BR');
+    const termo = normalizar(nome);
+    const resultados = this.alunos().filter((aluno) => normalizar(aluno.nome).includes(termo));
+    const inicio = pagina * tamanho;
+
+    return of({
+      content: resultados.slice(inicio, inicio + tamanho).map((aluno) => ({
+        id: aluno.alunoId,
+        nome: aluno.nome,
+      })),
+      totalPages: Math.ceil(resultados.length / tamanho),
+    });
+  };
 
   readonly cartao = 'space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6';
   readonly campo = 'w-full rounded-xl border border-stone-300 bg-white px-3 py-2 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:bg-stone-100';
@@ -82,11 +99,15 @@ export class ObservacoesProfessor implements OnInit {
     });
   }
 
-  selecionarAluno(alunoId: string): Promise<void> {
+  selecionarAluno(opcao: OpcaoVinculo | null): Promise<void> {
+    const alunoId = opcao?.id;
+    if (!alunoId || alunoId === this.alunoId()) return Promise.resolve();
     if (!this.alunos().some((aluno) => aluno.alunoId === alunoId)) return Promise.resolve();
+
     return this.executar(async () => {
       this.fecharPaineis();
       this.alunoId.set(alunoId);
+      this.observacoes.set([]);
       await this.buscar();
     });
   }
@@ -154,7 +175,6 @@ export class ObservacoesProfessor implements OnInit {
     });
   }
 
-  /** Alunos matriculados hoje na turma escolhida (a mesma lista que o diário de rotina usa). */
   private async carregarAlunos(): Promise<void> {
     this.alunos.set([]);
     this.observacoes.set([]);
@@ -188,7 +208,6 @@ export class ObservacoesProfessor implements OnInit {
     } catch (erro: unknown) {
       this.erro.set(this.mensagemErro(erro));
       if (erro instanceof HttpErrorResponse && (erro.status === 409 || erro.status === 404)) {
-        // Outra pessoa mexeu na observação (ou o aluno saiu da turma): recarrega a lista.
         this.fecharPaineis();
         try {
           await this.buscar();
