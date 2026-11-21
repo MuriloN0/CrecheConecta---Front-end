@@ -29,7 +29,10 @@ export class Login {
   private readonly dialogo = viewChild<ElementRef<HTMLDialogElement>>('dialogoSessao');
   private readonly abrirAviso = effect(() => {
     const dialogo = this.dialogo()?.nativeElement;
-    if (this.avisoSessao.expirou() && dialogo && !dialogo.open) dialogo.showModal();
+
+    if (this.avisoSessao.expirou() && dialogo && !dialogo.open) {
+      dialogo.showModal();
+    }
   });
 
   private readonly auth = inject(AuthService);
@@ -47,6 +50,7 @@ export class Login {
   readonly tempoBloqueio = computed(() => {
     const segundos = this.segundosBloqueados();
     const minutos = Math.floor(segundos / 60);
+
     return `${minutos}:${String(segundos % 60).padStart(2, '0')}`;
   });
 
@@ -74,6 +78,7 @@ export class Login {
     this.erro.set('');
 
     const segundos = Math.ceil((this.proximoEnvioEm - Date.now()) / 1000);
+
     if (segundos > 0) {
       const espera = segundos === 1 ? '1 segundo' : `${segundos} segundos`;
       this.erro.set(`Aguarde ${espera} antes de solicitar outro código.`);
@@ -83,7 +88,10 @@ export class Login {
     this.carregando.set(true);
 
     try {
-      const resposta = await this.auth.iniciarLogin(this.email.trim().toLowerCase(), this.senha);
+      const resposta = await this.auth.iniciarLogin(
+        this.email.trim().toLowerCase(),
+        this.senha,
+      );
 
       this.acao.set(resposta);
       this.senha = '';
@@ -91,10 +99,18 @@ export class Login {
       this.proximoEnvioEm = Date.now() + 60_000;
       this.etapa.set('codigo');
     } catch (erro: unknown) {
-      if (erro instanceof HttpErrorResponse && erro.status === 429
-          && erro.error?.codigo === 'LOGIN_BLOQUEADO') {
+      if (
+        erro instanceof HttpErrorResponse &&
+        erro.status === 429 &&
+        ['LOGIN_BLOQUEADO', 'RATE_LIMIT_EXCEDIDO'].includes(erro.error?.codigo)
+      ) {
         const segundos: unknown = erro.error.segundosRestantes;
-        if (typeof segundos === 'number' && Number.isSafeInteger(segundos) && segundos > 0) {
+
+        if (
+          typeof segundos === 'number' &&
+          Number.isSafeInteger(segundos) &&
+          segundos > 0
+        ) {
           this.aplicarBloqueio(segundos * 1000);
         } else {
           this.erro.set(this.mensagemErro(erro));
@@ -113,6 +129,7 @@ export class Login {
     this.erro.set('');
 
     const acao = this.acao();
+
     if (!acao || Date.parse(acao.expiraEm) <= Date.now()) {
       this.erro.set('O código expirou. Volte e solicite um novo.');
       return;
@@ -135,7 +152,22 @@ export class Login {
     } catch (erro: unknown) {
       if (erro instanceof HttpErrorResponse && erro.status === 429) {
         this.senha = '';
-        this.aplicarBloqueio(BLOQUEIO_CODIGO_MS);
+
+        if (erro.error?.codigo === 'RATE_LIMIT_EXCEDIDO') {
+          const segundos: unknown = erro.error.segundosRestantes;
+
+          if (
+            typeof segundos === 'number' &&
+            Number.isSafeInteger(segundos) &&
+            segundos > 0
+          ) {
+            this.aplicarBloqueio(segundos * 1000);
+          } else {
+            this.erro.set(this.mensagemErro(erro));
+          }
+        } else {
+          this.aplicarBloqueio(BLOQUEIO_CODIGO_MS);
+        }
       } else {
         this.erro.set(this.mensagemErro(erro));
       }
@@ -168,12 +200,19 @@ export class Login {
     this.atualizarContagem();
 
     if (this.bloqueado()) {
-      this.contadorBloqueio = setInterval(() => this.atualizarContagem(), 250);
+      this.contadorBloqueio = setInterval(
+        () => this.atualizarContagem(),
+        250,
+      );
     }
   }
 
   private atualizarContagem(): void {
-    const segundos = Math.max(0, Math.ceil((this.bloqueadoAte - Date.now()) / 1000));
+    const segundos = Math.max(
+      0,
+      Math.ceil((this.bloqueadoAte - Date.now()) / 1000),
+    );
+
     this.segundosBloqueados.set(segundos);
 
     if (segundos === 0 && this.bloqueadoAte !== 0) {
@@ -185,10 +224,15 @@ export class Login {
 
   private lerPrazoBloqueio(): number {
     try {
-      const valor = this.documento.defaultView?.sessionStorage.getItem(CHAVE_BLOQUEIO_CODIGO);
+      const valor = this.documento.defaultView?.sessionStorage.getItem(
+        CHAVE_BLOQUEIO_CODIGO,
+      );
+
       const prazo = Number(valor);
 
-      return Number.isSafeInteger(prazo) && prazo > Date.now() ? prazo : 0;
+      return Number.isSafeInteger(prazo) && prazo > Date.now()
+        ? prazo
+        : 0;
     } catch {
       return 0;
     }
@@ -199,12 +243,14 @@ export class Login {
       const armazenamento = this.documento.defaultView?.sessionStorage;
 
       if (this.bloqueadoAte > 0) {
-        armazenamento?.setItem(CHAVE_BLOQUEIO_CODIGO, String(this.bloqueadoAte));
+        armazenamento?.setItem(
+          CHAVE_BLOQUEIO_CODIGO,
+          String(this.bloqueadoAte),
+        );
       } else {
         armazenamento?.removeItem(CHAVE_BLOQUEIO_CODIGO);
       }
     } catch {
-
     }
   }
 

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { permitirPerfis } from './core/guards/perfil.guard';
-import { aceiteObrigatorioGuard, termoAceitoGuard } from './portal-pais/termo.guard';
+import { aceiteObrigatorioGuard } from './portal-pais/termo.guard';
 
 export const routes: Routes = [
   {
@@ -73,7 +73,6 @@ export const routes: Routes = [
       {
         path: 'familia/atividades',
         canActivate: [permitirPerfis('RESPONSAVEL')],
-        canActivateChild: [termoAceitoGuard],
         children: [
           {
             path: '',
@@ -87,7 +86,6 @@ export const routes: Routes = [
       {
         path: 'familia/mala-virtual',
         canActivate: [permitirPerfis('RESPONSAVEL')],
-        canActivateChild: [termoAceitoGuard],
         children: [
           {
             path: '',
@@ -209,7 +207,6 @@ export const routes: Routes = [
       {
         path: 'familia/observacoes',
         canActivate: [permitirPerfis('RESPONSAVEL')],
-        canActivateChild: [termoAceitoGuard],
         children: [
           {
             path: '',
