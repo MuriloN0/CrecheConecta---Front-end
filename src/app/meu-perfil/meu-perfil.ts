@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
+import { RevogarAceite } from './revogar-aceite';
 
 interface DadosPerfil {
   nome: string;
@@ -16,7 +17,7 @@ interface DadosPerfil {
 @Component({
   selector: 'app-meu-perfil',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RevogarAceite],
   template: `
     <button type="button" aria-haspopup="dialog" [class]="botao" (click)="abrir(dialogo)">
       Meu perfil
@@ -110,6 +111,8 @@ interface DadosPerfil {
                 Solicitar anonimização de dados
               </a>
             </div>
+            <app-revogar-aceite [bloqueada]="ocupada()"
+              (ocupacao)="ocupada.set($event)" (revogado)="voltarAoLogin(dialogo)" />
           </section>
 
           <section class="mt-6 space-y-3 border-t border-stone-200 pt-5" aria-labelledby="titulo-inativar-conta">
@@ -229,9 +232,12 @@ export class MeuPerfil {
           month: '2-digit',
           day: '2-digit',
         }).format(new Date());
-        const arquivo = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+        const arquivo = new Blob([JSON.stringify(dados, null, 2)], {
+          type: 'application/json',
+        });
         const link = this.documento.createElement('a');
         const url = URL.createObjectURL(arquivo);
+
         try {
           link.href = url;
           link.download = `meus-dados-crecheconecta-${hoje}.json`;
@@ -249,9 +255,11 @@ export class MeuPerfil {
 
   salvarTelefone(): Promise<void> {
     return this.executar(async () => {
-      const perfil = await firstValueFrom(this.http.put<DadosPerfil>(`${this.api}/telefone`, {
-        telefone: this.telefone.trim(),
-      }));
+      const perfil = await firstValueFrom(
+        this.http.put<DadosPerfil>(`${this.api}/telefone`, {
+          telefone: this.telefone.trim(),
+        }),
+      );
       this.dados.set(perfil);
       this.mostrarMensagem('Telefone atualizado.', 'sucesso');
     });
@@ -279,7 +287,9 @@ export class MeuPerfil {
         return;
       }
 
-      await firstValueFrom(this.http.post<void>(`${this.api}/email/confirmar`, { codigo }));
+      await firstValueFrom(
+        this.http.post<void>(`${this.api}/email/confirmar`, { codigo }),
+      );
       await this.voltarAoLogin(dialogo);
     });
   }
@@ -311,7 +321,7 @@ export class MeuPerfil {
     this.cancelarInativacao();
   }
 
-  private async voltarAoLogin(dialogo: HTMLDialogElement): Promise<void> {
+  async voltarAoLogin(dialogo: HTMLDialogElement): Promise<void> {
     this.limparFormularios();
     dialogo.close();
     this.auth.limparSessao();
@@ -333,6 +343,7 @@ export class MeuPerfil {
       const detalhe: unknown = falha instanceof HttpErrorResponse
         ? (falha.error?.detail ?? falha.error?.mensagem)
         : null;
+
       this.mostrarMensagem(
         typeof detalhe === 'string' && detalhe.trim() ? detalhe : mensagemPadrao,
         'erro',

@@ -1,8 +1,15 @@
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
+import {
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { atualizacaoInterceptor } from './core/interceptors/atualizacao.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,10 +19,18 @@ export const appConfig: ApplicationConfig = {
         path: '',
         pathMatch: 'full',
         title: 'CrecheConecta',
-        loadComponent: () => import('./pages/landing/landing').then((m) => m.Landing),
+        loadComponent: () =>
+          import('./pages/landing/landing').then(
+            (m) => m.Landing,
+          ),
       },
       ...routes,
     ]),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(
+      withInterceptors([
+        atualizacaoInterceptor,
+        authInterceptor,
+      ]),
+    ),
   ],
 };
