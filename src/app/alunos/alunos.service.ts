@@ -8,11 +8,10 @@ export interface Aluno {
   anoNascimento: number | null;
   ativo: boolean;
   versao: number;
-  // LGPD: os dados pessoais já foram anonimizados (nome genérico e só o ano de nascimento).
+  // LGPD: os dados pessoais já foram anonimizados.
   anonimizado: boolean;
 }
 
-// Resumo devolvido pela anonimização.
 export interface ResultadoAnonimizacao {
   alunoId: string;
   responsaveisAnonimizados: number;
@@ -38,23 +37,45 @@ export class AlunosApi {
   private readonly http = inject(HttpClient);
   private readonly url = '/api/alunos';
 
-  listar(pagina: number, ativo: boolean | null, nome = '') {
-    const params: Record<string, string | number | boolean> = { pagina, tamanho: 20 };
+  listar(
+    pagina: number,
+    ativo: boolean | null,
+    nome = '',
+    mesNascimento: number | null = null,
+  ) {
+    const params: Record<string, string | number | boolean> = {
+      pagina,
+      tamanho: 20,
+    };
 
     if (ativo !== null) params['ativo'] = ativo;
     if (nome) params['nome'] = nome;
+    if (mesNascimento !== null) {
+      params['mesNascimento'] = mesNascimento;
+    }
 
     return this.http.get<PaginaAlunos>(this.url, { params });
   }
 
   listarDisponiveis(pagina: number, tamanho = 20, nome = '') {
-    const params: Record<string, string | number> = { pagina, tamanho };
+    const params: Record<string, string | number> = {
+      pagina,
+      tamanho,
+    };
+
     if (nome) params['nome'] = nome;
-    return this.http.get<PaginaAlunos>(`${this.url}/disponiveis`, { params });
+
+    return this.http.get<PaginaAlunos>(
+      `${this.url}/disponiveis`,
+      { params },
+    );
   }
 
   convidar(nome: string, email: string) {
-    return this.http.post<{ mensagem: string }>(`${this.url}/convites`, { nome, email });
+    return this.http.post<{ mensagem: string }>(
+      `${this.url}/convites`,
+      { nome, email },
+    );
   }
 
   consultar(id: string) {
@@ -62,16 +83,22 @@ export class AlunosApi {
   }
 
   listarResponsaveis(id: string) {
-    return this.http.get<ResponsavelAluno[]>(`${this.url}/${id}/responsaveis`);
+    return this.http.get<ResponsavelAluno[]>(
+      `${this.url}/${id}/responsaveis`,
+    );
   }
 
   inativar(aluno: Aluno) {
-    return this.http.post<Aluno>(`${this.url}/${aluno.id}/inativar`, {
-      versao: aluno.versao,
-    });
+    return this.http.post<Aluno>(
+      `${this.url}/${aluno.id}/inativar`,
+      { versao: aluno.versao },
+    );
   }
 
   anonimizar(aluno: Aluno) {
-    return this.http.post<ResultadoAnonimizacao>(`${this.url}/${aluno.id}/anonimizar`, {});
+    return this.http.post<ResultadoAnonimizacao>(
+      `${this.url}/${aluno.id}/anonimizar`,
+      {},
+    );
   }
 }

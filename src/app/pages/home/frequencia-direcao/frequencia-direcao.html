@@ -82,10 +82,6 @@
           {{ dados.fim | date: 'dd/MM/yyyy' : 'UTC' }}
         </p>
       </div>
-      <button type="button" (click)="baixarPdf()" [disabled]="exportando()"
-        class="rounded-xl border border-creche-verde px-4 py-2 text-sm font-semibold text-creche-verde disabled:opacity-50">
-        {{ exportando() ? 'Gerando PDF…' : 'Baixar PDF' }}
-      </button>
     </div>
 
     @if (erroPdf()) {

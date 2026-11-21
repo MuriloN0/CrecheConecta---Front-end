@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "source": "/api/:path((?!auth/login/?$).*)",
+      "source": "/api/:path((?!auth/(?:login|confirmar-login|esqueci-senha|confirmar-recuperacao|redefinir-senha)/?$).*)",
       "destination": "https://crecheconecta-back-end.onrender.com/api/:path"
     },
     {
