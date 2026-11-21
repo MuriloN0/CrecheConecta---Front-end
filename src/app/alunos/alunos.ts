@@ -4,13 +4,14 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { Aluno, AlunosApi, ResponsavelAluno } from './alunos.service';
+import { InformacoesAluno } from './informacoes-aluno';
 
 type FiltroAluno = 'ativos' | 'inativos' | 'todos';
 
 @Component({
   selector: 'app-alunos',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, InformacoesAluno],
   templateUrl: './alunos.html',
 })
 export class Alunos implements OnInit {
@@ -21,6 +22,13 @@ export class Alunos implements OnInit {
   readonly pagina = signal(0);
   readonly totalPaginas = signal(0);
   readonly filtro = signal<FiltroAluno>('ativos');
+  readonly mesNascimento = signal<number | null>(null);
+
+  readonly meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  ];
+
   readonly carregando = signal(false);
   readonly falhaListagem = signal(false);
   readonly salvando = signal(false);
@@ -28,14 +36,25 @@ export class Alunos implements OnInit {
   readonly sucesso = signal('');
 
   readonly formularioAberto = signal(false);
-  readonly consultando = signal<{ aluno: Aluno; responsaveis: ResponsavelAluno[] } | null>(null);
+  readonly consultando = signal<{
+    aluno: Aluno;
+    responsaveis: ResponsavelAluno[];
+  } | null>(null);
+
   readonly paraInativar = signal<Aluno | null>(null);
   readonly paraAnonimizar = signal<Aluno | null>(null);
 
-  readonly card = 'space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6';
-  readonly campo = 'rounded-xl border border-stone-300 bg-white px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:opacity-50';
-  readonly botao = 'rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold hover:bg-stone-50 disabled:opacity-50';
-  readonly primario = 'rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50';
+  readonly card =
+    'space-y-4 rounded-2xl border border-stone-200 bg-white p-4 md:p-6';
+
+  readonly campo =
+    'rounded-xl border border-stone-300 bg-white px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-creche-verde disabled:opacity-50';
+
+  readonly botao =
+    'rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold hover:bg-stone-50 disabled:opacity-50';
+
+  readonly primario =
+    'rounded-xl bg-creche-verde px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50';
 
   nomeBusca = '';
   nome = '';
@@ -58,6 +77,12 @@ export class Alunos implements OnInit {
   aplicarBusca(): void {
     if (this.ocupado()) return;
     this.nomeAplicado = this.nomeBusca.trim();
+    this.atualizarLista(0);
+  }
+
+  mudarMesNascimento(mes: number | null): void {
+    if (this.ocupado()) return;
+    this.mesNascimento.set(mes);
     this.atualizarLista(0);
   }
 
@@ -89,10 +114,13 @@ export class Alunos implements OnInit {
     this.salvando.set(true);
 
     try {
-      const detalhes = await firstValueFrom(forkJoin({
-        aluno: this.api.consultar(aluno.id),
-        responsaveis: this.api.listarResponsaveis(aluno.id),
-      }));
+      const detalhes = await firstValueFrom(
+        forkJoin({
+          aluno: this.api.consultar(aluno.id),
+          responsaveis: this.api.listarResponsaveis(aluno.id),
+        }),
+      );
+
       this.consultando.set(detalhes);
     } catch (erro: unknown) {
       this.erro.set(this.mensagemErro(erro));
@@ -134,9 +162,9 @@ export class Alunos implements OnInit {
       const resultado = await firstValueFrom(this.api.anonimizar(aluno));
       this.fecharPaineis();
       this.sucesso.set(
-        `Dados anonimizados. Responsáveis anonimizados: ${resultado.responsaveisAnonimizados}; `
-        + `informações relevantes removidas: ${resultado.informacoesRelevantesRemovidas}; `
-        + `observações removidas: ${resultado.observacoesRemovidas}.`,
+        `Dados anonimizados. Responsáveis anonimizados: ${resultado.responsaveisAnonimizados}; ` +
+          `informações relevantes removidas: ${resultado.informacoesRelevantesRemovidas}; ` +
+          `observações removidas: ${resultado.observacoesRemovidas}.`,
       );
       await this.carregar(this.pagina());
     } catch (erro: unknown) {
@@ -151,14 +179,18 @@ export class Alunos implements OnInit {
     this.limparMensagens();
 
     const nome = this.nome.trim();
+
     if (!nome || nome.length > 150) {
       this.erro.set('Informe o nome do responsável com até 150 caracteres.');
       return;
     }
 
     this.salvando.set(true);
+
     try {
-      const convite = await firstValueFrom(this.api.convidar(nome, this.email.trim()));
+      const convite = await firstValueFrom(
+        this.api.convidar(nome, this.email.trim()),
+      );
       this.fecharPaineis();
       this.sucesso.set(convite.mensagem);
     } catch (erro: unknown) {
@@ -170,6 +202,7 @@ export class Alunos implements OnInit {
 
   async inativar(aluno: Aluno): Promise<void> {
     if (this.ocupado() || this.paraInativar()?.id !== aluno.id) return;
+
     this.limparMensagens();
     this.salvando.set(true);
 
@@ -192,14 +225,24 @@ export class Alunos implements OnInit {
 
     const filtro = this.filtro();
     const ativo = filtro === 'todos' ? null : filtro === 'ativos';
+    const mesNascimento = this.mesNascimento();
 
     try {
-      let resposta = await firstValueFrom(this.api.listar(pagina, ativo, this.nomeAplicado));
+      let resposta = await firstValueFrom(
+        this.api.listar(
+          pagina, ativo, this.nomeAplicado, mesNascimento,
+        ),
+      );
 
       const ultimaPagina = Math.max(0, resposta.totalPages - 1);
+
       if (pagina > ultimaPagina) {
         pagina = ultimaPagina;
-        resposta = await firstValueFrom(this.api.listar(pagina, ativo, this.nomeAplicado));
+        resposta = await firstValueFrom(
+          this.api.listar(
+            pagina, ativo, this.nomeAplicado, mesNascimento,
+          ),
+        );
       }
 
       this.pagina.set(pagina);

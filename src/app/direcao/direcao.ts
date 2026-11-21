@@ -37,6 +37,7 @@ export class Direcao implements OnInit {
 
   readonly minhaConta = signal<ContaDirecao | null>(null);
   readonly equipe = signal<ContaDirecao[]>([]);
+  readonly consultando = signal<ContaDirecao | null>(null);
   readonly pagina = signal(0);
   readonly totalPaginas = signal(0);
   readonly ocupada = signal(false);
@@ -80,6 +81,20 @@ export class Direcao implements OnInit {
 
   carregarEquipe(pagina: number): Promise<void> {
     return this.executar(() => this.buscarEquipe(pagina));
+  }
+
+  consultar(integrante: ContaDirecao): void {
+    if (this.ocupada()) return;
+
+    const conta = this.equipe().find(
+      (item) => item.id === integrante.id,
+    );
+
+    if (conta) this.consultando.set(conta);
+  }
+
+  fecharConsulta(): void {
+    this.consultando.set(null);
   }
 
   salvarConta(formulario: NgForm): Promise<void> {
@@ -196,6 +211,7 @@ export class Direcao implements OnInit {
   ): Promise<void> {
     if (this.ocupada()) return;
 
+    this.fecharConsulta();
     this.ocupada.set(true);
     this.erro.set('');
     this.sucesso.set('');

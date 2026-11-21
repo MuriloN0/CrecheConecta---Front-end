@@ -97,6 +97,7 @@
           >
             Salvar alterações
           </button>
+
           <button
             type="button"
             [class]="botao"
@@ -160,6 +161,44 @@
       Integrantes
     </h2>
 
+    @if (consultando(); as integrante) {
+      <section
+        class="space-y-4 rounded-xl border border-stone-200 bg-stone-50 p-4"
+        aria-labelledby="titulo-consulta-integrante"
+      >
+        <h3 id="titulo-consulta-integrante" class="font-semibold">
+          Dados do integrante
+        </h3>
+
+        <dl class="grid gap-3 text-sm sm:grid-cols-2">
+          <div>
+            <dt class="font-semibold">Nome</dt>
+            <dd class="wrap-anywhere">{{ integrante.nome }}</dd>
+          </div>
+
+          <div>
+            <dt class="font-semibold">E-mail</dt>
+            <dd class="wrap-anywhere">{{ integrante.email }}</dd>
+          </div>
+
+          <div>
+            <dt class="font-semibold">Telefone</dt>
+            <dd>
+              {{ integrante.telefone?.trim() || 'Não informado' }}
+            </dd>
+          </div>
+        </dl>
+
+        <button
+          type="button"
+          [class]="botao"
+          (click)="fecharConsulta()"
+        >
+          Fechar consulta
+        </button>
+      </section>
+    }
+
     <ul class="divide-y divide-stone-200">
       @for (integrante of equipe(); track integrante.id) {
         <li class="flex flex-wrap justify-between gap-2 py-3">
@@ -172,21 +211,24 @@
                 </span>
               }
             </p>
-
-            <p class="text-sm text-stone-600">
-              {{ integrante.email }}
-            </p>
-
-            @if (integrante.telefone) {
-              <p class="text-sm text-stone-600">
-                {{ integrante.telefone }}
-              </p>
-            }
           </div>
 
-          <span class="text-sm text-stone-700">
-            {{ integrante.ativo ? 'Ativo' : 'Inativo' }}
-          </span>
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="text-sm text-stone-700">
+              {{ integrante.ativo ? 'Ativo' : 'Inativo' }}
+            </span>
+
+            <button
+              type="button"
+              [class]="botao"
+              [disabled]="ocupada()"
+              [attr.aria-label]="'Consultar ' + integrante.nome"
+              [attr.aria-expanded]="consultando()?.id === integrante.id"
+              (click)="consultar(integrante)"
+            >
+              Consultar
+            </button>
+          </div>
         </li>
       } @empty {
         @if (!ocupada() && !erro()) {

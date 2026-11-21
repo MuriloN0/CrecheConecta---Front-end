@@ -127,7 +127,6 @@ describe('Controle compartilhado de atualizações', () => {
     '/api/alunos/aluno/informacoes-relevantes',
     '/api/notificacoes?pagina=0',
     '/api/termos/paginados?pagina=0',
-    '/api/termo/status',
     '/api/solicitacoes-materiais?pagina=0',
     '/api/solicitacoes-materiais/id',
     '/api/turmas/id/malas/id/progresso',
@@ -316,6 +315,7 @@ describe('Controle compartilhado de atualizações', () => {
     '/api/chat/contatos',
     '/api/chat/contatos/id/mensagens',
     '/api/auth/me',
+    '/api/termo/status',
     '/api/meus-dados',
   ])('não altera chat, sessão ou exportação: %s', async (url) => {
     await consultar(url);

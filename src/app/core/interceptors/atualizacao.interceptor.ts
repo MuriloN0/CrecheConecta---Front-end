@@ -222,6 +222,7 @@ export const atualizacaoInterceptor: HttpInterceptorFn = (
     request.reportProgress ||
     request.url.startsWith('/api/auth/') ||
     request.url.startsWith('/api/chat/') ||
+    request.url.split('?')[0] === '/api/termo/status' ||
     request.url.split('?')[0] === '/api/meus-dados'
   ) {
     return next(request);
