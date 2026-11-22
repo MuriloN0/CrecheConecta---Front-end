@@ -1,12 +1,13 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+  afterNextRender,
   Component,
   computed,
   DestroyRef,
   inject,
-  OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -30,10 +31,13 @@ import { PainelFamilia } from './painel-familia/painel-familia';
   ],
   templateUrl: './home.html',
 })
-export class Home implements OnInit {
+export class Home {
   private readonly auth = inject(AuthService);
   private readonly dashboard = inject(DashboardService);
   private readonly destroy = inject(DestroyRef);
+
+  private readonly painelFamilia = viewChild(PainelFamilia);
+  private readonly minhaTurma = viewChild(MinhaTurma);
 
   private proximaAtualizacaoEm = 0;
   private contador?: ReturnType<typeof setInterval>;
@@ -42,6 +46,9 @@ export class Home implements OnInit {
 
   constructor() {
     this.destroy.onDestroy(() => clearInterval(this.contador));
+    afterNextRender(() => {
+      void this.atualizar();
+    });
   }
 
   readonly usuario = this.auth.usuario;
@@ -55,9 +62,15 @@ export class Home implements OnInit {
   readonly carregandoMural = signal(false);
   readonly erroResumo = signal('');
   readonly erroMural = signal('');
+  readonly erroPainel = signal('');
 
   readonly carregando = computed(
-    () => this.carregandoResumo() || this.carregandoMural(),
+    () =>
+      this.carregandoResumo() ||
+      this.carregandoMural() ||
+      (this.painelFamilia()?.carregando() ?? false) ||
+      (this.painelFamilia()?.carregandoDiario() ?? false) ||
+      (this.minhaTurma()?.carregando() ?? false),
   );
 
   readonly indicadores = computed(() => {
@@ -99,30 +112,45 @@ export class Home implements OnInit {
       },
     ].map((grupo) => {
       const total = grupo.ativos + grupo.inativos;
-      const percentualAtivos = total > 0
-        ? (grupo.ativos / total) * 100
-        : 0;
+      const percentualAtivos =
+        total > 0 ? (grupo.ativos / total) * 100 : 0;
 
       return { ...grupo, total, percentualAtivos };
     });
   });
 
-  ngOnInit(): void {
-    void this.atualizar();
-  }
-
   async atualizar(): Promise<void> {
     if (this.carregando() || this.segundosAteAtualizar() > 0) return;
 
     this.iniciarEspera(10);
+    this.erroPainel.set('');
 
     const consultas = [this.carregarMural()];
 
     if (this.perfil() === 'DIRECAO') {
       consultas.push(this.carregarResumo());
+    } else if (this.perfil() === 'RESPONSAVEL') {
+      const painel = this.painelFamilia();
+      if (painel) consultas.push(painel.atualizar());
+    } else if (this.perfil() === 'PROFESSOR') {
+      const painel = this.minhaTurma();
+      if (painel) consultas.push(painel.atualizar());
     }
 
-    await Promise.all(consultas);
+    try {
+      await Promise.all(consultas);
+    } finally {
+      this.iniciarEspera(10);
+    }
+  }
+
+  registrarLimite(erro: unknown): void {
+    const mensagem = this.tratarLimite(erro);
+    if (mensagem) this.erroPainel.set(mensagem);
+  }
+
+  aguardarPainel(): void {
+    this.iniciarEspera(10);
   }
 
   private async carregarResumo(): Promise<void> {
@@ -144,7 +172,7 @@ export class Home implements OnInit {
 
       this.erroResumo.set(
         limite ??
-        'Não foi possível carregar os indicadores de alunos e turmas.',
+          'Não foi possível carregar os indicadores de alunos e turmas.',
       );
     } finally {
       this.carregandoResumo.set(false);
@@ -179,6 +207,8 @@ export class Home implements OnInit {
   }
 
   private iniciarEspera(segundos: number): void {
+    if (this.destroy.destroyed) return;
+
     this.proximaAtualizacaoEm = Math.max(
       this.proximaAtualizacaoEm,
       Date.now() + segundos * 1000,

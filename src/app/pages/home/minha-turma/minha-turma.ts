@@ -1,6 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -21,9 +28,13 @@ interface ResumoChamada {
   imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './minha-turma.html',
 })
-export class MinhaTurma implements OnInit {
+export class MinhaTurma {
   private readonly atividades = inject(AtividadesService);
   private readonly chamada = inject(ChamadaService);
+  private readonly destroy = inject(DestroyRef);
+
+  readonly limite = output<unknown>();
+  readonly concluido = output<void>();
 
   private readonly calendario = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'America/Sao_Paulo',
@@ -44,26 +55,43 @@ export class MinhaTurma implements OnInit {
     if (!resumo) return [];
 
     return [
-      { titulo: 'Presentes', valor: resumo.presentes, cor: 'bg-creche-verde' },
-      { titulo: 'Ausentes', valor: resumo.ausentes, cor: 'bg-red-600' },
-      { titulo: 'Pendentes', valor: resumo.pendentes, cor: 'bg-amber-500' },
+      {
+        titulo: 'Presentes',
+        valor: resumo.presentes,
+        cor: 'bg-creche-verde',
+      },
+      {
+        titulo: 'Ausentes',
+        valor: resumo.ausentes,
+        cor: 'bg-red-600',
+      },
+      {
+        titulo: 'Pendentes',
+        valor: resumo.pendentes,
+        cor: 'bg-amber-500',
+      },
     ].map((item) => ({
       ...item,
-      percentual: resumo.total > 0 ? (item.valor / resumo.total) * 100 : 0,
+      percentual:
+        resumo.total > 0 ? (item.valor / resumo.total) * 100 : 0,
     }));
   });
 
-  ngOnInit(): void {
-    void this.atualizar();
-  }
-
   atualizar(): Promise<void> {
     return this.executar(async () => {
-      const turmas = await firstValueFrom(this.atividades.listarTurmas());
+      const turmas = await firstValueFrom(
+        this.atividades.listarTurmas(),
+      );
+
       this.turmas.set(turmas);
 
-      const turmaAtual = turmas.find((turma) => turma.id === this.turmaId());
+      const turmaAtual = turmas.find(
+        (turma) => turma.id === this.turmaId(),
+      );
       const selecionada = turmaAtual ?? turmas[0];
+
+      if (!turmaAtual) this.resumo.set(null);
+
       this.turmaId.set(selecionada?.id ?? '');
       this.data.set('');
 
@@ -80,6 +108,7 @@ export class MinhaTurma implements OnInit {
 
     return this.executar(async () => {
       this.turmaId.set(turmaId);
+      this.resumo.set(null);
       await this.buscarResumo(turmaId);
     });
   }
@@ -92,7 +121,10 @@ export class MinhaTurma implements OnInit {
     const data = this.hoje();
     this.data.set(data);
 
-    const primeira = await firstValueFrom(this.chamada.consultar(turmaId, data, 0));
+    const primeira = await firstValueFrom(
+      this.chamada.consultar(turmaId, data, 0),
+    );
+
     const alunos = new Map<string, AlunoChamada>();
 
     for (const aluno of primeira.content) {
@@ -100,7 +132,9 @@ export class MinhaTurma implements OnInit {
     }
 
     for (let pagina = 1; pagina < primeira.totalPages; pagina++) {
-      const resposta = await firstValueFrom(this.chamada.consultar(turmaId, data, pagina));
+      const resposta = await firstValueFrom(
+        this.chamada.consultar(turmaId, data, pagina),
+      );
 
       for (const aluno of resposta.content) {
         alunos.set(aluno.alunoId, aluno);
@@ -108,7 +142,9 @@ export class MinhaTurma implements OnInit {
     }
 
     if (data !== this.hoje()) {
-      this.erro.set('O dia mudou durante a consulta. Atualize o resumo.');
+      this.erro.set(
+        'O dia mudou durante a consulta. Atualize o resumo.',
+      );
       return;
     }
 
@@ -128,23 +164,40 @@ export class MinhaTurma implements OnInit {
     });
   }
 
-  private async executar(acao: () => Promise<void>): Promise<void> {
+  private async executar(
+    acao: () => Promise<void>,
+  ): Promise<void> {
     if (this.carregando()) return;
 
     this.carregando.set(true);
     this.erro.set('');
-    this.resumo.set(null);
 
     try {
       await acao();
     } catch (erro: unknown) {
-      if (erro instanceof HttpErrorResponse && erro.status === 403) {
-        this.erro.set('Confira se sua conta está vinculada à turma.');
+      if (erro instanceof HttpErrorResponse && erro.status === 429) {
+        if (!this.destroy.destroyed) this.limite.emit(erro);
+
+        this.erro.set(
+          'Muitas atualizações. Aguarde o intervalo indicado no painel.',
+        );
+      } else if (
+        erro instanceof HttpErrorResponse &&
+        erro.status === 403
+      ) {
+        this.resumo.set(null);
+        this.erro.set(
+          'Confira se sua conta está vinculada à turma.',
+        );
       } else {
-        this.erro.set('Não foi possível carregar a chamada da turma. Tente novamente.');
+        this.resumo.set(null);
+        this.erro.set(
+          'Não foi possível carregar a chamada da turma. Tente novamente.',
+        );
       }
     } finally {
       this.carregando.set(false);
+      if (!this.destroy.destroyed) this.concluido.emit();
     }
   }
 }
