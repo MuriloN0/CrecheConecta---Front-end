@@ -9,10 +9,8 @@
           Acompanhe os cadastros, a frequência e os comunicados da creche.
         </p>
       } @else {
-        <h1
-          id="titulo-home"
-          class="wrap-break-word text-3xl font-bold text-creche-texto"
-        >
+        <h1 id="titulo-home"
+          class="wrap-break-word text-3xl font-bold text-creche-texto">
           Olá, {{ usuario()?.nome || 'bem-vindo(a)' }}!
         </h1>
         <p class="mt-1 text-sm text-stone-600">
@@ -40,10 +38,16 @@
       } @else if (perfil() === 'DIRECAO') {
         Atualizar indicadores e mural
       } @else {
-        Atualizar mural
+        Atualizar painel
       }
     </button>
   </header>
+
+  @if (erroPainel()) {
+    <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">
+      {{ erroPainel() }}
+    </p>
+  }
 
   @if (perfil() === 'DIRECAO') {
     <section class="space-y-4" aria-labelledby="titulo-indicadores">
@@ -52,22 +56,17 @@
       </h2>
 
       @if (erroResumo()) {
-        <p
-          role="alert"
-          class="rounded-xl bg-red-50 p-4 text-sm text-red-800"
-        >
+        <p role="alert" class="rounded-xl bg-red-50 p-4 text-red-800">
           {{ erroResumo() }}
         </p>
       }
 
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         @for (indicador of indicadores(); track indicador.caminho) {
-          <a
-            [routerLink]="indicador.caminho"
+          <a [routerLink]="indicador.caminho"
             class="block rounded-2xl border border-stone-200 bg-white p-5 shadow-sm
                    hover:border-creche-verde focus-visible:ring-2
-                   focus-visible:ring-creche-verde focus-visible:ring-offset-2"
-          >
+                   focus-visible:ring-creche-verde focus-visible:ring-offset-2">
             <span class="block text-sm font-semibold text-stone-600">
               {{ indicador.titulo }}
             </span>
@@ -87,13 +86,10 @@
     @if (resumo()) {
       <section
         class="space-y-5 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm md:p-6"
-        aria-labelledby="titulo-distribuicao"
-      >
+        aria-labelledby="titulo-distribuicao">
         <div>
-          <h2
-            id="titulo-distribuicao"
-            class="text-xl font-bold text-creche-texto"
-          >
+          <h2 id="titulo-distribuicao"
+            class="text-xl font-bold text-creche-texto">
             Situação dos cadastros
           </h2>
           <p class="mt-1 text-sm text-stone-600">
@@ -103,9 +99,7 @@
 
         @for (grupo of distribuicao(); track grupo.titulo) {
           <figure class="space-y-2">
-            <figcaption
-              class="flex flex-wrap items-center justify-between gap-2"
-            >
+            <figcaption class="flex flex-wrap items-center justify-between gap-2">
               <span class="font-semibold">{{ grupo.titulo }}</span>
               <span class="text-sm text-stone-600">
                 {{ grupo.total | number }} no total
@@ -113,30 +107,22 @@
             </figcaption>
 
             @if (grupo.total > 0) {
-              <div
-                aria-hidden="true"
-                class="h-3 overflow-hidden rounded-full bg-creche-pessego"
-              >
-                <div
-                  class="h-full bg-creche-verde"
-                  [style.width.%]="grupo.percentualAtivos"
-                ></div>
+              <div aria-hidden="true"
+                class="h-3 overflow-hidden rounded-full bg-creche-pessego">
+                <div class="h-full bg-creche-verde"
+                  [style.width.%]="grupo.percentualAtivos"></div>
               </div>
             }
 
             <div class="flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-700">
               <span class="inline-flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  class="size-3 rounded-full bg-creche-verde"
-                ></span>
+                <span aria-hidden="true"
+                  class="size-3 rounded-full bg-creche-verde"></span>
                 Ativos {{ grupo.ativos | number }}
               </span>
               <span class="inline-flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  class="size-3 rounded-full bg-creche-pessego"
-                ></span>
+                <span aria-hidden="true"
+                  class="size-3 rounded-full bg-creche-pessego"></span>
                 Inativos {{ grupo.inativos | number }}
               </span>
             </div>
@@ -147,27 +133,29 @@
 
     <app-frequencia-direcao class="block" />
   } @else if (perfil() === 'PROFESSOR') {
-    <app-minha-turma class="block" />
+    <app-minha-turma
+      class="block"
+      (limite)="registrarLimite($event)"
+      (concluido)="aguardarPainel()"
+    />
   } @else if (perfil() === 'RESPONSAVEL') {
-    <app-painel-familia class="block" />
+    <app-painel-familia
+      class="block"
+      (limite)="registrarLimite($event)"
+      (concluido)="aguardarPainel()"
+    />
   }
 
   <section
     class="space-y-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm md:p-6"
     aria-labelledby="titulo-mural"
-    [attr.aria-busy]="carregandoMural()"
-  >
+    [attr.aria-busy]="carregandoMural()">
     <header class="flex flex-wrap items-center justify-between gap-2">
-      <h2
-        id="titulo-mural"
-        class="text-xl font-bold text-creche-texto"
-      >
+      <h2 id="titulo-mural" class="text-xl font-bold text-creche-texto">
         Mural de avisos
       </h2>
-      <a
-        routerLink="/comunicados"
-        class="text-sm font-semibold text-creche-verde underline"
-      >
+      <a routerLink="/comunicados"
+        class="text-sm font-semibold text-creche-verde underline">
         Ver todos os comunicados
       </a>
     </header>
@@ -177,10 +165,7 @@
         Carregando avisos…
       </p>
     } @else if (erroMural()) {
-      <p
-        role="alert"
-        class="rounded-xl bg-red-50 p-3 text-sm text-red-800"
-      >
+      <p role="alert" class="rounded-xl bg-red-50 p-3 text-sm text-red-800">
         {{ erroMural() }}
       </p>
     } @else {
@@ -193,9 +178,7 @@
             <p class="text-xs text-stone-600">
               {{ comunicado.criadoEm | date: 'dd/MM/yyyy HH:mm' }}
             </p>
-            <p
-              class="line-clamp-3 whitespace-pre-wrap wrap-break-word text-sm text-stone-700"
-            >
+            <p class="line-clamp-3 whitespace-pre-wrap wrap-break-word text-sm text-stone-700">
               {{ comunicado.conteudo }}
             </p>
           </li>
